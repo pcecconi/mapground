@@ -1,0 +1,41 @@
+{% load static %}
+{% load humanize %}
+{% load mapas_tags %}
+<div class="thumbnail mapa">
+<img data-src="holder.js/300x300" alt="{{mapa.titulo}}" src="{% get_media_prefix %}{{ mapa.id_mapa }}.png?t={{ mapa.timestamp_modificacion|date:'U' }}">
+<div class="caption">
+  <h3>{{mapa.titulo}}</h3>
+  {% if mapa.categorias.all|length > 0 %}
+    <div class="labels">
+      {% for categ in mapa.categorias.all %}
+      	<a class="label label-default" href="{% url 'maps:detalle_categoria' categ.id %}">{{categ.nombre}}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="user">
+  <!-- <a href="/users/{{ capa.owner.username }}" class="usuario">{{ capa.owner.username }}</a>-->
+  {% if order_by == 'mrm' or order_by == 'lrm' %}
+    {{ mapa.owner.username }}, modificado <span title="Creado {{mapa.timestamp_alta}} - Última modificación {{mapa.timestamp_modificacion}}">{{ mapa.timestamp_modificacion|naturaltime|quitar_char:'\u00a0' }}</span>
+  {% else %}
+    {{ mapa.owner.username }}, creado <span title="Creado {{mapa.timestamp_alta}} - Última modificación {{mapa.timestamp_modificacion}}">{{ mapa.timestamp_alta|naturaltime|quitar_char:'\u00a0' }}</span>
+  {% endif %}
+  </div>
+  <p class"abstract">{{ mapa.descripcion|truncar_string:50 }}</p>
+  {% if mapa.capas.all|length > 0 %}
+  <div class="capas"><b>Capas incluídas ({{ mapa.capas.all|length}}): </b>
+    {% for capa in mapa.capas.all %}
+      <a href="{% url 'layers:detalle_capa' capa.id_capa %}">{{ capa.dame_titulo }}</a>{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if mapa.permiso != None %}
+  <a href="{% url 'maps:detalle_mapa' mapa.id_mapa %}" class="btn btn-primary" role="button">Ver</a>
+  {% endif %}
+  {% if mapa.permiso == 'owner' or mapa.permiso == 'superuser' %} 
+  <a href="{% url 'maps:metadatos' mapa.id_mapa %}" class="btn btn-default" role="button">Editar</a>
+  {% endif %}
+  {% if mapa.permiso == 'owner' or mapa.permiso == 'superuser' %}
+  <a href="{% url 'maps:borrar_mapa' mapa.id_mapa %}" class="btn btn-danger eliminar" role="button" title="eliminar {{ mapa.titulo }}">Eliminar</a>
+  {% endif %}
+</div>
+</div>

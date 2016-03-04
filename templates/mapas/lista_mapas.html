@@ -1,0 +1,9 @@
+{% load mapas_tags %}
+
+{% if lista_mapas %}
+	{% for mapa in lista_mapas %}
+		{% mostrar_resumen_mapa mapa order_by%}
+	{% endfor %}
+{% else %}
+    <p>No hay mapas.</p>
+{% endif %}

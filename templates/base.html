@@ -1,0 +1,144 @@
+{% load common_tags %}
+
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:"es" }}">
+<head>
+<!-- Force latest IE rendering engine or ChromeFrame if installed -->
+<!--[if IE]>
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+<![endif]-->
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+<link rel="icon" href="{{ STATIC_URL }}img/mapground.ico">
+
+<title>{{ page_title }}{% if page_title %} | {% endif %}{% settings_value "SITE_TITLE" %}</title>
+<!-- Bootstrap core CSS -->
+<link href="{{ STATIC_URL }}libs/bootstrap-3.2.0-dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Bootstrap theme -->
+<link href="{{ STATIC_URL }}libs/bootstrap-3.2.0-dist/css/bootstrap-theme.min.css" rel="stylesheet">
+
+{% block extrastyle %}
+<!-- MapGround styles -->
+<link href="{{ STATIC_URL }}css/mapground.css" rel="stylesheet">
+{% endblock %}
+
+<!-- Custom styles for this template -->
+<link href="{{ STATIC_URL }}css/theme.css" rel="stylesheet">
+
+<!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+<script src="{{ STATIC_URL }}assets/js/ie10-viewport-bug-workaround.js"></script>
+
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+  <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+  <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+  <![endif]-->
+{% block extrahead %}{% endblock %}
+{% block blockbots %}<meta name="robots" content="NONE,NOARCHIVE" />{% endblock %}
+</head>
+{% load i18n %}
+
+<body class="{% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %}">
+
+<!-- Container -->
+<div id="container">
+
+    {% if not is_popup %}
+    <!-- Header -->
+    <div id="header">
+        <div id="branding">
+        {% block branding %}{% endblock %}
+        </div>
+        {% block nav-global %}
+        {% url 'layers:ultimas' as url_inicio %}
+        {% url 'layers:index' as url_capas %}
+        {% url 'maps:index' as url_mapas %}
+        {% url 'maps:visor' as url_visor %}
+        {% url 'users:usuarios' as url_usuarios %}
+        <!-- Fixed navbar -->
+        <div class="navbar navbar-default navbar-static-top navbar-inverse" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              <span class="navbar-brand" href="#">{% settings_value "SITE_HEADER" %}</span>
+            </div>
+            <div class="navbar-collapse collapse">
+              <ul class="nav navbar-nav">
+                <li{% if request.path == url_inicio %} class="active"{% endif %}><a href="{{ url_inicio }}">Inicio</a></li>
+                <li{% if request.path == url_visor %} class="active"{% endif %}><a href="{{ url_visor }}">Visor</a></li>
+                <li{% if request.path == url_mapas %} class="active"{% endif %}><a href="{{ url_mapas }}?view=own&order_by=mr">Mapas</a></li>
+                <li{% if request.path == url_capas %} class="active"{% endif %}><a href="{{ url_capas }}?view=own&order_by=mr">Capas</a></li>
+                {% if request.user.is_superuser %}
+                    <li {% if request.path == url_usuarios %} class="active"{% endif %}><a href="{{ url_usuarios }}">Usuarios</a></li>
+                {% endif %}
+              </ul>
+              <ul class="nav navbar-nav navbar-right">
+                {% if user.is_authenticated %}
+                  <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% if user.first_name != '' %}{{ user.first_name }}{% else %}{{ user.get_username }}{% endif %} <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                      <!--<li><a href="#">Preferencias</a></li>-->
+                      <li><a href="/accounts/logout">Salir</a></li>
+                    </ul>
+                  </li>
+                {% else %}
+                  <li><a href="/accounts/login">Identificarse</a></li>
+                {% endif %}
+              </ul>
+            </div><!--/.nav-collapse -->
+          </div>
+        </div>
+        {% endblock %}
+    </div>
+    <!-- END Header -->
+    {% block breadcrumbs %}
+    {% endblock %}
+    {% endif %}
+
+    {% block messages %}
+        {% if messages %}
+        <ul class="messagelist">{% for message in messages %}
+          <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|capfirst }}</li>
+        {% endfor %}</ul>
+        {% endif %}
+    {% endblock messages %}
+
+    <!-- Content -->
+    <div id="content" class="{% block contentclass %}container{% endblock %}">
+        {% block pretitle %}{% endblock %}
+        {% block content_title %}{% if title %}<h1>{{ title }}</h1>{% endif %}{% endblock %}
+        {% block content %}
+        <h1>No content set</h1>
+        {% endblock %}
+        {% block sidebar %}{% endblock %}
+    </div>
+    <!-- END Content -->
+
+    {% block footer %}
+    <div class="no-footer"></div>
+    {% endblock %}
+</div>
+<!-- END Container -->
+
+{% block javascript %}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
+<!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
+<script src="{{ STATIC_URL }}libs/bootstrap-3.2.0-dist/js/bootstrap.min.js"></script>
+<!-- blueimp Gallery script -->
+{% endblock %}
+
+{% block extra_body %}
+{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+table {
+	margin-top: 1em;
+}
+td.capa-importable {
+	font-size: 120%;
+	vertical-align: middle!important;
+}
+.bg-danger {
+	padding: 15px;
+}

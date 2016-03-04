@@ -1,0 +1,101 @@
+@charset "UTF-8";
+/*
+ * jQuery File Upload UI Plugin CSS 8.8.1
+ * https://github.com/blueimp/jQuery-File-Upload
+ *
+ * Copyright 2010, Sebastian Tschan
+ * https://blueimp.net
+ *
+ * Licensed under the MIT license:
+ * http://www.opensource.org/licenses/MIT
+ */
+
+.fileinput-button {
+  position: relative;
+  overflow: hidden;
+}
+.fileinput-button input {
+  position: absolute;
+  top: 0;
+  right: 0;
+  margin: 0;
+  opacity: 0;
+  filter: alpha(opacity=0);
+  transform: translate(-300px, 0) scale(4);
+  font-size: 23px;
+  direction: ltr;
+  cursor: pointer;
+}
+.fileupload-buttonbar .btn,
+.fileupload-buttonbar .toggle {
+  margin-bottom: 5px;
+}
+.progress-animated .progress-bar,
+.progress-animated .bar {
+  background: url(../img/progressbar.gif) !important;
+  filter: none;
+}
+.fileupload-loading {
+  float: right;
+  width: 32px;
+  height: 32px;
+  background: url(../img/loading.gif) center no-repeat;
+  background-size: contain;
+  display: none;
+}
+.fileupload-processing .fileupload-loading {
+  display: block;
+}
+.files audio,
+.files video {
+  max-width: 300px;
+}
+
+@media (max-width: 767px) {
+  .fileupload-buttonbar .toggle,
+  .files .toggle,
+  .files .btn span {
+    display: none;
+  }
+  .files .name {
+    width: 80px;
+    word-wrap: break-word;
+  }
+  .files audio,
+  .files video {
+    max-width: 80px;
+  }
+}
+
+.drop-area {
+  border: 2px dashed #ccc;
+  bottom: 1em;
+  color: #ccc;
+  font-size: 200%;
+  position: absolute;
+  text-align: center;
+  top: 8em;
+  right: 0.5em;
+  left: 0.5em;
+}
+.drop-area > p {
+    font-weight: bold;
+    margin-top: -0.5em;
+    position: relative;
+    top: 50%;
+}
+@media (min-width: 768px) { 
+  .drop-area {
+    width: 80%;
+    right: auto;
+    left: auto;
+  }
+}
+
+@media (min-width: 1400px) { 
+  .drop-area {
+    width: 70%;
+    right: auto;
+    left: auto;
+  }
+}

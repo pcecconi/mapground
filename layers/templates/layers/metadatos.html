@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load field_addcss %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+{% endblock %}
+
+{% block content %}
+<div class="row">
+	<div class="col-sm-8 main-content">
+
+        <div class="page-header no-border">
+			<h1>Metadatos de capa "{{ capa.dame_titulo }}"</h1>
+		</div>
+
+        <div class="clearfix"></div>
+		<ul class="nav nav-tabs" role="tablist" id="myTab">
+			<li class="active"><a href="#layerInfo" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-info-sign"></span>
+			&nbsp;Información</a></li>
+			<li><a href="{% url 'layers:atributos' capa.id_capa %}"><span class="glyphicon glyphicon-list"></span>
+			&nbsp;Atributos</a></li>
+			<li><a href="{% url 'layers:permisos' capa.id_capa %}"><span class="glyphicon glyphicon-lock"></span>
+			&nbsp;Permisos</a></li>
+            <li><a href="{% url 'layers:sld' capa.id_capa %}"><span class="glyphicon glyphicon-eye-close"></span>
+            &nbsp;Simbología</a></li>
+		</ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade in active" id="layerInfo">
+			<form action="" method="post" role="form">
+
+			{% for field in form %}
+
+	    		{% if field.errors|length > 0 %}
+				    <div class="form-group has-error">
+			    {% else %}
+				    <div class="form-group">
+	      		{% endif %}
+	      		
+	      			{% if field.name == 'categorias' %}
+	      				<label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}</label>
+	      				<div class="pull-right"><a href="#" id="todas">Todas</a> | <a href="#" id="ninguna">Ninguna</a></div>
+	      				{{ field}}
+	      			{% else %}
+	      				<label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}</label> {{ field|addcss:"form-control" }}
+	      			{% endif %} 
+	    	        
+			    	{% if field.errors|length > 0 %}
+				        <p class="text-danger">{{ field.errors.as_text }}</p>
+			      	{% endif %}
+			    </div>
+			{% endfor %}
+
+			{% csrf_token %}
+			<button type="submit" class="btn btn-primary" name="_cancel"><i class="glyphicon glyphicon-remove-circle"></i><span>&nbsp;Cancelar</span></button>
+			<button type="submit" class="btn btn-danger" name="_save"><i class="glyphicon glyphicon-save"></i><span>&nbsp;Grabar</span></button>
+			<button type="submit" class="btn btn-danger" name="_save_and_continue"><i class="glyphicon glyphicon-refresh"></i><span>&nbsp;Grabar y continuar editando</span></button>
+			<button type="submit" class="btn btn-danger" name="_save_and_next"><span>Grabar y editar Atributos&nbsp;</span><i class="glyphicon glyphicon-forward"></i></button>
+			</form>
+		</div>
+	    <div class="tab-pane fade" id="layerAttributes">
+	    </div>
+        <div class="tab-pane fade" id="layerPermissions">
+		</div>
+        <div class="tab-pane fade" id="layerSymbology">
+        </div>
+	  </div>
+	</div> 
+    <div class="col-sm-4">
+        <br/>
+
+	<a href="{% url 'layers:detalle_capa' capa.id_capa %}" type="button" class="btn btn-default pull-right"><span class="glyphicon glyphicon-arrow-left"></span>&nbsp;Volver a la capa</a>
+	<div class="clearfix"></div>
+	<br/>
+	{% include 'layers/detalle_capa_widget.html' %}
+	
+	</div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script src="{{ STATIC_URL }}js/metadatos.js"></script>
+
+{% endblock %}

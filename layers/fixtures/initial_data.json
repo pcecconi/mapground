@@ -1,0 +1,128 @@
+[
+{
+    "pk": 1, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "POINT", 
+        "nombre": "Punto", 
+        "postgres_type": "POINT"
+    }
+},
+{
+    "pk": 2, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "LINE", 
+        "nombre": "L\u00ednea", 
+        "postgres_type": "LINESTRING"
+    }
+},
+{
+    "pk": 3, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "POLYGON", 
+        "nombre": "Pol\u00edgono", 
+        "postgres_type": "POLYGON"
+    }
+},
+{
+    "pk": 4, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "POINT", 
+        "nombre": "Multi-Punto", 
+        "postgres_type": "MULTIPOINT"
+    }
+},
+{
+    "pk": 5, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "LINE", 
+        "nombre": "Multi-L\u00ednea", 
+        "postgres_type": "MULTILINESTRING"
+    }
+},
+{
+    "pk": 6, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "POLYGON", 
+        "nombre": "Multi-Pol\u00edgono", 
+        "postgres_type": "MULTIPOLYGON"
+    }
+},
+{
+    "pk": 7, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "POINT", 
+        "nombre": "Multi-Punto M", 
+        "postgres_type": "MULTIPOINTM"
+    }
+},
+{
+    "pk": 8, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "LINE", 
+        "nombre": "Multi-L\u00ednea M", 
+        "postgres_type": "MULTILINESTRINGM"
+    }
+},
+{
+    "pk": 9, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "POLYGON", 
+        "nombre": "Multi-Pol\u00edgono M", 
+        "postgres_type": "MULTIPOLYGONM"
+    }
+},
+{
+    "pk": 1, 
+    "model": "layers.conexionpostgres", 
+    "fields": {
+        "dbname": "sspt", 
+        "host": "localhost", 
+        "user": "mapserver", 
+        "nombre": "mapserver@localhost.sspt", 
+        "password": "m4ps3rv3r", 
+        "port": "5432"
+    }
+},
+{
+    "pk": 2, 
+    "model": "layers.conexionpostgres", 
+    "fields": {
+        "dbname": "usig", 
+        "host": "10.10.4.55", 
+        "user": "usig", 
+        "nombre": "usig@10.10.4.55.usig", 
+        "password": "usig", 
+        "port": "5432"
+    }
+},
+{
+    "fields": {
+        "nombre": "Regional"
+    },
+    "model": "layers.escala",
+    "pk": 1
+},
+{
+    "fields": {
+        "nombre": "Provincial"
+    },
+    "model": "layers.escala",
+    "pk": 2
+},
+{
+    "fields": {
+        "nombre": "Nacional"
+    },
+    "model": "layers.escala",
+    "pk": 3
+}
+]

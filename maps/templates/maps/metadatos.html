@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load field_addcss %}
+{% load static %}
+{% load mapas_tags %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}libs/leaflet/leaflet.css" />
+<!--
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/abstract.control.css" media="all">
+-->
+{% endblock %}
+
+{% block content %}
+<div class="row">
+	<div class="col-sm-8 main-content">
+
+      <div class="page-header no-border">
+        <h1>Metadatos de mapa "{{mapa.dame_titulo}}"</h1>
+      </div>
+
+      <div class="clearfix"></div>
+      <form action="" method="post" role="form">
+
+      {% for field in form %}
+
+          {% if field.errors|length > 0 %}
+              <div class="form-group has-error">
+          {% else %}
+              <div class="form-group">
+          {% endif %}
+            
+                {% if field.name == 'categorias' %}
+                    <label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}</label>
+                    <div class="pull-right"><a href="#" id="todas">Todas</a> | <a href="#" id="ninguna">Ninguna</a></div>
+                    {{ field}}
+                {% else %}
+                    <label for="{{ field.id_for_label }}" class="control-label">{{ field.label }}</label> {{ field|addcss:"form-control" }}
+                {% endif %} 
+              
+              {% if field.errors|length > 0 %}
+                  <p class="text-danger">{{ field.errors.as_text }}</p>
+                {% endif %}
+          </div>
+      {% endfor %}
+
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary" name="_cancel"><i class="glyphicon glyphicon-remove-circle"></i><span>&nbsp;Cancelar</span></button>
+      <button type="submit" class="btn btn-danger" name="_save"><i class="glyphicon glyphicon-save"></i><span>&nbsp;Grabar</span></button>
+      <button type="submit" class="btn btn-danger" name="_save_and_continue"><i class="glyphicon glyphicon-refresh"></i><span>&nbsp;Grabar y continuar editando</span></button>
+      <button type="submit" class="btn btn-danger" name="_save_and_next"><span>Grabar y editar capas&nbsp;</span><i class="glyphicon glyphicon-forward"></i></button>
+      </form>
+    </div>
+
+    {% if mapa.id_mapa %}
+    <div class="col-sm-4">
+        <br/>
+	<a href="{% url 'maps:detalle_mapa' mapa.id_mapa %}" type="button" class="btn btn-default pull-right"><span class="glyphicon glyphicon-arrow-left"></span>&nbsp;Volver al mapa</a>
+	<div class="clearfix"></div>
+	<br/>
+	
+        <dt>Capas incluídas ({{ mapa.capas.all|length}})</dt><dd>          
+          {% for msl in mapa.mapserverlayer_set.all|sort_by:'orden_de_capa,capa__metadatos__titulo' %}
+            <br/><a href="{% url 'layers:detalle_capa' msl.capa.id_capa %}">{{ msl.capa.dame_titulo }}</a>
+          {% endfor %}
+        </dd>
+	
+	</div>
+	{% endif %}
+
+
+	</div>
+</div>
+
+
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script src="{{ STATIC_URL }}js/metadatos.js"></script>
+{% endblock %}

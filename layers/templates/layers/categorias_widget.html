@@ -1,0 +1,24 @@
+          <div class="row">
+            <div class="col-xs-12">
+
+            <h3><span class="glyphicon glyphicon-tags"></span>&nbsp;&nbsp;Categorías
+	            {% if request.user.is_superuser %}
+	            <a href="{% url 'layers:categorias' %}" type="button" class="btn btn-primary pull-right">
+	              <span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp;Editar
+	            </a>
+	            {% endif %}
+            </h3>
+            {% if lista_categorias.categorias|length > 0 %}
+            <ul class="dropdown-menu no-border no-shadow" style="display: block;margin-left: 30px; position: relative;">
+              {% for c in lista_categorias.categorias %} 
+              <li><a href="{% url 'layers:detalle_categoria' c.id %}" title="{{ c.descripcion|default:'Ver capas en esta categoría' }}">{{ c.nombre }} ({{ c.total }})</a>
+              {% endfor %}
+              <li class="divider" role="separator"></li>
+              <li><a href="{% url 'layers:detalle_categoria' 0 %}" title="Capas sin categoría asignada">Sin categoría ({{lista_categorias.sin_categoria}})</a>
+            </ul>
+            {% else %}
+            <p>No hay categorías definidas.</p>
+            {% endif %}
+            
+            </div>
+          </div>

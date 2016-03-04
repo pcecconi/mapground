@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block css %}
+{% endblock %}
+
+{% block content %}
+ <div class="row">
+ 	<div class="col-sm-12 main-content">
+    {% if ok %}
+    <p class="text-success">La capa {{ capa }} se importó con éxito. 
+        <a href="/layers/edit/{{ capa }}" type="button" class="btn btn-primary pull-right">
+          <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Agregar al catálogo
+        </a>
+    </p>
+    {% else %}
+    <p class="bg-danger">{{ error_msg }}</p>
+    {% endif %}
+   	</div>
+ </div>
+{% endblock %}

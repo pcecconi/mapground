@@ -1,0 +1,12 @@
+SYMBOLSET
+
+SYMBOL
+    NAME "circle"
+    TYPE ellipse
+    POINTS
+        1 1
+    END
+	FILLED true    
+END 
+
+END

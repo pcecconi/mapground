@@ -1,0 +1,12 @@
+<source name="${mapname}" type="wms">
+	<getmap>
+	 <params>
+	    <FORMAT>image/png</FORMAT>
+	    <LAYERS>${layers}</LAYERS>
+	    <MAP>${map_path}/${mapfile}.map</MAP>
+	 </params>
+	</getmap>
+	<http>
+		<url>${mapserver_url}?</url>
+	</http>
+</source>

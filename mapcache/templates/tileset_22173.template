@@ -1,0 +1,8 @@
+<tileset name="${mapname}">
+	<source>${mapname}</source>
+	<cache>${mapname}</cache>
+	<grid>posgar98-faja3</grid>
+	<format>PNG</format>
+	<metabuffer>10</metabuffer>
+	<expires>86400</expires>
+</tileset>

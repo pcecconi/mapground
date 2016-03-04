@@ -1,0 +1,44 @@
+{% load static %}
+{% load humanize %}
+{% load capas_tags %}
+<div class="thumbnail">
+<img data-src="holder.js/300x300" width="110" alt="{{capa.dame_titulo}}" src="{% get_media_prefix %}{{ capa.id_capa }}_layer_srs.png?t={{ capa.timestamp_modificacion|date:'U' }}">
+<div class="caption">
+  <h3>{{capa.dame_titulo}}</h3>
+  {% if capa.metadatos.area_tematica %}
+    <div class="labels">
+        <a class="label label-primary" href="{% url 'layers:detalle_area_tematica' capa.metadatos.area_tematica.id %}">{{capa.metadatos.area_tematica.nombre}}</a>
+    </div>
+  {% endif %}
+  {% if capa.metadatos.categorias.all|length > 0 %}
+    <div class="labels">
+      {% for categ in capa.metadatos.categorias.all %}
+      	<a class="label label-default" href="{% url 'layers:detalle_categoria' categ.id %}">{{categ.nombre}}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="user">
+  <!-- <a href="/users/{{ capa.owner.username }}" class="usuario">{{ capa.owner.username }}</a>-->
+  {% if order_by == 'mrm' or order_by == 'lrm' %}
+    {{ capa.owner.username }}, modificada <span title="Subida {{capa.timestamp_alta}} - Última modificación {{capa.timestamp_modificacion}}">{{ capa.timestamp_modificacion|naturaltime|quitar_char:'\u00a0' }}</span>
+  {% else %}
+    {{ capa.owner.username }}, subida <span title="Subida {{capa.timestamp_alta}} - Última modificación {{capa.timestamp_modificacion}}">{{ capa.timestamp_alta|naturaltime|quitar_char:'\u00a0' }}</span>
+  {% endif %}
+  </div>
+  <p class"abstract">{{ capa.dame_descripcion|truncar_string:50 }}</p>
+  {% if capa.permiso != None %}
+  <a href="{% url 'layers:detalle_capa' capa.id_capa %}" class="btn btn-primary" role="button">Ver</a>
+  {% endif %}
+  {% if capa.permiso == 'owner' or capa.permiso == 'superuser' or capa.permiso == 'write' %} 
+  <a href="{% url 'layers:metadatos' capa.id_capa %}" class="btn btn-default" role="button">Editar</a>
+  {% endif %}
+  {% if capa.permiso == 'owner' or capa.permiso == 'superuser' %}
+    {% if capa.borrable %}
+        <a href="{% url 'layers:borrar_capa' capa.id_capa %}" class="btn btn-danger eliminar" role="button" title="eliminar {{ capa.dame_titulo }}">Eliminar</a>
+    {% else %}
+        <button class="btn btn-danger delete disabled" role="button" title="la capa {{ capa.dame_titulo }} no puede eliminarse por estar incluida en algun mapa">Eliminar</>
+    {% endif %}
+  {% endif %}
+  
+</div>
+</div>

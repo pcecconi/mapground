@@ -1,0 +1,117 @@
+/*
+ * L.Control.LayersToggle 
+ */
+
+L.Control.LayersToggle = L.Control.extend({
+	options: {
+		position: 'topleft',
+		title: 'Select layers',
+		symbol: '',
+		itemsTemplate: '\
+			<li class="clearfix">\
+				<div data-role="fieldcontain" class="ui-field-contain">\
+			    	<img src="$icon" style="float: left; width: 20px; height: 20px;"/>\
+			    	<label for="$name">$label</label>\
+			    	<input type="checkbox" name="$name" data-role="flipswitch" data-mini="true"/>\
+				</div>\
+			</li>',
+		layers: [
+			{
+				icon: 'http://static.mapa.buenosaires.gob.ar/symbols/n/corte_de_transito.png',
+				label: 'Cortes de tránsito',
+				name: 'cortes_de_transito'
+			},
+			{
+				icon: 'http://static.mapa.buenosaires.gob.ar/symbols/n/estacion_de_bicicletas.png',
+				label: 'Red de ciclovías',
+				name: 'red_de_ciclovias'
+			},
+			{
+				icon: 'http://static.mapa.buenosaires.gob.ar/symbols/n/farmacia.png',
+				label: 'Farmacias',
+				name: 'farmacias'
+			},
+			{
+				icon: 'http://static.mapa.buenosaires.gob.ar/symbols/n/hospital_general_de_agudos.png',
+				label: 'Hospitales',
+				name: 'hospitales'
+			},
+			{
+				icon: 'http://static.mapa.buenosaires.gob.ar/symbols/n/banco.png',
+				label: 'Cajeros automáticos',
+				name: 'cajeros_automaticos'
+			}
+		]
+	},
+	self: this,
+
+	onAdd: function (map) {
+		var zoomName = 'leaflet-control-layerstoggle',
+		    container = L.DomUtil.create('div', zoomName + ' leaflet-bar'),
+		    sidebarContainer = L.DomUtil.create('div', 'sidebar-right', container);
+
+		this._map = map;
+
+		this._button = this._createButton(
+		        this.options.symbol, this.options.title,
+		        zoomName + '-btn',  container, this._onClick,  this);
+
+		var this_ptr = this;
+        this._rightSidebar = L.control.sidebar(sidebarContainer, {
+            position: 'right',
+            closeButton: true,
+            onClose: function () {
+            	this_ptr._onClose()
+            }
+        });
+
+        var content = '<form><ul>';
+        for (var i=0,l=this.options.layers.length;i<l;i++) {
+        	content+=this.options.itemsTemplate.replace(/\$icon/g, this.options.layers[i].icon)
+        		.replace(/\$label/g, this.options.layers[i].label)
+        		.replace(/\$name/g, this.options.layers[i].name);
+        }
+        content+= '</ul></form>';
+        sidebarContainer.innerHTML = content;
+        map.addControl(this._rightSidebar);
+
+		return container;
+	},
+
+	_onClose: function () {
+		L.DomUtil.removeClass(this._button, 'active');
+	},
+
+	_onClick: function (e) {
+		if (L.DomUtil.hasClass(this._button, 'active')) {
+			L.DomUtil.removeClass(this._button, 'active')
+		} else {
+			L.DomUtil.addClass(this._button, 'active');
+		}
+		this._rightSidebar.toggle();
+	},
+
+	_createButton: function (html, title, className, container, fn, context) {
+		var link = L.DomUtil.create('a', className, container);
+		link.innerHTML = html;
+		link.href = '#';
+		link.title = title;
+
+		var stop = L.DomEvent.stopPropagation;
+
+		L.DomEvent
+		    .on(link, 'click', stop)
+		    .on(link, 'mousedown', stop)
+		    .on(link, 'dblclick', stop)
+		    .on(link, 'click', L.DomEvent.preventDefault)
+		    .on(link, 'click', fn, context)
+		    .on(link, 'click', this._refocusOnMap, context);
+
+		return link;
+	}
+});
+
+
+L.control.layersToggle = function (options) {
+	return new L.Control.LayersToggle(options);
+};

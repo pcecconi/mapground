@@ -1,0 +1,9 @@
+{% load capas_tags %}
+
+{% if lista_capas %}
+	{% for capa in lista_capas %}
+		{% mostrar_resumen_capa capa order_by%}
+	{% endfor %}
+{% else %}
+    <p>No hay capas.</p>
+{% endif %}

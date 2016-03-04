@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load mapas_tags %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}libs/leaflet/leaflet.css" />
+<!--
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/abstract.control.css" media="all">
+-->
+{% endblock %}
+
+{% block content %}
+      <div class="page-header">
+        <h1>{{mapa.titulo}}</h1>
+
+        <div class="btn-group btn-toolbar" role="toolbar">
+          {% if mapa.permiso == 'owner' or mapa.permiso == 'superuser' %}
+            <a href="{% url 'maps:metadatos' mapa.id_mapa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span>&nbsp;Editar Metadatos</a>
+            <a href="{% url 'maps:visor' mapa.id_mapa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-th-list"></span>&nbsp;Editar Capas</a>
+            <a href="{% url 'maps:borrar_mapa' mapa.id_mapa %}" class="btn btn-danger eliminar" role="button" title="eliminar {{ mapa.dame_titulo }}"><span class="glyphicon glyphicon-trash"></span>&nbsp;Eliminar</a>
+          {% endif %}
+          <a href="{% url 'maps:embeddable' mapa.id_mapa %}?abstract=0&title=1" class="btn btn-default" target="_blank"><span class="glyphicon glyphicon-new-window"></span>
+        &nbsp;Pantalla Completa</a>
+        </div>        
+      </div>
+      <p class="abstract">{{ mapa.descripcion }}</p>
+      <div id="mapa">
+        <iframe src="{% url 'maps:embeddable' mapa.id_mapa %}" frameborder="0" scrolling="no" width="100%" height="100%"></iframe>
+      </div>
+      <dl class="inline">
+        <dt>Mapa de acceso {% if mapa.publico %}público{% else %}privado{% endif %}</dt>
+        <dt>Creado por</dt><dd><a class="user" href="#">{{ mapa.owner.username }}</a></dd>
+        <dt>Categorías</dt><dd><div class="labels">
+          {% for cat in mapa.categorias.all|sort_by:'nombre' %}
+              <a class="label label-default" href="{% url 'layers:detalle_categoria' cat.id %}">{{cat.nombre}}</a>
+          {% endfor %}
+            </div></dd>
+        {% if mapa.escala != None %}
+            <dt>Escala</dt><dd>{{ mapa.escala }}</dd>
+        {% endif %}            
+        {% if mapa.fuente != '' %}
+            <dt>Fuente</dt><dd>{{ mapa.fuente }}</dd>
+        {% endif %}
+        {% if mapa.contacto != '' %}
+            <dt>Contacto</dt><dd>{{ mapa.contacto }}</dd>
+        {% endif %}
+        {% if mapa.palabras_claves != '' %}
+            <dt>Palabras Claves</dt><dd>{{ mapa.palabras_claves }}</dd>
+        {% endif %}            
+                    
+        <dt>Capas incluídas ({{ mapa.capas.all|length}})</dt><dd>          
+          {% for msl in mapa.mapserverlayer_set.all|sort_by:'orden_de_capa,capa__metadatos__titulo' %}
+            <a href="{% url 'layers:detalle_capa' msl.capa.id_capa %}">{{ msl.capa.dame_titulo }}</a>{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        </dd>
+        <!--
+        <dt>WMS</dt><dd><a class="user" href="#">/ogc/mapas/disponibilidad_de_bienes</a></dd>
+      -->
+      </dl>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script type="text/javascript" src="{{ STATIC_URL }}js/mapground.js"></script>
+
+<div class="modal fade" id="modal-eliminar" tabindex="-1" role="dialog" aria-labelledby="Eliminar Mapa" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">¡Atención!</h3>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro que desea <b>$action</b>? Esta acción no podrá deshacerse.
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="btn btn-danger" data-action="eliminar">Eliminar</a> <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancelar</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

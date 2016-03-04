@@ -1,0 +1,3 @@
+<cache name="${mapname}" type="mbtiles">
+	<dbfile>${cache_path}/${mapname}.mbtiles</dbfile>
+</cache>

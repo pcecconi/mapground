@@ -1,0 +1,83 @@
+.leaflet-control-abstract {
+    border:solid rgba(255, 255, 255, 1.0) 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.65);
+    border-radius: 4px;
+    font: 10px/12px Arial, Helvetica, sans-serif;
+    background: #f8f8f9;
+    transition: all .2s;
+    max-width: 300px;
+    max-height: 400px;
+    overflow: auto;
+}
+.leaflet-control-abstract.minimized {
+	overflow: hidden;
+}
+
+.leaflet-control-abstract a {
+    background-color: rgba(255, 255, 255, 1.0);
+    background-repeat: no-repeat;
+    z-index: 99999;
+    transition: all .2s;
+    border-radius: 3px 0px 0px 0px;
+}
+
+.leaflet-control-abstract a.minimized {
+    -webkit-transform: rotate(180deg);
+    transform: rotate(180deg);
+    border-radius: 0px;
+}
+
+.leaflet-control-abstract-toggle-display {
+    background-image: url("../img/toggle.png");
+    height: 19px;
+    width: 19px;
+    position: absolute;
+    top: 0;
+    right: 0; 
+}
+
+.leaflet-control-abstract .title {
+    margin: 0 0 5px;
+    font-weight: bold;
+    font-size: 120%;
+}
+
+.leaflet-control-abstract h5 {
+    margin-top: 5px;
+}
+
+.leaflet-control-abstract .abstract {
+    padding: 1px 3px;
+    margin: 5px;
+}
+
+.leaflet-control-abstract .referencias {
+    padding: 1px 3px;
+    margin: 5px;
+}
+
+.leaflet-control-abstract ul {
+    list-style: none inside none;
+}
+.leaflet-control-abstract .legend_title {
+    font-weight: bold;
+    font-size: 120%;
+    margin: 5px 0;
+}
+.legend {
+    line-height: 18px !important;
+    text-align: left;
+    color: #555;
+}
+
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+.leaflet-control-abstract.minimized div {
+    display: none;
+}

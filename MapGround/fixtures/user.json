@@ -1,0 +1,30 @@
+[
+{
+	"fields": {
+		"username": "admin",
+		"first_name": "",
+		"last_name": "",
+		"is_active": true,
+		"is_superuser": true,
+		"is_staff": true,
+		"password": "pbkdf2_sha256$12000$UabM465Dztib$07c8JDMYdjlf5UH0GeOrLMN2DifuWsZiBpaoLZgP6F4=",
+		"email": ""
+	},
+	"model": "auth.user",
+	"pk": 1
+},
+{
+	"fields": {
+		"username": "mapground",
+		"first_name": "",
+		"last_name": "",
+		"is_active": false,
+		"is_superuser": false,
+		"is_staff": false,
+		"password": "pbkdf2_sha256$12000$u1keCevnTly2$vz7T194xAB0Wls4hnZ/PJKO9bFZpW3d8wId/mH5JGjY=",
+		"email": ""
+	},
+	"model": "auth.user",
+	"pk": 2
+}
+]

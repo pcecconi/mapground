@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block css %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/layerimport.css">
+{% endblock %}
+
+{% block content %}
+ <div class="row">
+ 	<div class="col-sm-12 main-content">
+    <h2>Capas importables</h2>
+ 	{% if object_list %}
+    <!-- The table listing the layers available for import -->
+    <table role="presentation" class="table table-striped"><tbody>
+        {% for capa in object_list %}
+            <tr><td class="capa-importable">{{ capa.nombre }}</td>
+                <td class="encoding">
+                    <form class="form-inline">
+                    <div class="form-group">
+                        <label class="control-label">Encoding:</label>
+                        <select class="form-control" data-id="{{ capa.nombre }}">
+                            {% for key, val in encodings %}
+                              <option value="{{ key }}">{{ val }}</option>
+                            {% endfor %}
+                        </select>                        
+                    </div>
+                    </form>
+                </td>
+            	<td><a href="{% url 'layerimport:layer-import-view' capa.nombre %}" type="button" id="link_{{ capa.nombre }}" class="btn btn-primary pull-right">
+			          <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Importar Capa
+			        </a>
+			    </td>
+			</tr>
+        {% endfor %}
+    </tbody></table>
+    {% else %}
+    <p>No se hallaron capas para importar.</p>
+    {% endif %}
+ 	{% if errors_list %}
+    <h3>Problemas encontrados</h3>
+    <ul class="bg-danger">
+        {% for e in errors_list %}
+            <li>{{ e }}</li>
+        {% endfor %}
+    </ul>
+    <br/>
+    <a href="/upload/new" type="button" class="btn btn-primary btn-lg pull-right">
+      <span class="glyphicon glyphicon-upload"></span>&nbsp;&nbsp;Subir Archivos
+    </a>
+    {% endif %}
+   	</div>
+ </div>
+{% endblock %}
+{% block javascript %}
+{{ block.super }}
+<script>
+$('select').change(function(ev) {
+    var base_url = $('#link_'+$(this).attr('data-id')).attr('href').split('?')[0];
+    $('#link_'+$(this).attr('data-id')).attr('href', base_url+'?enc='+$(this).val());
+    // console.log($(this).val(), $(this).attr('data-id') );
+});
+</script>
+{% endblock %}

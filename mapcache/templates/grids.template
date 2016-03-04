@@ -1,0 +1,76 @@
+<grid name="campo_inchauspe-faja3">
+   <metadata>
+     <title>Argentina Faja 3</title>
+   </metadata>
+   <extent>50000 2200000 9100000 11250000</extent>
+   <srs>EPSG:22193</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>35546.875 17773.4375 8886.71875 4443.359375 2221.6796875 1110.83984375 555.419921875 277.709960938 138.854980469 69.427490234 34.713745117 17.356872559</resolutions>
+</grid>
+
+<grid name="posgar98-faja1">
+   <metadata>
+     <title>POSGAR 98 - Faja 1</title>
+   </metadata>
+   <extent>-2200000 -189000 9100000 11111000</extent>
+   <srs>EPSG:22171</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>44140.625 22070.3125 11035.15625 5517.578125 2758.7890625 1379.39453125 689.697265625 344.848632813 172.424316406 86.212158203 43.106079102 21.553039551 10.776519775</resolutions>
+</grid>
+
+<grid name="posgar98-faja2">
+   <metadata>
+     <title>POSGAR 98 - Faja 2</title>
+   </metadata>
+   <extent>-2200000 -189000 9100000 11111000</extent>
+   <srs>EPSG:22172</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>44140.625 22070.3125 11035.15625 5517.578125 2758.7890625 1379.39453125 689.697265625 344.848632813 172.424316406 86.212158203 43.106079102 21.553039551 10.776519775</resolutions>
+</grid>
+
+<grid name="posgar98-faja3">
+   <metadata>
+     <title>POSGAR 98 - Faja 3</title>
+   </metadata>
+   <extent>-2200000 -189000 9100000 11111000</extent>
+   <srs>EPSG:22173</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>44140.625 22070.3125 11035.15625 5517.578125 2758.7890625 1379.39453125 689.697265625 344.848632813 172.424316406 86.212158203 43.106079102 21.553039551 10.776519775</resolutions>
+</grid>
+
+<grid name="posgar98-faja4">
+   <metadata>
+     <title>POSGAR 98 - Faja 4</title>
+   </metadata>
+   <extent>-2200000 -189000 9100000 11111000</extent>
+   <srs>EPSG:22174</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>44140.625 22070.3125 11035.15625 5517.578125 2758.7890625 1379.39453125 689.697265625 344.848632813 172.424316406 86.212158203 43.106079102 21.553039551 10.776519775</resolutions>
+</grid>
+
+<grid name="posgar98-faja5">
+   <metadata>
+     <title>POSGAR 98 - Faja 5</title>
+   </metadata>
+   <extent>-2200000 -189000 9100000 11111000</extent>
+   <srs>EPSG:22175</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>44140.625 22070.3125 11035.15625 5517.578125 2758.7890625 1379.39453125 689.697265625 344.848632813 172.424316406 86.212158203 43.106079102 21.553039551 10.776519775</resolutions>
+</grid>
+
+<grid name="posgar98-faja6">
+   <metadata>
+     <title>POSGAR 98 - Faja 6</title>
+   </metadata>
+   <extent>-2200000 -189000 9100000 11111000</extent>
+   <srs>EPSG:22176</srs>
+   <units>m</units>
+   <size>256 256</size>
+   <resolutions>44140.625 22070.3125 11035.15625 5517.578125 2758.7890625 1379.39453125 689.697265625 344.848632813 172.424316406 86.212158203 43.106079102 21.553039551 10.776519775</resolutions>
+</grid>

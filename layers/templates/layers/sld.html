@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load field_addcss %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+{% endblock %}
+
+{% block content %}
+<div class="row">
+	<div class="col-sm-8 main-content">
+
+        <div class="page-header no-border">
+			<h1>Simbología de capa "{{ capa.dame_titulo }}"</h1>
+		</div>
+
+        <div class="clearfix"></div>
+		<ul class="nav nav-tabs" role="tablist" id="myTab">
+			<li><a href="{% url 'layers:metadatos' capa.id_capa %}"><span class="glyphicon glyphicon-info-sign"></span>
+			&nbsp;Información</a></li>
+			<li><a href="{% url 'layers:atributos' capa.id_capa %}"><span class="glyphicon glyphicon-list"></span>
+			&nbsp;Atributos</a></li>
+			<li><a href="{% url 'layers:permisos' capa.id_capa %}"><span class="glyphicon glyphicon-lock"></span>
+			&nbsp;Permisos</a></li>
+			<li class="active"><a href="#layerSymbology" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-eye-close"></span>
+			&nbsp;Simbología</a></li>
+		</ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade" id="layerInfo">
+		</div>
+	    <div class="tab-pane fade" id="layerAttributes">
+	    </div>
+        <div class="tab-pane fade in active" id="layerPermissions">
+		</div>
+		<div class="tab-pane fade in active" id="layerSymbology">
+	
+				<form action="" method="post" enctype="multipart/form-data">
+				{% csrf_token %}
+				
+					{{ formset.management_form }}
+					{{ formset.non_form_errors }}
+					<table class="table table-striped">
+						<thead><tr>
+							{% with firstform=formset|first %}
+								{% for field in firstform.visible_fields %}
+									{% if field.name != 'capa' and field.name != 'id' %}						 
+										 <th>{{ field.label }}</th>
+									{% endif %}
+								{% endfor %}
+							{% endwith %}
+						</tr></thead>
+						<tbody>
+					{% for form in formset %}
+					
+						{# Include the hidden fields: en este caso timestamps y users #}
+						{% for hidden in form.hidden_fields %}
+							{{ hidden }}
+						{% endfor %}
+					
+						{% if form.non_field_errors %}
+							<tr><td colspan="100%" class="text-danger">{{ form.non_field_errors }}</td></tr>
+						{% endif %}
+					
+							<tr><td colspan="100%" style="display: none;">{{form.id}}</td></tr>
+							<tr>
+							
+							{#{% for field in form %}#}
+							{# Include the visible fields #}
+							{% for field in form.visible_fields %}
+								{% if field.name != 'capa' and field.name != 'id' %}
+									{% if field.errors|length > 0 %}
+										<div class="form-group has-error">
+									{% else %}
+										<div class="form-group">
+							 		{% endif %}
+										<td style="max-width: 250px; overflow: hidden;">
+											{% if field.errors|length > 0 %}
+											<p class="text-danger">{{ field.errors.as_text }}</p>
+										  	{% endif %}
+										  	{{ field|addcss:"form-control" }}												  	
+										</td>
+									 </div>
+								{% endif %}
+							{% endfor %}
+							</tr>
+							<tr><td colspan="100%" style="display: none;">&nbsp;</td></tr>
+					{% endfor %}
+					   </tbody>
+					</table>
+			
+			<button type="submit" class="btn btn-primary" name="_cancel"><i class="glyphicon glyphicon-remove-circle"></i><span>&nbsp;Cancelar</span></button>
+			<button type="submit" class="btn btn-danger" name="_save"><i class="glyphicon glyphicon-save"></i><span>&nbsp;Grabar</span></button>
+			<button type="submit" class="btn btn-danger" name="_save_and_continue"><i class="glyphicon glyphicon-refresh"></i><span>&nbsp;Grabar y continuar editando</span></button>
+			
+			
+			</form>
+		</div>		
+	  </div>
+	</div> 
+    <div class="col-sm-4">
+        <br/>
+
+	<a href="{% url 'layers:detalle_capa' capa.id_capa %}" type="button" class="btn btn-default pull-right"><span class="glyphicon glyphicon-arrow-left"></span>&nbsp;Volver a la capa</a>
+	<div class="clearfix"></div>
+	<br/>
+	{% include 'layers/detalle_capa_widget.html' %}
+	
+	</div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script src="{{ STATIC_URL }}assets/js/bootstrap-filestyle.min.js"></script>
+<script>
+	$(":file").filestyle({buttonText: "&nbsp;Elegir archivo...", input: false, iconName: "glyphicon-file"});
+</script>
+{% endblock %}

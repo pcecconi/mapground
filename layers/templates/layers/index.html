@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% load capas_tags %}
+
+{% block css %}
+{% endblock %}
+
+{% block content %}
+      <div class="row">
+        <div class="col-sm-4 col-sm-push-8">
+          <div class="row"><div class="col-xs-12">
+            <form role="search" method="GET" action="{% url 'layers:buscar' %}">
+              <div class="form-group">
+              <div class="input-group add-on">
+                <input class="form-control" placeholder="Buscar capa..." name="texto" type="text" {% if request.GET.texto != '' %}value="{{ request.GET.texto }}"{% endif %}>
+                <div class="input-group-btn">
+                  <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+                </div>
+              </div>
+              </div>    
+            </form>
+          </div></div>
+            {% if user.is_authenticated %}
+          <div class="row">
+            <div class="col-xs-12">
+            <a href="{% url 'fileupload:upload-new' %}" type="button" class="btn btn-primary btn-lg btn-block">
+              <span class="glyphicon glyphicon-upload"></span>&nbsp;&nbsp;Subir Capa
+            </a>
+            </div>
+            </div>            
+            {% endif %}
+          
+          {% include 'layers/escalas_widget.html' %}
+          {% include 'layers/areas_tematicas_widget.html' %}
+          {% include 'layers/categorias_widget.html' %}
+        
+        </div>
+        {% url 'layers:ultimas' as url_inicio %}
+        {% url 'layers:buscar' as url_buscar %}
+        {% url 'layers:index' as url_index %}
+        {% if request.path == url_inicio or request.path == url_buscar %}
+        <div class="col-sm-8 col-sm-pull-4 main-content">
+          <div class="page-header">
+            {% if request.path == url_inicio %}
+            <h1>Capas más recientes</h1>        
+            {% else %}
+            <h1>Resultados</h1>        
+            {% endif %}
+          </div>
+          <div class="list-container th-list">
+            {% if lista_capas|length > 0 %}
+            <div class="btn-group pull-right" data-toggle="buttons">
+              <label class="btn btn-default active">
+                <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
+              </label>
+              <label class="btn btn-default">
+                <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
+              </label>
+            </div>
+              {% if request.path == url_inicio %}
+                {% if lista_capas|length > 1 %}
+                <p class="pull-left">Últimas {{ lista_capas|length }} capas modificadas:</p>
+                {% else %}
+                <p class="pull-left">Última capa modificada:</p>
+                {% endif %}
+              {% elif request.path == url_buscar %}
+                {% if cantidad_total > 1 %}
+                <p class="pull-left">Mostrando {{ lista_capas|length }} de {{ cantidad_total }} capas halladas:</p>
+                {% elif cantidad_total == 1 %}
+                <p class="pull-left">Se halló 1 capa:</p>
+                {% else %}
+                <p class="pull-left">No se hallaron capas.</p>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+            <div class="clearfix"></div>
+            {% mostrar_capas lista_capas order_by %}
+
+                  <div class="clearfix"></div>
+
+                   {% if request.path == url_buscar and lista_capas.paginator.num_pages > 1 %}         
+                   <ul class="pagination">
+                    <li {% if not lista_capas.has_previous %}class="disabled"{% endif %}><a {% if lista_capas.has_previous %}href="?texto={{ request.GET.texto }}&p={{ lista_capas.previous_page_number }}"{% endif %}>&laquo;</a></li>
+                    {% for i in lista_capas.paginator.num_pages|get_range  %}                    
+                        <li {% if i|add:1 == lista_capas.number %}class="active"{% endif %}><a {% if i|add:1 != lista_capas.number %}href="?texto={{ request.GET.texto }}&p={{ i|add:1 }}"{% endif %}>{{ i|add:1 }} {% if i|add:1 == lista_capas.number %}<span class="sr-only">(actual)</span>{% endif %}</a></li>
+                    {% endfor %}
+                    <li {% if not lista_capas.has_next %}class="disabled"{% endif %}><a {% if lista_capas.has_next %}href="?texto={{ request.GET.texto }}&p={{ lista_capas.next_page_number }}"{% endif %}>&raquo;</a></li>
+                   </ul>
+                   {% endif %}
+
+              </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="col-sm-8 col-sm-pull-4 main-content">
+          {% if user.is_authenticated %}
+          <ul class="nav nav-tabs" role="tablist" id="myTab">
+			<li {% if request.GET.view == 'own' %}class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=mr><span class="glyphicon glyphicon-user"></span>&nbsp;Mis capas</a></li>
+			<li {% if request.GET.view == 'all' %}class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=mr><span class="glyphicon glyphicon-th-list"></span>&nbsp;Todas las capas</a></li>
+			<li {% if request.GET.view == 'list' %}class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=mr><span class="glyphicon glyphicon-list-alt"></span>&nbsp;Lista</a></li>
+            <!-- <li><a href="#capasPendientes" role="tab" data-toggle="tab">Pendientes</a></li>-->
+          </ul>
+          {% endif %}
+          <div class="tab-content">
+            <div class="tab-pane fade {% if request.GET.view == 'own' %}in active{% endif %}" id="misCapas">
+              <div class="list-container th-list">
+                 <ul class="nav nav-pills pull-left layer-sort">
+                  <li{% if request.GET.order_by == 'mr' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=mr>Últimas subidas</a></li>
+                  <li{% if request.GET.order_by == 'lr' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=lr>Primeras subidas</a></li>
+                  <li{% if request.GET.order_by == 'mrm' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=mrm>Últimas modificadas</a></li>
+                  <li{% if request.GET.order_by == 'lrm' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=lrm>Primeras modificadas</a></li>
+                  <li{% if request.GET.order_by == 'az' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=az>A-Z</a></li>
+                  <li{% if request.GET.order_by == 'za' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=za>Z-A</a></li>
+                 </ul>
+                 <div class="btn-group pull-right" data-toggle="buttons">
+                    <label class="btn btn-default active">
+                      <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
+                    </label>
+                    <label class="btn btn-default">
+                      <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
+                    </label>
+                  </div>
+                  <div class="clearfix"></div>
+                  {% if lista_capas|length > 0 %}
+                  <p class="list-description">Mostrando {{ lista_capas|length }} de {{ cantidad_total }} capas disponibles:</p>
+                  {% endif %}
+        				  {% mostrar_capas lista_capas order_by %}
+         
+                  <div class="clearfix"></div>
+         
+                   {% if lista_capas.paginator.num_pages > 1 %}
+                   <ul class="pagination">
+                    <li {% if not lista_capas.has_previous %}class="disabled"{% endif %}><a {% if lista_capas.has_previous %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ lista_capas.previous_page_number }}"{% endif %}>&laquo;</a></li>
+                    {% for i in lista_capas.paginator.num_pages|get_range  %}                    
+                        <li {% if i|add:1 == lista_capas.number %}class="active"{% endif %}><a {% if i|add:1 != lista_capas.number %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ i|add:1 }}"{% endif %}>{{ i|add:1 }} {% if i|add:1 == lista_capas.number %}<span class="sr-only">(actual)</span>{% endif %}</a></li>
+                    {% endfor %}
+                    <li {% if not lista_capas.has_next %}class="disabled"{% endif %}><a {% if lista_capas.has_next %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ lista_capas.next_page_number }}"{% endif %}>&raquo;</a></li>
+                   </ul>
+                   {% endif %}
+                              
+              </div>
+            </div>
+            <div class="tab-pane fade {% if request.GET.view == 'all' %}in active{% endif %}" id="todasLasCapas">              
+              <div class="list-container th-list">
+                 <ul class="nav nav-pills pull-left layer-sort">
+                  <li{% if request.GET.order_by == 'mr' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=mr>Últimas subidas</a></li>
+                  <li{% if request.GET.order_by == 'lr' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=lr>Primeras subidas</a></li>
+                  <li{% if request.GET.order_by == 'mrm' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=mrm>Últimas modificadas</a></li>
+                  <li{% if request.GET.order_by == 'lrm' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=lrm>Primeras modificadas</a></li>
+                  <li{% if request.GET.order_by == 'az' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=az>A-Z</a></li>
+                  <li{% if request.GET.order_by == 'za' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=za>Z-A</a></li>
+                 </ul>
+                  <div class="btn-group pull-right" data-toggle="buttons">
+                    <label class="btn btn-default active">
+                      <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
+                    </label>
+                    <label class="btn btn-default">
+                      <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
+                    </label>
+                  </div>
+                  <div class="clearfix"></div>
+                  {% if lista_capas|length > 0 %}
+                  <p class="list-description">Mostrando {{ lista_capas|length }} de {{ cantidad_total }} capas disponibles:</p>
+                  {% endif %}
+
+                  {% mostrar_capas lista_capas order_by %}
+
+                  <div class="clearfix"></div>
+
+                    {% if lista_capas.paginator.num_pages > 1 %}
+                   <ul class="pagination">
+                    <li {% if not lista_capas.has_previous %}class="disabled"{% endif %}><a {% if lista_capas.has_previous %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ lista_capas.previous_page_number }}"{% endif %}>&laquo;</a></li>
+                    {% for i in lista_capas.paginator.num_pages|get_range  %}                    
+                        <li {% if i|add:1 == lista_capas.number %}class="active"{% endif %}><a {% if i|add:1 != lista_capas.number %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ i|add:1 }}"{% endif %}>{{ i|add:1 }} {% if i|add:1 == lista_capas.number %}<span class="sr-only">(actual)</span>{% endif %}</a></li>
+                    {% endfor %}
+                    <li {% if not lista_capas.has_next %}class="disabled"{% endif %}><a {% if lista_capas.has_next %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ lista_capas.next_page_number }}"{% endif %}>&raquo;</a></li>
+                   </ul>
+                   {% endif %}
+              </div>
+            </div>
+            <div class="tab-pane fade {% if request.GET.view == 'list' %}in active{% endif %}" id="listadoCapas">              
+              <div class="list-container th-list">
+                 <ul class="nav nav-pills pull-left layer-sort">
+                  <li{% if request.GET.order_by == 'mr' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=mr>Últimas subidas</a></li>
+                  <li{% if request.GET.order_by == 'lr' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=lr>Primeras subidas</a></li>
+                  <li{% if request.GET.order_by == 'mrm' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=mrm>Últimas modificadas</a></li>
+                  <li{% if request.GET.order_by == 'lrm' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=lrm>Primeras modificadas</a></li>
+                  <li{% if request.GET.order_by == 'az' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=az>A-Z</a></li>
+                  <li{% if request.GET.order_by == 'za' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=za>Z-A</a></li>
+                 </ul>
+                  <div class="clearfix"></div>
+                  <p></p>
+                  {% if lista_capas|length > 0 %}
+                  <p class="list-description">Mostrando {{ lista_capas|length }} de {{ cantidad_total }} capas disponibles:</p>
+			          <table class="table table-striped">
+			            <thead>
+			            	<tr>
+			                    <th>Capa</th><th>Tipo</th><th>#SLDs</th><th>Subida por</th><th>Fecha de carga</th><th>Fecha de modificación</th>
+			            	</tr>
+			            </thead>
+			            <tbody>
+			                {% for c in lista_capas %}
+			                <tr>
+			                      <td><a href="{% url 'layers:detalle_capa' c.id_capa %}">{{ c.dame_titulo }}</a></td>
+			                      <td>{{ c.tipo_de_geometria }}</td>
+			                      <td>{{ c.archivosld_set.all|length }}</td>
+			                      <td>{{ c.owner.username }}</td>
+			                      <td>{{ c.timestamp_alta }}</td>
+			                      <td>{{ c.timestamp_modificacion }}</td>
+			                </tr>
+			                {% endfor %}
+			            </tbody>
+			          </table>
+                  {% else %}
+	                  <p>No hay capas.</p>
+	              {% endif %}
+
+                  <div class="clearfix"></div>
+
+                    {% if lista_capas.paginator.num_pages > 1 %}
+                   <ul class="pagination">
+                    <li {% if not lista_capas.has_previous %}class="disabled"{% endif %}><a {% if lista_capas.has_previous %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ lista_capas.previous_page_number }}"{% endif %}>&laquo;</a></li>
+                    {% for i in lista_capas.paginator.num_pages|get_range  %}                    
+                        <li {% if i|add:1 == lista_capas.number %}class="active"{% endif %}><a {% if i|add:1 != lista_capas.number %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ i|add:1 }}"{% endif %}>{{ i|add:1 }} {% if i|add:1 == lista_capas.number %}<span class="sr-only">(actual)</span>{% endif %}</a></li>
+                    {% endfor %}
+                    <li {% if not lista_capas.has_next %}class="disabled"{% endif %}><a {% if lista_capas.has_next %}href="?view={{ request.GET.view }}&order_by={{ request.GET.order_by }}&p={{ lista_capas.next_page_number }}"{% endif %}>&raquo;</a></li>
+                   </ul>
+                   {% endif %}
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="capasPendientes"><p>No hay capas pendientes para importar</p></div>
+          </div>   
+        </div>
+        {% endif %}
+      </div>
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script src="{{ STATIC_URL }}js/mapground.js"></script>
+
+{% endblock %}
+
+{% block extra_body %}
+{{ block.super }}
+<div class="modal fade" id="modal-eliminar" tabindex="-1" role="dialog" aria-labelledby="Eliminar Capa" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">¡Atención!</h3>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro que desea <b>$action</b>? Esta acción no podrá deshacerse.
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="btn btn-danger" data-action="eliminar">Eliminar</a> <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancelar</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

@@ -1,0 +1,24 @@
+          <div class="row">
+            <div class="col-xs-12">
+
+            <h3><span class="glyphicon glyphicon-folder-open"></span>&nbsp;&nbsp;Áreas Temáticas
+                {% if request.user.is_superuser %}
+	            <a href="{% url 'layers:areas_tematicas' %}" type="button" class="btn btn-primary pull-right">
+	              <span class="glyphicon glyphicon-pencil"></span>&nbsp;&nbsp;Editar
+	            </a>
+	            {% endif %}
+            </h3>
+            {% if lista_areas_tematicas.areas_tematicas|length > 0 %}
+            <ul class="dropdown-menu no-border no-shadow" style="display: block;margin-left: 30px; position: relative;">
+              {% for at in lista_areas_tematicas.areas_tematicas %} 
+              <li><a href="{% url 'layers:detalle_area_tematica' at.id %}" title="Ver capas en esta área temática">{{ at.nombre }} ({{ at.total }})</a>
+              {% endfor %}
+              <li class="divider" role="separator"></li>
+              <li><a href="{% url 'layers:detalle_area_tematica' 0 %}" title="Capas sin área temática asignada">Sin área temática ({{lista_areas_tematicas.sin_area_tematica}})</a>
+            </ul>
+            {% else %}
+            <p>No hay áreas temáticas definidas.</p>
+            {% endif %}
+
+            </div>
+          </div>  

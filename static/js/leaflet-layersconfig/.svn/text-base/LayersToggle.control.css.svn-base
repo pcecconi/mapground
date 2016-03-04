@@ -1,0 +1,136 @@
+.leaflet-right .leaflet-control-layerstoggle {
+	margin-right: 0;
+	border-radius: 0;
+	box-shadow: none;
+	margin-top: 0;
+}
+.leaflet-right .leaflet-control a:hover {
+	opacity: 1;
+}
+.leaflet-control-layerstoggle-btn {
+	font-family: 'icomoon';
+	opacity: 0.85;
+	color: #fff!important;
+	font-size: 15px!important;
+	font-weight: normal!important;
+	background-color: #222!important;
+	text-indent: 0;
+	border-radius: 0!important;
+	border: none!important;
+	width: 30px!important;
+	height: 30px!important;
+	line-height: 30px!important;
+	text-shadow: none!important;
+}
+.leaflet-control-layerstoggle-btn.active {
+	color: #222!important;
+	background-color: #fff!important;
+	opacity: 1;
+}
+.leaflet-sidebar {
+	width: 200px;
+	padding: 0;
+}
+.leaflet-sidebar > .leaflet-control {
+	box-shadow: none;
+	padding: 30px 5px 30px 0;
+}
+.leaflet-sidebar.right.visible ~ .leaflet-right {
+right: 200px;
+}
+@media (max-width: 319px) {
+	.leaflet-sidebar.right.visible ~ .leaflet-right {
+		right: 193px;
+	}
+	.leaflet-sidebar {
+		width: 193px;
+		padding: 0;
+	}
+	.leaflet-sidebar .ui-field-contain > label {
+		width: 110px!important;
+	}
+}
+.sidebar-right {
+	border-radius: 0 !important;
+}
+.sidebar-right ul {
+	padding-left: 0;
+	list-style: none;
+}
+.leaflet-sidebar .close {
+	position: absolute;
+	right: 5px;
+	top: 5px;
+	width: 28px;
+	height: 28px;
+	color: #333;
+	font-size: 18pt;
+	line-height: 1.2em;
+	text-align: center;
+	background: white;
+	-webkit-border-radius: 16px;
+	border-radius: 16px;
+	cursor: pointer;
+	z-index: 8;
+}
+.leaflet-sidebar.right {
+right: -500px;
+transition: right 0.25s, width 0.3s;
+padding-left: 0;
+}
+.leaflet-right {
+transition: right 0.3s;
+}
+.leaflet-sidebar .ui-field-contain > label {
+	font-size: 13px;
+	font-weight: 700;
+	width: 115px;
+	margin: 0.1em 2% 0 4px;
+}
+.leaflet-sidebar li.clearfix {
+	border: none!important;
+	padding: 0;
+}
+.leaflet-sidebar li+li {
+	margin-top: 10px;
+}
+.leaflet-sidebar .ui-flipswitch.ui-flipswitch-active {
+    padding-left: 1.8em;
+}
+.leaflet-sidebar .ui-flipswitch .ui-btn.ui-flipswitch-on {
+    border-radius: inherit;
+    border-style: solid;
+    border-width: 1px;
+    box-sizing: border-box;
+    color: #FFFFFF !important;
+    font-size: 10px !important;
+    overflow: visible;
+    padding: 0;
+    text-align: left;
+    text-indent: -2.1em;
+    text-shadow: inherit;
+    width: 1.75em;
+}
+.leaflet-sidebar .ui-flipswitch .ui-btn.ui-flipswitch-on, .ui-flipswitch .ui-flipswitch-off {
+    float: left;
+    height: 1.75em;
+    line-height: 1.75em;
+    margin: 0.0625em;
+}
+.leaflet-sidebar .ui-field-contain, .ui-mobile fieldset.ui-field-contain {
+	margin: 0;
+}
+.leaflet-sidebar .ui-field-contain > label + .ui-flipswitch {
+    width: 3.375em;
+}
+.leaflet-sidebar .ui-flipswitch .ui-flipswitch-off {
+	font-size: 11px;
+	text-indent: 0.1em;
+}
+.leaflet-sidebar .ui-field-contain .ui-flipswitch.ui-flipswitch-active {
+    width: 1.575em;
+}
+.leaflet-sidebar .ui-flipswitch {
+	height: 1.575em ;
+	float: right !important;
+}

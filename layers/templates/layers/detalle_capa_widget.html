@@ -1,0 +1,62 @@
+<dl class="dl-horizontal">
+  <dt>Tipo</dt><dd>{{ capa.tipo_de_geometria.nombre }}</dd>
+  <dt>Cantidad de registros</dt><dd>{{ capa.cantidad_de_registros }}</dd>
+  <dt>Fecha y hora de carga</dt><dd>{{ capa.timestamp_alta }}</dd>
+  <dt>Última modificación</dt><dd>{{ capa.timestamp_modificacion }}</dd>
+  <dt>Subida por</dt><dd>
+    <!-- <a class="user" <a href="/users/{{ capa.owner.username }}">{{ capa.owner.username }}</a> -->
+    {{ capa.owner.username }}
+    </dd>
+  {% if capa.metadatos.categorias.all|length > 0 %}
+    <dt>Categorías</dt><dd><div class="labels">
+      {% for categ in capa.metadatos.categorias.all %}
+			<a class="label label-default" href="{% url 'layers:detalle_categoria' categ.id %}">{{categ.nombre}}</a>
+      {% endfor %}
+    </div></dd>
+  {% endif %}
+  {% if capa.metadatos.area_tematica != None %}
+    <dt>Área Temática</dt>
+        <dd>
+            <div class="labels"><a class="label label-primary" href="{% url 'layers:detalle_area_tematica' capa.metadatos.area_tematica.id %}">{{capa.metadatos.area_tematica.nombre}}</a>
+        </dd>
+  {% endif %}
+  {% if capa.metadatos.escala != None %}
+    <dt>Escala</dt><dd>{{ capa.metadatos.escala }}</dd>
+  {% endif %}
+  <dt>Encoding</dt><dd>UTF-8</dd>
+  <dt>SRS</dt><dd>{{ capa.srid }}</dd>
+  {% if user.is_authenticated %}
+  <dt>WMS/WFS de la capa</dt><dd><a class="user" href="/layers/wxs/{{ capa.id_capa }}/">http://{{ request.get_host }}/layers/wxs/{{ capa.id_capa }}/</a></dd>
+  <dt>WMS/WFS del usuario</dt><dd><a class="user" href="/users/{{request.user.username}}/wxs/">http://{{ request.get_host }}/users/{{request.user.username}}/wxs/</a></dd>
+  {% if capa.wxs_publico %}
+  <dt>WMS/WFS público</dt><dd><a class="user" href="/layers/public_wxs/">http://{{ request.get_host }}/layers/public_wxs/</a></dd>
+  {% endif %}
+  {% else %}
+  <dt>WMS/WFS público</dt><dd><a class="user" href="/layers/public_wxs/">http://{{ request.get_host }}/layers/public_wxs/</a></dd>
+  {% endif %}
+  {% if capa.metadatos.fuente != "" %}
+    <dt>Fuente</dt><dd>{{ capa.metadatos.fuente }}</dd>
+  {% endif %}
+  {% if capa.metadatos.contacto != "" %}
+    <dt>Contacto</dt><dd>{{ capa.metadatos.contacto }}</dd>
+  {% endif %}
+  {% if capa.metadatos.palabras_claves != "" %}
+    <dt>Palabras Claves</dt><dd>{{ capa.metadatos.palabras_claves }}</dd>
+  {% endif %}
+  {% if capa.metadatos.fecha_de_relevamiento != "" %}
+    <dt>Fecha de Relevamiento</dt><dd>{{ capa.metadatos.fecha_de_relevamiento }}</dd>
+  {% endif %}
+  {% if capa.metadatos.fecha_de_actualizacion != "" %}
+    <dt>Fecha de Actualización</dt><dd>{{ capa.metadatos.fecha_de_actualizacion }}</dd>
+  {% endif %}
+  {% if capa.metadatos.frecuencia_de_actualizacion != "" %}
+    <dt>Se actualiza</dt><dd>{{ capa.metadatos.frecuencia_de_actualizacion }}</dd>
+  {% endif %}
+  {% if mapas.count > 0 %}
+  <dt>Mapas que la incluyen</dt><dd>          
+    {% for mapa in mapas %}
+      <a href="{% url 'maps:detalle_mapa' mapa.id_mapa %}">{{ mapa.titulo }} {% if user.is_authenticated %}({{mapa.owner}}){% endif %}{% if not mapa.publico %}*{% endif %}</a>{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  </dd>
+  {% endif %}
+</dl>

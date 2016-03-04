@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load mapas_tags %}
+
+{% block css %}
+{% endblock %}
+
+
+
+{% block content %}
+      <div class="row">
+        <div class="col-sm-4 col-sm-push-8">
+          <div class="row"><div class="col-xs-12">
+            <form role="search" method="GET" action="{% url 'maps:buscar' %}">
+              <div class="form-group">
+              <div class="input-group add-on">
+                <input class="form-control" placeholder="Buscar mapa..." name="texto" type="text" {% if request.GET.texto != '' %}value="{{ request.GET.texto }}"{% endif %}>
+                <div class="input-group-btn">
+                  <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+                </div>
+              </div>
+              </div>    
+            </form>
+          </div></div>
+          
+		  {% include 'maps/categorias_widget.html' %}
+          
+        </div>
+
+
+        <div class="col-sm-8 col-sm-pull-4 main-content">
+          <div class="page-header">
+  		      <h1><span class="glyphicon glyphicon-tag"></span>&nbsp;{{categoria.nombre}}</h1>
+          </div>
+          {% if categoria.descripcion %}
+          <p class="abstract">{{ categoria.descripcion }}</p>
+          {% endif %}
+          <div class="list-container th-list">
+            {% if lista_mapas|length > 0 %}
+            <div class="btn-group pull-right" data-toggle="buttons">
+              <label class="btn btn-default active">
+                <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
+              </label>
+              <label class="btn btn-default">
+                <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
+              </label>
+            </div>
+           {% endif %}
+	             {% if cantidad_total > 1 %}
+                <p class="pull-left">Mostrando {{ lista_mapas|length }} de {{ cantidad_total }} mapas hallados en esta categoría:</p>
+                {% elif cantidad_total == 1 %}
+                <p class="pull-left">Se halló 1 mapa en esta categoría:</p>
+                {% else %}
+                <p class="pull-left">No se hallaron mapas en esta categoría.</p>
+                {% endif %}
+
+	            <div class="clearfix"></div>
+		            {% mostrar_mapas lista_mapas order_by %}
+              <div class="clearfix"></div>
+               {% if lista_mapas.paginator.num_pages > 1 %}         
+               <ul class="pagination">
+                <li {% if not lista_mapas.has_previous %}class="disabled"{% endif %}><a {% if lista_mapas.has_previous %}href="?texto={{ request.GET.texto }}&p={{ lista_mapas.previous_page_number }}"{% endif %}>&laquo;</a></li>
+                {% for i in lista_mapas.paginator.num_pages|get_range  %}                    
+                    <li {% if i|add:1 == lista_mapas.number %}class="active"{% endif %}><a {% if i|add:1 != lista_mapas.number %}href="?texto={{ request.GET.texto }}&p={{ i|add:1 }}"{% endif %}>{{ i|add:1 }} {% if i|add:1 == lista_mapas.number %}<span class="sr-only">(actual)</span>{% endif %}</a></li>
+                {% endfor %}
+                <li {% if not lista_mapas.has_next %}class="disabled"{% endif %}><a {% if lista_mapas.has_next %}href="?texto={{ request.GET.texto }}&p={{ lista_mapas.next_page_number }}"{% endif %}>&raquo;</a></li>
+               </ul>
+             {% endif %}
+
+
+              </div>
+          </div>
+        </div>
+      </div>
+{% endblock %}
+
+
+
+
+
+
+{% block javascript %}
+{{ block.super }}
+
+<script src="{{ STATIC_URL }}js/mapground.js"></script>
+
+{% endblock %}
+
+{% block footer %}
+{% endblock %}

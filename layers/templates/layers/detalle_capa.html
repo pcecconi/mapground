@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load capas_tags %}
+
+{% block extrastyle %}
+{{ block.super }}
+
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}libs/leaflet/leaflet.css" />
+<!--
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/abstract.control.css" media="all">
+-->
+{% endblock %}
+
+{% block content %}
+      <div class="page-header">
+        <h1>{{capa.dame_titulo}}</h1>
+
+        <div class="btn-group btn-toolbar" role="toolbar">
+          <div class="btn-group">
+            <button type="button" class="btn btn-default dropdown" data-toggle="dropdown" id="downloadMenu"><span class="glyphicon glyphicon-download"></span>
+                  &nbsp;Bajar <span class="caret"></span></button>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="downloadMenus">
+              <li role="presentation"><a role="menuitem" tabindex="-1" target="_blank" href="{% url 'layers:download' capa.id_capa %}geojson">GeoJson</a></li>
+              <li role="presentation"><a role="menuitem" tabindex="-1" target="_blank" href="{% url 'layers:download' capa.id_capa %}shapezip">Shapefile</a></li>
+              <li role="presentation"><a role="menuitem" tabindex="-1" target="_blank" href="{% url 'layers:download' capa.id_capa %}csv">CSV</a></li>
+            </ul>
+          </div>
+          {% if capa.permiso == 'owner' or capa.permiso == 'superuser' or capa.permiso == 'write' %}
+            <a href="{% url 'layers:metadatos' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span>&nbsp;Editar</a>
+          {% endif %}
+          {% if capa.permiso == 'owner' or capa.permiso == 'superuser' %}
+            {% if capa.borrable %}
+                <a href="{% url 'layers:borrar_capa' capa.id_capa %}" class="btn btn-danger eliminar" role="button" title="eliminar {{ capa.dame_titulo }}"><span class="glyphicon glyphicon-trash"></span>&nbsp;Eliminar</a>
+            {% else %}
+                <button class="btn btn-danger delete disabled" role="button" title="la capa {{ capa.dame_titulo }} no puede eliminarse por estar incluida en algun mapa"><span class="glyphicon glyphicon-trash"></span>&nbsp;Eliminar</>
+            {% endif %}
+          {% endif %}
+        </div>        
+      </div>
+      <p class="abstract">{{ capa.dame_descripcion }}</p>
+      <ul class="nav nav-tabs" role="tablist" id="myTab">
+        <li class="active"><a href="#layerInfo" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-info-sign"></span>
+        &nbsp;Información</a></li>
+        <li><a href="#layerAttributes" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-list"></span>
+        &nbsp;Atributos</a></li>
+        {% if user.is_authenticated %}
+        <li><a href="#layerPermissions" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-lock"></span>
+        &nbsp;Permisos</a></li>
+        {% endif %}
+        <li><a href="#layerData" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-list-alt"></span>
+        &nbsp;Registros</a></li>
+        <li><a href="#layerSymbology" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-eye-close"></span>
+        &nbsp;Simbología</a></li>
+      </ul>
+
+      <div class="tab-content">
+        
+        <div class="tab-pane fade in active" id="layerInfo">
+          {% include 'layers/detalle_capa_widget.html' %}
+        </div>
+        <div class="tab-pane fade" id="layerAttributes">
+          <table class="table table-striped">
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Alias</th><th>Descripción</th><th>Publicable</th></tr></thead>
+            <tbody>
+                {% for attr in capa.metadatos.atributo_set.all %}
+                    {% if attr.nombre_del_campo != 'geom' and attr.nombre_del_campo != 'gid' %}
+                        <tr><td>{{ attr.nombre_del_campo }}</td><td>{{ attr.tipo }}</td><td>{{ attr.alias }}</td><td>{{ attr.dame_descripcion }}</td><td><span class={% if attr.publicable %}"glyphicon glyphicon-ok"{% else %}"glyphicon glyphicon-remove"{% endif %}></span></td></tr>
+                    {% endif %}
+                {% endfor %}
+                <!--
+              <tr><td>id</td><td>Integer</td><td>id</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+              <tr><td>nombre</td><td>Varchar</td><td>Nombre</td><td>Nombre del departamento</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+              <tr><td>codigo</td><td>Integer</td><td>Código</td><td>Código del departamento</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+              <tr><td>nomprov</td><td>Varchar</td><td>Provincia</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+              <tr><td>area</td><td>Float</td><td>area</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-remove"></span></td></tr>
+              -->
+            </tbody>
+          </table>
+        </div>
+        
+        {% if user.is_authenticated %}
+        <div class="tab-pane fade" id="layerPermissions">
+          <dl class="dl-horizontal">
+            <dt>Subida por</dt><dd>
+                <!-- <a class="user" <a href="/users/{{ capa.owner.username }}">{{ capa.owner.username }}</a> -->
+                {{ capa.owner.username }}
+                </dd>
+            <dt>Lectura</dt>
+                <dd>
+                {% if permisos.read|length == 0 %}-{% else %}
+                    {% for user in permisos.read %}
+                        <!--     <a class="user" href="/users/{{ user.username }}">{{user.username}}</a>{% if not forloop.last %},{% endif %} -->
+                        {{user.username}}{% if not forloop.last %},{% endif %} 
+                    {% endfor %}
+                {% endif %}            
+                </dd>
+            <dt>Lectura/Modificación</dt>
+                <dd>
+                {% if permisos.write|length == 0 %}-{% else %}
+                    {% for user in permisos.write %}
+                        <!--     <a class="user" href="/users/{{ user.username }}">{{user.username}}</a>{% if not forloop.last %},{% endif %} -->
+                        {{user.username}}{% if not forloop.last %},{% endif %} 
+                    {% endfor %}
+                {% endif %}            
+                </dd>
+            <dt>Acceso WMS/WFS</dt><dd>{% if capa.wxs_publico %}Público{% else %}Privado{% endif %}</dd>
+          </dl>
+        </div>
+        {% endif %}
+        
+        <div class="tab-pane fade" id="layerData">
+            {% if capa.cantidad_de_registros == 1 %}
+                <p>A continuación se muestra el único registro de esta capa:</p>
+            {% elif capa.cantidad_de_registros > 100 %}
+                <p>A continuación se muestran los primeros 100 de los {{capa.cantidad_de_registros}} registros de esta capa:</p>
+            {% else %}
+                <p>A continuación se muestran los {{capa.cantidad_de_registros}} registros de esta capa:</p>
+            {% endif %}
+          <table class="table table-striped">
+            <thead><tr>
+                {% for attr in capa.metadatos.atributo_set.all %}
+                  {% if attr.nombre_del_campo != 'gid' and attr.nombre_del_campo != 'geom' %}
+                    <th>{{ attr.nombre_del_campo }}</th>
+                  {% endif %}
+                {% endfor %}
+            </tr></thead>
+            <tbody>
+                {% for r in capa.dame_datos %}
+                <tr>
+                    {% for f in r %}
+                      <td>{{ f }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="tab-pane fade" id="layerSymbology">
+          {% if capa.archivosld_set.count > 0 %}
+          <p>A continuación se muestran los archivos SLD definidos para esta capa:</p>
+          <table class="table table-striped">
+            <thead><tr><th>Vista previa</th><th>Descripción</th><th>Fecha de carga</th><th>Subida por</th><th>Activa</th><th>Descargar</th></tr></thead>
+            <tbody>
+                {% for sld in capa.archivosld_set.all %}
+                  <tr><td><img src="{{ sld.filename.url|replace_text:".sld,.png" }}" alt="Vista previa" width="150" height="150"/></td><td>{{ sld.descripcion|default:"Sin descripción" }}</td><td>{{ sld.timestamp_modificacion }}</td><td>{{ sld.user_modificacion }}</td><td><span class={% if sld.default %}"glyphicon glyphicon-ok"{% else %}"glyphicon glyphicon-remove"{% endif %}></span></td><td><a href="{{ sld.filename.url }}"><span class="glyphicon glyphicon-download"></span></a></td></tr>
+                {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+           <p>Aún no hay archivos de simbología para esta capa.</p> 
+          {% endif %}
+            <!-- TODO
+          <p>A continuación se muestran los archivos SLD definidos para esta capa:</p>
+          <table class="table table-striped">
+            <thead><tr>
+                {% for attr in capa.metadatos.atributo_set.all %}
+                  {% if attr.nombre_del_campo != 'gid' and attr.nombre_del_campo != 'geom' %}
+                    <th>{{ attr.nombre_del_campo }}</th>
+                  {% endif %}
+                {% endfor %}
+            </tr></thead>
+            <tbody>
+                {% for r in capa.dame_datos %}
+                <tr>
+                    {% for f in r %}
+                      <td>{{ f }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+            -->
+          </table>
+        </div>
+        
+      </div>   
+      <div style="text-align: right; margin-bottom: 2px;">
+          <a href="{% url 'maps:embeddable' capa.id_capa %}?abstract=0&title=1" class="btn btn-default" target="_blank"><span class="glyphicon glyphicon-new-window"></span>
+        &nbsp;Pantalla Completa</a>
+      </div>
+      <div id="mapa">
+        <iframe src="{% url 'maps:embeddable' capa.id_capa %}" frameborder="0" scrolling="no" width="100%" height="100%"></iframe>
+      </div>
+      
+{% endblock %}
+
+{% block javascript %}
+{{ block.super }}
+
+<script type="text/javascript" src="{{ STATIC_URL }}js/mapground.js"></script>
+<!--
+<script type="text/javascript" src="{{ STATIC_URL }}libs/leaflet/leaflet.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}assets/js/proj4leaflet/lib/proj4-compressed.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}assets/js/proj4leaflet/src/proj4leaflet.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.js"></script>
+<script type="text/javascript" src="{{ STATIC_URL }}js/abstract.control.js"></script>    
+<script type="text/javascript" src="{{ STATIC_URL }}js/mapa.js"></script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+
+      var mapa = L.map('mapa', {
+        continuousWorld: true,
+        worldCopyJump: false
+      }).fitBounds(
+        L.latLngBounds(
+            L.latLng({{ capa.extent_minx_miny.y|stringformat:"f" }}, {{ capa.extent_minx_miny.x|stringformat:"f" }}),
+            L.latLng({{ capa.extent_maxx_maxy.y|stringformat:"f" }}, {{ capa.extent_maxx_maxy.x|stringformat:"f" }})
+        )
+      ); 
+
+      var base_layer = L.tileLayer('{{ MAPCACHE_URL }}tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png', {
+          tms: true,
+          continuousWorld: true
+      }).addTo(mapa);
+
+      var layer = L.tileLayer('{{ MAPCACHE_URL }}tms/1.0.0/{{ capa.id_capa }}@GoogleMapsCompatible/{z}/{x}/{y}.png?t={{ capa.timestamp_modificacion|date:"U" }}', {
+          attribution: '<b>Fuente:</b> ',
+          tms: true,
+          continuousWorld: true
+      }).addTo(mapa);
+
+  });
+</script>        
+-->
+<div class="modal fade" id="modal-eliminar" tabindex="-1" role="dialog" aria-labelledby="Eliminar Capa" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h3 class="modal-title">¡Atención!</h3>
+      </div>
+      <div class="modal-body">
+        ¿Está seguro que desea <b>$action</b>? Esta acción no podrá deshacerse.
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="btn btn-danger" data-action="eliminar">Eliminar</a> <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">Cancelar</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% endblock %}
