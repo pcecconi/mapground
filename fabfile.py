@@ -11,6 +11,7 @@ def _install_local_base_packages():
 	try:
 		local("sudo apt-get install uwsgi apache2 postgresql-9.3-postgis-2.1 python-psycopg2 python-gdal nginx python-virtualenv fabric uwsgi uwsgi-plugin-python python-mapscript cgi-mapserver mapserver-bin mapcache-cgi mapcache-tools imagemagick python-lxml")
 		local("sudo a2enmod cgid")
+		local("sudo pip install simpleflock")
 	except:
 		pass
 
@@ -37,7 +38,7 @@ def init_dev():
 	_setup_local_db(dbname, dbname, dbpass)
 	secret_key = _get_secret_key()
 	local("sed -e 's/mapground-db/%s/g' MapGround/settings_local.py.template | sed -e 's/mapground-user/%s/g' - | sed -e 's/mapground-password/%s/g' - | sed -e 's/secret-key/%s/g' > MapGround/settings_local.py" % (dbname, dbname, dbpass, secret_key))
-	local('mkdir MapGround/media; mkdir mapcache/cache; touch mapfiles/map-error.log')
+	local('mkdir MapGround/media; mkdir mapcache/cache; touch mapfiles/map-error.log; sudo chmod 666 mapfiles/map-error.log')
 	local('cp mapcache/mapcache.xml.template mapcache/mapcache.xml')
 	local('cp mapcache/settings.py.template mapcache/settings.py')
 	local('sudo chown -R www-data:www-data mapcache/cache')

@@ -3,8 +3,8 @@
 *.sublime-project
 *.sublime-workspace
 venv
-MapGlass/static
-MapGlass/media/*
+MapGround/static
+MapGround/media/*
 settings_local.py
 mapglass_nginx.conf
 mapglass_uwsgi.ini

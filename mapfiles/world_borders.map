@@ -1,0 +1,51 @@
+MAP
+	NAME "world_borders"
+    CONFIG "MS_ERRORFILE" "map-error.log"
+    CONFIG "PROJ_LIB" "/usr/share/proj/"
+    CONFIG "MS_OPENLAYERS_JS_URL" "http://openlayers.org/api/OpenLayers.js"
+    IMAGETYPE png
+    SIZE 600 400
+	UNITS meters
+    EXTENT -20037508.3427892 -20037508.3427892 20037508.3427892 20037508.3427892
+    IMAGECOLOR '#C6E2F2'
+    SHAPEPATH '../data/'
+	SYMBOLSET "symbols.txt"
+    FONTSET 'fonts.txt'
+    WEB
+        METADATA
+            "ows_title" "World Borders"
+            "ows_abstract" ""
+            "ows_attribution_title" ""
+			"ows_contactorganization" ""
+            "ows_srs" "EPSG:3857"
+			"ows_encoding" "UTF-8"
+            "ows_enable_request" "*"
+            "labelcache_map_edge_buffer" "-10"
+        END
+        IMAGEPATH '/dev/shm/'
+        IMAGEURL '/ms_tmp/'
+    END
+    PROJECTION
+        "init=epsg:3857"
+    END
+    
+    LAYER
+        NAME 'world_borders'
+        TYPE POLYGON
+        GROUP 'default'
+        STATUS ON
+        PROJECTION
+            'init=epsg:3857'
+        END
+        PROCESSING 'LABEL_NO_CLIP=ON'
+        PROCESSING 'CLOSE_CONNECTION=DEFER'
+        DATA 'world_borders-3857.shp'
+        CLASS
+            STYLE
+                COLOR '#EEECDF'
+                OUTLINECOLOR '#CBCCCA'
+            END
+        END
+    END      
+
+END
