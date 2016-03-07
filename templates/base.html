@@ -18,14 +18,16 @@
 <!-- Bootstrap core CSS -->
 <link href="{{ STATIC_URL }}libs/bootstrap-3.2.0-dist/css/bootstrap.min.css" rel="stylesheet">
 
-<!-- Bootstrap theme
+<!-- Bootstrap theme -->
 <link href="{{ STATIC_URL }}libs/bootstrap-3.2.0-dist/css/bootstrap-theme.min.css" rel="stylesheet">
--->
+<!--
 <link href="{{ STATIC_URL }}css/bootstrap-material-design.min.css" rel="stylesheet">
 <link href="{{ STATIC_URL }}css/ripples.min.css" rel="stylesheet">
+-->
 {% block extrastyle %}
 <!-- MapGround styles -->
 <link href="{{ STATIC_URL }}css/mapground.css" rel="stylesheet">
+<link href='https://fonts.googleapis.com/css?family=Roboto+Condensed:400,300,700' rel='stylesheet' type='text/css'>
 {% endblock %}
 
 <!-- Custom styles for this template -->
@@ -62,7 +64,7 @@
         {% url 'maps:visor' as url_visor %}
         {% url 'users:usuarios' as url_usuarios %}
         <!-- Fixed navbar -->
-        <div class="navbar navbar-default navbar-static-top navbar-inverse" role="navigation">
+        <div class="navbar navbar-default navbar-static-top " role="navigation">
           <div class="container">
             <div class="navbar-header">
               <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -136,8 +138,10 @@
 <!-- The jQuery UI widget factory, can be omitted if jQuery UI is already included -->
 <!-- Bootstrap JS is not required, but included for the responsive demo navigation -->
 <script src="{{ STATIC_URL }}libs/bootstrap-3.2.0-dist/js/bootstrap.min.js"></script>
+<!--
 <script src="{{ STATIC_URL }}js/material.min.js"></script>
 <script src="{{ STATIC_URL }}js/ripples.min.js"></script>
+-->
 <!-- blueimp Gallery script -->
 {% endblock %}
 

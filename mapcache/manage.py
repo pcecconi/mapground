@@ -13,6 +13,7 @@ import simpleflock
 uso = "\nUso: manage add|remove|mk_preview <mapname>[:<srid>] [ <mapname>[:srid] .. <mapname>[:srid] ]\n"
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 MAPCACHE_CONFIG = os.path.join(curr_dir, 'mapcache.xml')
+print MAPCACHE_CONFIG
 MAPCACHE_TEMPLATES_DIR = os.path.join(curr_dir, 'templates')
 map_path = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'mapfiles')
 cache_path = os.path.join(curr_dir, 'cache')
@@ -47,64 +48,70 @@ def remove(maps):
 					print '\nError: no se encontro '+mapa+'.\n'
 	except:
 		print "Mapcache filelock!"
-	
+
+def _add(maps):
+	tree = ET.parse(MAPCACHE_CONFIG)
+	root = tree.getroot()
+	for m in maps:
+		params = m.split(':')
+		mapa = params[0]
+		if len(params) > 1:
+			capa = params[1]
+		else:
+			capa = mapa
+		if len(params) > 2:
+			srid = params[2]
+		else:
+			srid = default_srid
+		if len(params) > 3:
+			sld = ':'.join(params[3:])
+			sld_hash = sld.split('$')
+			if len(sld_hash) > 1:
+				sld_id = '$'+sld_hash[1]
+				sld = sld_hash[0]
+			else:
+				sld_id = ''
+		else:
+			sld = ''
+			sld_id = ''
+		if len(root.findall("*[@name='"+mapa+sld_id+"']")) == 0:
+			print os.path.join(map_path,mapa+'.map')
+			if isfile(os.path.join(map_path,mapa+'.map')):
+				d=dict(mapname=mapa+sld_id,cache_path=cache_path,map_path=map_path)
+				with open(os.path.join(MAPCACHE_TEMPLATES_DIR, 'cache.template'), 'r') as file:
+					template=Template(file.read())
+			    	root.append(ET.fromstring(template.substitute(d)))
+
+				src_template = 'source_sld.template' if sld != '' else 'source.template'
+				with open(os.path.join(MAPCACHE_TEMPLATES_DIR, src_template), 'r') as file:
+					template=Template(file.read())
+					d['mapfile'] = mapa
+					d['layers'] = capa
+					d['sld'] = sld
+					d['mapserver_url'] = MAPSERVER_URL
+					root.append(ET.fromstring(template.substitute(d)))
+			
+				with open(os.path.join(MAPCACHE_TEMPLATES_DIR, 'tileset_%s.template'%srid), 'r') as file:
+					template=Template(file.read())
+			    	root.append(ET.fromstring(template.substitute(d)))    	
+					
+				tree.write(MAPCACHE_CONFIG, encoding='utf-8')
+				print ('\n+ %s (%s)\n')%(mapa, srid)
+				# update_demo()
+				# call('service apache2 reload', shell=True)
+				# mk_preview([mapa])
+			else:
+				print '\nError: No se encontro el mapa: '+mapa+'\n'
+		else:
+			print '\nError: '+mapa+sld_id+' ya existe.\n'
+
 def add(maps):
 	try:
-		with simpleflock.SimpleFlock(MAPCACHE_CONFIG, timeout=15):
-			tree = ET.parse(MAPCACHE_CONFIG)
-			root = tree.getroot()
-			for m in maps:
-				params = m.split(':')
-				mapa = params[0]
-				if len(params) > 1:
-					capa = params[1]
-				else:
-					capa = mapa
-				if len(params) > 2:
-					srid = params[2]
-				else:
-					srid = default_srid
-				if len(params) > 3:
-					sld = ':'.join(params[3:])
-					sld_hash = sld.split('$')
-					if len(sld_hash) > 1:
-						sld_id = '$'+sld_hash[1]
-						sld = sld_hash[0]
-					else:
-						sld_id = ''
-				else:
-					sld = ''
-					sld_id = ''
-				if len(root.findall("*[@name='"+mapa+sld_id+"']")) == 0:
-					print os.path.join(map_path,mapa+'.map')
-					if isfile(os.path.join(map_path,mapa+'.map')):
-						d=dict(mapname=mapa+sld_id,cache_path=cache_path,map_path=map_path)
-						with open(os.path.join(MAPCACHE_TEMPLATES_DIR, 'cache.template'), 'r') as file:
-							template=Template(file.read())
-					    	root.append(ET.fromstring(template.substitute(d)))
-
-						src_template = 'source_sld.template' if sld != '' else 'source.template'
-						with open(os.path.join(MAPCACHE_TEMPLATES_DIR, src_template), 'r') as file:
-							template=Template(file.read())
-							d['mapfile'] = mapa
-							d['layers'] = capa
-							d['sld'] = sld
-							d['mapserver_url'] = MAPSERVER_URL
-							root.append(ET.fromstring(template.substitute(d)))
-					
-						with open(os.path.join(MAPCACHE_TEMPLATES_DIR, 'tileset_%s.template'%srid), 'r') as file:
-							template=Template(file.read())
-					    	root.append(ET.fromstring(template.substitute(d)))    	
-							
-						tree.write(MAPCACHE_CONFIG, encoding='utf-8')
-						print ('\n+ %s (%s)\n')%(mapa, srid)
-						# update_demo()
-						# call('service apache2 reload', shell=True)
-						# mk_preview([mapa])
-					else:
-						print '\nError: No se encontro el mapa: '+mapa+'\n'
-				else:
-					print '\nError: '+mapa+sld_id+' ya existe.\n'
+		if len(sys.argv) <= 1:
+			with simpleflock.SimpleFlock(MAPCACHE_CONFIG, timeout=15):
+				_add(maps)
+		else:
+			_add(maps)
 	except:
 		print "Mapcache filelock!"
 

@@ -1,7 +1,7 @@
 body {
   padding-bottom: 0;
-  font-family: 'Roboto Condensed', 'Helvetica', 'Arial', sans-serif;
-  font-weight: 300;
+  font-family: 'Roboto Condensed', 'Helvetica', 'Arial', sans-serif; 
+  font-weight: 400;
 }
 
 .theme-dropdown .dropdown-menu {
@@ -21,6 +21,7 @@ body {
 	padding-left: 35px;
 	padding-right: 15px;
 	margin-left: 14px;
+  font-weight: 300;
 }
 .navbar-default .navbar-brand {
 	background: url(../img/logo.png) 0 50% no-repeat;
@@ -40,7 +41,7 @@ body {
 		background-color: #fff;
 	}
 }
-
+/*
 @font-face {
   font-family: 'Roboto Condensed';
   font-style: normal;
@@ -88,3 +89,5 @@ body {
   src: url(../fonts/RobotoCondensed-BoldItalic.eot);
   src: local('Roboto Condensed Bold Italic'), local('RobotoCondensed-BoldItalic'), url(../fonts/RobotoCondensed-BoldItalic.eot) format('embedded-opentype'), url(../fonts/RobotoCondensed-BoldItalic.woff) format('woff');
 }
+
+*/
