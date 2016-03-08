@@ -1,7 +1,7 @@
 # encoding: utf-8
 from fabric.api import lcd, local, sudo, prompt, prefix, env, run, cd
 import random; import string;
-import logging
+import logging, os
 logging.basicConfig()
 
 def _get_secret_key():
