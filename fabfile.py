@@ -9,7 +9,7 @@ def _get_secret_key():
 
 def _install_local_base_packages():
 	try:
-		local("sudo apt-get install uwsgi apache2 postgresql-9.3-postgis-2.1 python-psycopg2 python-gdal nginx python-virtualenv fabric uwsgi uwsgi-plugin-python python-mapscript cgi-mapserver mapserver-bin mapcache-cgi mapcache-tools imagemagick python-lxml")
+		local("sudo apt-get update; sudo apt-get install uwsgi apache2 postgresql-9.3-postgis-2.1 python-psycopg2 python-gdal nginx python-virtualenv fabric uwsgi uwsgi-plugin-python python-mapscript cgi-mapserver mapserver-bin mapcache-cgi mapcache-tools imagemagick python-lxml")
 		local("sudo a2enmod cgid")
 		local("sudo pip install simpleflock")
 	except:
