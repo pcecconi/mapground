@@ -25,20 +25,22 @@
     {{ capa.owner.username }}, subida <span title="Subida {{capa.timestamp_alta}} - Última modificación {{capa.timestamp_modificacion}}">{{ capa.timestamp_alta|naturaltime|quitar_char:'\u00a0' }}</span>
   {% endif %}
   </div>
-  <p class"abstract">{{ capa.dame_descripcion|truncar_string:50 }}</p>
+  <p class="abstract">{{ capa.dame_descripcion|truncar_string:120 }}</p>
+  
+</div>
+<div class="actions">
   {% if capa.permiso != None %}
   <a href="{% url 'layers:detalle_capa' capa.id_capa %}" class="btn btn-primary" role="button">Ver</a>
   {% endif %}
   {% if capa.permiso == 'owner' or capa.permiso == 'superuser' or capa.permiso == 'write' %} 
   <a href="{% url 'layers:metadatos' capa.id_capa %}" class="btn btn-default" role="button">Editar</a>
   {% endif %}
-  {% if capa.permiso == 'owner' or capa.permiso == 'superuser' %}
+  {% if capa.permiso == 'superuser' %}
     {% if capa.borrable %}
         <a href="{% url 'layers:borrar_capa' capa.id_capa %}" class="btn btn-danger eliminar" role="button" title="eliminar {{ capa.dame_titulo }}">Eliminar</a>
     {% else %}
         <button class="btn btn-danger delete disabled" role="button" title="la capa {{ capa.dame_titulo }} no puede eliminarse por estar incluida en algun mapa">Eliminar</>
     {% endif %}
   {% endif %}
-  
 </div>
 </div>

@@ -46,13 +46,14 @@
             <h1>Resultados</h1>        
             {% endif %}
           </div>
-          <div class="list-container th-list">
+          <div class="list-container th-large">
+            <div class="list-header">
             {% if lista_capas|length > 0 %}
             <div class="btn-group pull-right" data-toggle="buttons">
-              <label class="btn btn-default active">
+              <label class="btn btn-default">
                 <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
               </label>
-              <label class="btn btn-default">
+              <label class="btn btn-default active">
                 <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
               </label>
             </div>
@@ -72,6 +73,7 @@
                 {% endif %}
               {% endif %}
             {% endif %}
+            </div>
             <div class="clearfix"></div>
             {% mostrar_capas lista_capas order_by %}
 
@@ -102,7 +104,7 @@
           {% endif %}
           <div class="tab-content">
             <div class="tab-pane fade {% if request.GET.view == 'own' %}in active{% endif %}" id="misCapas">
-              <div class="list-container th-list">
+              <div class="list-container th-large">
                  <ul class="nav nav-pills pull-left layer-sort">
                   <li{% if request.GET.order_by == 'mr' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=mr>Últimas subidas</a></li>
                   <li{% if request.GET.order_by == 'lr' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=lr>Primeras subidas</a></li>
@@ -112,10 +114,10 @@
                   <li{% if request.GET.order_by == 'za' %} class="active"{% endif %}><a href={{ url_index }}?view=own&order_by=za>Z-A</a></li>
                  </ul>
                  <div class="btn-group pull-right" data-toggle="buttons">
-                    <label class="btn btn-default active">
+                    <label class="btn btn-default">
                       <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
                     </label>
-                    <label class="btn btn-default">
+                    <label class="btn btn-default active">
                       <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
                     </label>
                   </div>
@@ -140,7 +142,7 @@
               </div>
             </div>
             <div class="tab-pane fade {% if request.GET.view == 'all' %}in active{% endif %}" id="todasLasCapas">              
-              <div class="list-container th-list">
+              <div class="list-container th-large">
                  <ul class="nav nav-pills pull-left layer-sort">
                   <li{% if request.GET.order_by == 'mr' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=mr>Últimas subidas</a></li>
                   <li{% if request.GET.order_by == 'lr' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=lr>Primeras subidas</a></li>
@@ -150,10 +152,10 @@
                   <li{% if request.GET.order_by == 'za' %} class="active"{% endif %}><a href={{ url_index }}?view=all&order_by=za>Z-A</a></li>
                  </ul>
                   <div class="btn-group pull-right" data-toggle="buttons">
-                    <label class="btn btn-default active">
+                    <label class="btn btn-default">
                       <input type="radio" name="list-style" id="th-list" checked><span class="glyphicon glyphicon-th-list"></span>
                     </label>
-                    <label class="btn btn-default">
+                    <label class="btn btn-default active">
                       <input type="radio" name="list-style" id="th-large"><span class="glyphicon glyphicon-th-large"></span>
                     </label>
                   </div>
@@ -178,7 +180,7 @@
               </div>
             </div>
             <div class="tab-pane fade {% if request.GET.view == 'list' %}in active{% endif %}" id="listadoCapas">              
-              <div class="list-container th-list">
+              <div class="list-container th-large">
                  <ul class="nav nav-pills pull-left layer-sort">
                   <li{% if request.GET.order_by == 'mr' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=mr>Últimas subidas</a></li>
                   <li{% if request.GET.order_by == 'lr' %} class="active"{% endif %}><a href={{ url_index }}?view=list&order_by=lr>Primeras subidas</a></li>

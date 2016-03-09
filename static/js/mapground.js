@@ -24,4 +24,16 @@
   	$('#modal-eliminar').modal('show');
   });
 
+  $('.list-container>.thumbnail').hover(function() {
+    $(this).addClass('active hovered');
+  }, function() {
+    $(this).removeClass('active hovered');
+  });
+
+  $('.list-container>.thumbnail').click(function() {
+    if (!$(this).hasClass('hovered')) {
+      $(this).toggleClass('active');
+    }
+  });
+
  }(jQuery);

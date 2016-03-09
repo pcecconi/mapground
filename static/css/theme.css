@@ -2,6 +2,7 @@ body {
   padding-bottom: 0;
   font-family: 'Roboto Condensed', 'Helvetica', 'Arial', sans-serif; 
   font-weight: 400;
+  background-color: #fff;
 }
 
 .theme-dropdown .dropdown-menu {
@@ -41,7 +42,7 @@ body {
 		background-color: #fff;
 	}
 }
-/*
+
 @font-face {
   font-family: 'Roboto Condensed';
   font-style: normal;
@@ -89,5 +90,3 @@ body {
   src: url(../fonts/RobotoCondensed-BoldItalic.eot);
   src: local('Roboto Condensed Bold Italic'), local('RobotoCondensed-BoldItalic'), url(../fonts/RobotoCondensed-BoldItalic.eot) format('embedded-opentype'), url(../fonts/RobotoCondensed-BoldItalic.woff) format('woff');
 }
-
-*/
