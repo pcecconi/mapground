@@ -59,6 +59,7 @@ AUTHENTICATION_BACKENDS = (
 
 TEMPLATE_CONTEXT_PROCESSORS += ( 
     'django.core.context_processors.request',
+    'commons.context_processors.front_end_settings',
 )
 
 ROOT_URLCONF = 'MapGround.urls'

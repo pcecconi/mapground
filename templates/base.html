@@ -80,9 +80,11 @@
             <div class="navbar-collapse collapse">
               <ul class="nav navbar-nav">
                 <li{% if request.path == url_inicio %} class="active"{% endif %}><a href="{{ url_inicio }}">Inicio</a></li>
-                <li{% if request.path == url_visor %} class="active"{% endif %}><a href="{{ url_visor }}">Visor</a></li>
-                <li{% if request.path == url_mapas %} class="active"{% endif %}><a href="{{ url_mapas }}?view=own&order_by=mr">Mapas</a></li>
                 <li{% if request.path == url_capas %} class="active"{% endif %}><a href="{{ url_capas }}?view=own&order_by=mr">Capas</a></li>
+                <li{% if request.path == url_mapas %} class="active"{% endif %}><a href="{{ url_mapas }}?view=own&order_by=mr">Mapas</a></li>
+                {% if VISOR %}
+                <li{% if request.path == url_visor %} class="active"{% endif %}><a href="{{ url_visor }}">Visor</a></li>
+                {% endif %}
                 {% if request.user.is_superuser %}
                     <li {% if request.path == url_usuarios %} class="active"{% endif %}><a href="{{ url_usuarios }}">Usuarios</a></li>
                 {% endif %}

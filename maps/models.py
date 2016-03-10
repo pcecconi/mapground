@@ -98,21 +98,24 @@ class ManejadorDeMapas:
         print "ManejadorDeMapas.get_mapfile: %s" %(id_mapa)
         mapfile_full_path=os.path.join(settings.MAPAS_PATH, id_mapa+'.map')
         if not os.path.isfile(mapfile_full_path):
-            try:
-                mapa=Mapa.objects.get(id_mapa=id_mapa)
-            except:
-                print "....ManejadorDeMapas.get_mapfile: ERROR: mapa inexistente %s" %(mapfile_full_path) 
-                return ''
-            if mapa.tipo_de_mapa=='user':
-                cls.regenerar_mapas_de_usuarios([mapa.owner])
-            elif mapa.tipo_de_mapa=='public_layers':
+            if id_mapa=='mapground_public_layers':
                 cls.regenerar_mapa_publico()
-            elif mapa.tipo_de_mapa in ['layer', 'layer_original_srs']:
-                mapa.save() 
-            elif mapa.tipo_de_mapa in ['general']: # a evaluar...
-                mapa.save()
             else:
-                return ''
+                try:
+                    mapa=Mapa.objects.get(id_mapa=id_mapa)
+                except:
+                    print "....ManejadorDeMapas.get_mapfile: ERROR: mapa inexistente %s" %(mapfile_full_path) 
+                    return ''
+                if mapa.tipo_de_mapa=='user':
+                    cls.regenerar_mapas_de_usuarios([mapa.owner])
+                elif mapa.tipo_de_mapa=='public_layers':
+                    cls.regenerar_mapa_publico()
+                elif mapa.tipo_de_mapa in ['layer', 'layer_original_srs']:
+                    mapa.save() 
+                elif mapa.tipo_de_mapa in ['general']: # a evaluar...
+                    mapa.save()
+                else:
+                    return ''
         return mapfile_full_path
     
     @classmethod

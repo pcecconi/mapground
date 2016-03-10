@@ -386,6 +386,7 @@ def onUserPostSave(sender, instance, created, **kwargs):
     print 'onUserPostSave %s'%(str(instance))
     if created:
         mapa_usuario = Mapa.objects.create(owner=instance,nombre=instance.username,id_mapa=instance.username, tipo_de_mapa='user')
+        ManejadorDeMapas.regenerar_mapas_de_usuarios([instance])
 
 @receiver(post_save, sender=Group)
 def onGroupPostSave(sender, instance, created, **kwargs):
