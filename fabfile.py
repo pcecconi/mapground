@@ -60,9 +60,15 @@ def setup():
 	with lcd(dir):
 		secret_key = _get_secret_key()
 		local("sed -e 's/mapground-db/%s/g' MapGround/settings_local.py.template | sed -e 's/mapground-user/%s/g' - | sed -e 's/mapground-password/%s/g' - | sed -e 's/secret-key/%s/g' > MapGround/settings_local.py" % (dbname, dbname, dbpass, secret_key))
+		try:
+			local('sudo rm -rf /var/cache/mapground')
+			local('sudo rm -rf /var/local/mapground')
+		except:
+			pass
 		local("sed -e 's/\/path\/to\/your\/mapground/%s/g' mapground_uwsgi.ini.template > mapground_uwsgi.ini" % dir.replace('/', '\/'))
-		local('mkdir MapGround/media; mkdir mapcache/cache; touch mapfiles/map-error.log; sudo chmod 666 mapfiles/map-error.log')
-		local('cp mapcache/mapcache.xml.template mapcache/mapcache.xml')
+		local('sudo mkdir /var/cache/mapground; sudo mkdir /var/local/mapground; sudo mkdir /var/local/mapground/media; touch mapfiles/map-error.log; sudo chmod 666 mapfiles/map-error.log')
+		local('sudo cp -r mapfiles /var/local/mapground; sudo cp -r data /var/local/mapground; sudo chown -R ${USER:=$(/usr/bin/id -run)}:$USER /var/local/mapground')
+		local('cp mapcache/mapcache.xml.template /var/local/mapground/mapcache.xml')
 		local('cp mapcache/settings.py.template mapcache/settings.py')
 		# local('sudo chmod o+w mapfiles')
 		local('sudo cp mapground_uwsgi.ini /etc/uwsgi/apps-available/mapground.ini')
@@ -87,11 +93,11 @@ def setup():
 		local("sudo ln -s /etc/apache2/sites-available/mapground.conf /etc/apache2/sites-enabled/mapground.conf")
 	 	local("deactivate; virtualenv --system-site-packages venv; source venv/bin/activate; pip install -r requirements.txt", shell='/bin/bash')
 		local('source venv/bin/activate; sudo mapcache/manage.py add world_borders')
-		local("source venv/bin/activate; python manage.py syncdb; python manage.py collectstatic", shell='/bin/bash')
+		local("source venv/bin/activate; python manage.py syncdb --noinput; python manage.py collectstatic", shell='/bin/bash')
 		local("source venv/bin/activate; python manage.py loaddata MapGround/fixtures/user.json", shell='/bin/bash')
 		local("source venv/bin/activate; python manage.py loaddata layers/fixtures/initial_data.json", shell='/bin/bash')
-		local('sudo chown -R www-data:www-data MapGround/media mapcache/cache mapfiles mapcache/mapcache.xml')
-		local('sudo service uwsgi restart; sudo service nginx restart')
+		local('sudo chown -R www-data:www-data /var/local/mapground /var/cache/mapground;')
+		local('sudo service uwsgi restart; sudo service apache2 restart; sudo service nginx restart')
 
 def update(dir=''):
 	local('git pull')

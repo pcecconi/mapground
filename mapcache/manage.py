@@ -6,19 +6,29 @@ import xml.etree.ElementTree as ET
 from os.path import isfile
 from string import Template
 from subprocess import call
-from settings import MAPSERVER_URL
+from settings import MAPSERVER_URL, MAPCACHE_ROOT, CACHE_ROOT
 import simpleflock
 # from django.conf import settings
 
 uso = "\nUso: manage add|remove|mk_preview <mapname>[:<srid>] [ <mapname>[:srid] .. <mapname>[:srid] ]\n"
 curr_dir = os.path.dirname(os.path.abspath(__file__))
-MAPCACHE_CONFIG = os.path.join(curr_dir, 'mapcache.xml')
+if os.path.exists(MAPCACHE_ROOT):
+	MAPCACHE_CONFIG = os.path.join(MAPCACHE_ROOT, 'mapcache.xml')
+	map_path = os.path.join(MAPCACHE_ROOT, 'mapfiles')
+	preview_dir = os.path.join(MAPCACHE_ROOT, 'media', 'maps_prev')
+else:
+	MAPCACHE_CONFIG = os.path.join(curr_dir, 'mapcache.xml')
+	map_path = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'mapfiles')
+	preview_dir = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'MapGround/media/maps_prev')
+
 print MAPCACHE_CONFIG
 MAPCACHE_TEMPLATES_DIR = os.path.join(curr_dir, 'templates')
-map_path = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'mapfiles')
-cache_path = os.path.join(curr_dir, 'cache')
+if os.path.exists(CACHE_ROOT):
+	cache_path = CACHE_ROOT
+else:
+	cache_path = os.path.join(curr_dir, 'cache')
+
 default_srid = '3857'
-preview_dir = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'MapGround/media/maps_prev')
 
 def gen_preview(mapa):
 	print '\nMaking preview image for map: '+mapa+'.map\n'

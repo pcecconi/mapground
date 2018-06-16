@@ -87,6 +87,7 @@ STATICFILES_DIRS = (
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.abspath(os.path.dirname(__file__)) + '/media/'
+# MEDIA_ROOT = '/var/local/mapground/media/'
 
 IMPORT_SCHEMA = 'data'
 

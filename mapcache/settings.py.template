@@ -1,1 +1,3 @@
+MAPCACHE_ROOT = '/var/local/mapground/'
 MAPSERVER_URL = 'http://localhost:8080/cgi-bin/mapserv'
+CACHE_ROOT = '/var/cache/mapground'
