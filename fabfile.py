@@ -24,9 +24,9 @@ def _setup_local_db(dbname, dbuser, dbpass):
 		local("sudo -u postgres bash -c 'createuser -s %s'" % (dbuser))
 	except:
 		pass
-	local('sudo locale-gen es_AR.utf8')
+	# local('sudo /usr/sbin/locale-gen es_AR.utf8')
 	local('sudo service postgresql restart')
-	local("sudo -u postgres bash -c 'createdb -l es_AR.utf8 -O %s -T template0 %s'" % (dbuser, dbname))
+	local("sudo -u postgres bash -c 'export LC_ALL=es_AR.UTF-8; export LANGUAGE=es_AR.UTF-8; export LANG=es_AR.UTF-8; createdb -l es_AR.utf8 -O %s -T template0 %s'" % (dbuser, dbname))
 	local("sudo -u postgres psql -d %s < setup.sql" % dbname)
 	sql = '"alter user %s with password \'%s\'; create schema data; alter schema data owner to %s; alter schema utils OWNER TO %s;ALTER FUNCTION utils.campos_de_tabla(character varying, character varying) OWNER TO %s;"' % (dbuser, dbpass, dbuser, dbuser, dbuser)
 	local('sudo -u postgres psql -d %s -c %s' % (dbname, sql))
@@ -52,7 +52,7 @@ def init_dev():
 	# local("source venv/bin/activate; python manage.py test", shell='/bin/bash')
 
 def setup():
-	_install_local_base_packages()
+	# _install_local_base_packages()
 	dbpass = prompt('Ingrese el password para asignar al usuario de la base de datos:')
 	dbname = 'mapground'
 	_setup_local_db(dbname, dbname, dbpass)
