@@ -20,7 +20,7 @@ server {
 
     # Django media
     location /media  {
-        alias /path/to/your/mapground/MapGround/media;  # your Django project's media files - amend as required
+        alias /var/local/mapground/media;  # your Django project's media files - amend as required
     }
 
     location /static {
