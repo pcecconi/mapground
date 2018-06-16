@@ -84,8 +84,8 @@ def setup():
 		except:
 			pass
 		local("sudo ln -s /etc/nginx/sites-available/mapground /etc/nginx/sites-enabled/mapground")
-	 	local("sed -e 's/\/path\/to\/your\/mapground/%s/g' mapground_apache.conf.template > mapground_apache.conf" % dir.replace('/', '\/'))
-		local('sudo cp mapground_apache.conf /etc/apache2/sites-available/mapground.conf')
+	 	# local("sed -e 's/\/path\/to\/your\/mapground/%s/g' mapground_apache.conf.template > mapground_apache.conf" % dir.replace('/', '\/'))
+		local('sudo cp mapground_apache.conf.template /etc/apache2/sites-available/mapground.conf')
 		try:
 			local('sudo rm /etc/apache2/sites-enabled/mapground.conf')
 		except:

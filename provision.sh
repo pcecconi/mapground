@@ -9,7 +9,7 @@ rm /etc/apache2/sites-enabled/*
 rm /etc/nginx/sites-enabled/default
 sed -i 's/^\(Listen\) 80$/\1 8080/' /etc/apache2/ports.conf
 sed -i 's/^# *\(es_AR.UTF-8\)/\1/' /etc/locale.gen
-pip install simpleflock
+pip install simpleflock requests
 /usr/sbin/locale-gen
 # dpkg-reconfigure --frontend=noninteractive locales
 # update-locale LC_CTYPE=es_AR.UTF-8
