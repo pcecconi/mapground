@@ -31,9 +31,6 @@ CANTIDAD_DE_MAPAS_POR_PAGINA = 5
 CANTIDAD_DE_MAPAS_EN_LISTA_POR_PAGINA = 100
 CANTIDAD_DE_ULTIMOS_MAPAS = 5
 
-# Para staging:
-MAPCACHE_URL = SITE_URL+'/mapcache/'
-
 # Para desarrollo seria algo asi como:
 #
 # MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'
@@ -50,7 +47,10 @@ VISOR = True
 if DEBUG:
     from settings_dev_db import *
     MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'
+    MAPAS_PATH = '/var/local/mapground_dev/mapfiles/'
+    MEDIA_ROOT = '/var/local/mapground_dev/media/'
 else:
     from settings_local_db import *
+    MAPCACHE_URL = SITE_URL+'/mapcache/'
     MAPAS_PATH = '/var/local/mapground/mapfiles/'
     MEDIA_ROOT = '/var/local/mapground/media/'

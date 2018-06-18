@@ -72,7 +72,7 @@ def setup_dev():
 	# local('sudo -u postgres psql -c "alter role %s createdb; alter role %s superuser;"' % (dbname, dbname))
 	# local("source venv/bin/activate; python manage.py test", shell='/bin/bash')
 
-def setup():
+def setup_prod():
 	# _install_local_base_packages()
 	dbpass = prompt('Ingrese el password para asignar al usuario de la base de datos:')
 	dbname = 'mapground'
@@ -136,5 +136,5 @@ def prod():
 	local("sed -i 's/DEBUG = True$/DEBUG False/' MapGround/settings_local.py")
 	local("sed -i 's/DEBUG = True$/DEBUG = False/' mapcache/settings.py")
 
-def run():
-	local("python manage.py runserver [::]:8000")
+def runserver():
+	local("source venv/bin/activate; python manage.py runserver [::]:8000", shell='/bin/bash')
