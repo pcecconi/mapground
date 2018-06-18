@@ -87,7 +87,7 @@ STATICFILES_DIRS = (
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.abspath(os.path.dirname(__file__)) + '/media/'
-# MEDIA_ROOT = '/var/local/mapground/media/'
+MAPAS_PATH = os.path.join(BASE_PATH, 'mapfiles')
 
 IMPORT_SCHEMA = 'data'
 
@@ -99,8 +99,6 @@ PROJ_LIB = '/usr/share/proj/'
 MS_OPENLAYERS_JS_URL = 'http://openlayers.org/api/OpenLayers.js'
 MAP_WEB_IMAGEPATH = '/dev/shm/'
 MAP_WEB_IMAGEURL = '/ms_tmp/'
-
-MAPAS_PATH = os.path.join(BASE_PATH, 'mapfiles')
 
 ENCODINGS =(
     ('LATIN1', 'Latin-1'),

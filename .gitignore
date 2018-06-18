@@ -6,9 +6,10 @@ venv
 MapGround/static
 MapGround/media/*
 settings_local.py
-mapglass_nginx.conf
-mapglass_uwsgi.ini
-mapglass_apache.conf
+mapground_nginx.conf
+mapground_uwsgi.ini
+mapground_apache.conf
+mapground_dev_apache.conf
 mapcache/cache
 mapcache/settings.py
 mapcache/mapcache.xml

@@ -1,3 +1,4 @@
-MAPCACHE_ROOT = '/var/local/mapground/'
+DEBUG = True
+MAPCACHE_BASE = '/var/local/mapground/' if not DEBUG else '/var/local/mapground_dev/'
 MAPSERVER_URL = 'http://localhost:8080/cgi-bin/mapserv'
-CACHE_ROOT = '/var/cache/mapground'
+CACHE_ROOT = '/var/cache/mapground' if not DEBUG else '/var/cache/mapground_dev/'

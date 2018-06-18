@@ -6,27 +6,19 @@ import xml.etree.ElementTree as ET
 from os.path import isfile
 from string import Template
 from subprocess import call
-from settings import MAPSERVER_URL, MAPCACHE_ROOT, CACHE_ROOT
+from settings import MAPSERVER_URL, MAPCACHE_BASE, CACHE_ROOT
 import simpleflock
 # from django.conf import settings
 
 uso = "\nUso: manage add|remove|mk_preview <mapname>[:<srid>] [ <mapname>[:srid] .. <mapname>[:srid] ]\n"
 curr_dir = os.path.dirname(os.path.abspath(__file__))
-if os.path.exists(MAPCACHE_ROOT):
-	MAPCACHE_CONFIG = os.path.join(MAPCACHE_ROOT, 'mapcache.xml')
-	map_path = os.path.join(MAPCACHE_ROOT, 'mapfiles')
-	preview_dir = os.path.join(MAPCACHE_ROOT, 'media', 'maps_prev')
-else:
-	MAPCACHE_CONFIG = os.path.join(curr_dir, 'mapcache.xml')
-	map_path = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'mapfiles')
-	preview_dir = os.path.join(os.path.abspath(os.path.join(curr_dir, os.pardir)), 'MapGround/media/maps_prev')
 
-print MAPCACHE_CONFIG
+cache_path = CACHE_ROOT
+MAPCACHE_CONFIG = os.path.join(MAPCACHE_BASE, 'mapcache.xml')
+map_path = os.path.join(MAPCACHE_BASE, 'mapfiles')
+preview_dir = os.path.join(MAPCACHE_BASE, 'media', 'maps_prev')
+
 MAPCACHE_TEMPLATES_DIR = os.path.join(curr_dir, 'templates')
-if os.path.exists(CACHE_ROOT):
-	cache_path = CACHE_ROOT
-else:
-	cache_path = os.path.join(curr_dir, 'cache')
 
 default_srid = '3857'
 
@@ -39,23 +31,23 @@ def gen_preview(mapa):
 
 def remove(maps):
 	try:
-		with simpleflock.SimpleFlock(MAPCACHE_CONFIG, timeout=15):
-			tree = ET.parse(MAPCACHE_CONFIG)
-			root = tree.getroot()
-			for mapa in maps:
-				elems = root.findall("*[@name='"+mapa+"']")
-				if len(elems) > 0:
-					for child in elems:
-						root.remove(child)
-					
-					tree.write(MAPCACHE_CONFIG, encoding='utf-8')
-					try:
-						os.remove(os.path.join(cache_path, mapa+'.mbtiles'))
-					except:
-						pass
-					print '\n- '+mapa+'\n'
-				else:
-					print '\nError: no se encontro '+mapa+'.\n'
+		# with simpleflock.SimpleFlock(MAPCACHE_CONFIG, timeout=15):
+		tree = ET.parse(MAPCACHE_CONFIG)
+		root = tree.getroot()
+		for mapa in maps:
+			elems = root.findall("*[@name='"+mapa+"']")
+			if len(elems) > 0:
+				for child in elems:
+					root.remove(child)
+				
+				tree.write(MAPCACHE_CONFIG, encoding='utf-8')
+				try:
+					os.remove(os.path.join(cache_path, mapa+'.mbtiles'))
+				except:
+					pass
+				print '\n- '+mapa+'\n'
+			else:
+				print '\nError: no se encontro '+mapa+'.\n'
 	except:
 		print "Mapcache filelock!"
 
@@ -104,8 +96,12 @@ def _add(maps):
 				with open(os.path.join(MAPCACHE_TEMPLATES_DIR, 'tileset_%s.template'%srid), 'r') as file:
 					template=Template(file.read())
 			    	root.append(ET.fromstring(template.substitute(d)))    	
-					
-				tree.write(MAPCACHE_CONFIG, encoding='utf-8')
+				
+				try:
+					tree.write(MAPCACHE_CONFIG, encoding='utf-8')
+				except: 
+					print ('\nNo se pudo escribir %s')%(MAPCACHE_CONFIG)
+
 				print ('\n+ %s (%s)\n')%(mapa, srid)
 				# update_demo()
 				# call('service apache2 reload', shell=True)
@@ -118,8 +114,8 @@ def _add(maps):
 def add(maps):
 	try:
 		if len(sys.argv) <= 1:
-			with simpleflock.SimpleFlock(MAPCACHE_CONFIG, timeout=15):
-				_add(maps)
+			# with simpleflock.SimpleFlock(MAPCACHE_CONFIG, timeout=15):
+			_add(maps)
 		else:
 			_add(maps)
 	except:

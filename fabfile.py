@@ -31,23 +31,44 @@ def _setup_local_db(dbname, dbuser, dbpass):
 	sql = '"alter user %s with password \'%s\'; create schema data; alter schema data owner to %s; alter schema utils OWNER TO %s;ALTER FUNCTION utils.campos_de_tabla(character varying, character varying) OWNER TO %s;"' % (dbuser, dbpass, dbuser, dbuser, dbuser)
 	local('sudo -u postgres psql -d %s -c %s' % (dbname, sql))
 
-def init_dev():
-	_install_local_base_packages()
+def setup_dev():
+	# _install_local_base_packages()
 	dbname = 'mapground_dev'
 	dbpass = prompt('Ingrese el password para asignar al usuario de la base de datos:')
 	_setup_local_db(dbname, dbname, dbpass)
 	secret_key = _get_secret_key()
-	local("sed -e 's/mapground-db/%s/g' MapGround/settings_local.py.template | sed -e 's/mapground-user/%s/g' - | sed -e 's/mapground-password/%s/g' - | sed -e 's/secret-key/%s/g' > MapGround/settings_local.py" % (dbname, dbname, dbpass, secret_key))
-	local('mkdir MapGround/media; mkdir mapcache/cache; touch mapfiles/map-error.log; sudo chmod 666 mapfiles/map-error.log')
-	local('cp mapcache/mapcache.xml.template mapcache/mapcache.xml')
-	local('cp mapcache/settings.py.template mapcache/settings.py')
-	local('sudo chown -R www-data:www-data mapcache/cache')
+	dir = os.getcwd()
+	local("sed -e 's/mapground-db/%s/g' MapGround/settings_db.py.template | sed -e 's/mapground-user/%s/g' - | sed -e 's/mapground-password/%s/g' - | sed -e 's/secret-key/%s/g' > MapGround/settings_dev_db.py" % (dbname, dbname, dbpass, secret_key))
+	local("cp MapGround/settings_local.py.template MapGround/settings_local.py")
+	# local('mkdir MapGround/media; mkdir mapcache/cache; touch mapfiles/map-error.log; sudo chmod 666 mapfiles/map-error.log')
+	try:
+		local('sudo rm -rf /var/cache/mapground_dev')
+		local('sudo rm -rf /var/local/mapground_dev')
+	except:
+		pass
+	local('sudo mkdir /var/cache/mapground_dev; sudo mkdir /var/local/mapground_dev; sudo mkdir /var/local/mapground_dev/media')
+	local('sudo cp -r mapfiles /var/local/mapground_dev; sudo cp -r data /var/local/mapground_dev; sudo chown -R ${USER:=$(/usr/bin/id -run)}:$USER /var/local/mapground_dev; touch /var/local/mapground_dev/mapfiles/map-error.log; sudo chmod 666 /var/local/mapground_dev/mapfiles/map-error.log')
+	local("sed -e 's/\DEBUG = False$/DEBUG = True/' mapcache/settings.py.template > mapcache/settings.py")
+	local('cp mapcache/mapcache.xml.template /var/local/mapground_dev/mapcache.xml')
+	# local('cp mapcache/settings.py.template mapcache/settings.py')
+	# local('sudo chown -R www-data:www-data mapcache/cache')
+	local("sed -e 's/\/mapground\//\/mapground_dev\//g' mapground_apache.conf.template > mapground_dev_apache.conf")
+	local("sudo sed -i 's/^<VirtualHost \*:8080>$/<VirtualHost *:7654>/' mapground_dev_apache.conf")
+	try:
+		local('sudo rm /etc/apache2/sites-enabled/mapground_dev.conf')
+	except:
+		pass
+	local("sudo cp mapground_dev_apache.conf /etc/apache2/sites-available/mapground_dev.conf")
+	local("sudo ln -s /etc/apache2/sites-available/mapground_dev.conf /etc/apache2/sites-enabled/mapground_dev.conf")
  	local("deactivate; virtualenv --system-site-packages venv; source venv/bin/activate; pip install -r requirements.txt", shell='/bin/bash')
  	# local("cp venv_path_extensions.pth venv/lib/python2.7/site-packages/")
-	local("source venv/bin/activate; python manage.py syncdb", shell='/bin/bash')
+	local("source venv/bin/activate; python manage.py syncdb --noinput", shell='/bin/bash')
 	local("source venv/bin/activate; python manage.py loaddata layers/fixtures/initial_data.json", shell='/bin/bash')
 	local("source venv/bin/activate; python manage.py loaddata MapGround/fixtures/user.json", shell='/bin/bash')
 	local('source venv/bin/activate; mapcache/manage.py add world_borders', shell='/bin/bash')
+	local('sudo chown -R www-data:www-data /var/cache/mapground_dev;')
+	local('sudo chmod 666 /var/local/mapground_dev/mapcache.xml;')
+	local('sudo service apache2 restart')
 	# local('sudo -u postgres psql -c "alter role %s createdb; alter role %s superuser;"' % (dbname, dbname))
 	# local("source venv/bin/activate; python manage.py test", shell='/bin/bash')
 
@@ -59,7 +80,8 @@ def setup():
 	dir = os.getcwd()
 	with lcd(dir):
 		secret_key = _get_secret_key()
-		local("sed -e 's/mapground-db/%s/g' MapGround/settings_local.py.template | sed -e 's/mapground-user/%s/g' - | sed -e 's/mapground-password/%s/g' - | sed -e 's/secret-key/%s/g' > MapGround/settings_local.py" % (dbname, dbname, dbpass, secret_key))
+		local("sed -e 's/mapground-db/%s/g' MapGround/settings_db.py.template | sed -e 's/mapground-user/%s/g' - | sed -e 's/mapground-password/%s/g' - | sed -e 's/secret-key/%s/g' > MapGround/settings_local_db.py" % (dbname, dbname, dbpass, secret_key))
+		local("sed -e 's/\DEBUG = True$/DEBUG = False/' MapGround/settings_local.py.template > MapGround/settings_local.py")
 		try:
 			local('sudo rm -rf /var/cache/mapground')
 			local('sudo rm -rf /var/local/mapground')
@@ -69,7 +91,8 @@ def setup():
 		local('sudo mkdir /var/cache/mapground; sudo mkdir /var/local/mapground; sudo mkdir /var/local/mapground/media; touch mapfiles/map-error.log; sudo chmod 666 mapfiles/map-error.log')
 		local('sudo cp -r mapfiles /var/local/mapground; sudo cp -r data /var/local/mapground; sudo chown -R ${USER:=$(/usr/bin/id -run)}:$USER /var/local/mapground')
 		local('cp mapcache/mapcache.xml.template /var/local/mapground/mapcache.xml')
-		local('cp mapcache/settings.py.template mapcache/settings.py')
+		local("sed -e 's/\DEBUG = True$/DEBUG = False/' mapcache/settings.py.template > mapcache/settings.py")
+		# local('cp mapcache/settings.py.template mapcache/settings.py')
 		# local('sudo chmod o+w mapfiles')
 		local('sudo cp mapground_uwsgi.ini /etc/uwsgi/apps-available/mapground.ini')
 		try:
@@ -104,3 +127,14 @@ def update(dir=''):
  	local("deactivate; source venv/bin/activate; pip install -r requirements.txt", shell='/bin/bash')
 	local("deactivate; source venv/bin/activate; python manage.py migrate; python manage.py collectstatic", shell='/bin/bash')
 	local('sudo service uwsgi restart')
+
+def dev():
+	local("sed -i 's/DEBUG = False$/DEBUG = True/' MapGround/settings_local.py")
+	local("sed -i 's/DEBUG = False$/DEBUG = True/' mapcache/settings.py")
+
+def prod():
+	local("sed -i 's/DEBUG = True$/DEBUG False/' MapGround/settings_local.py")
+	local("sed -i 's/DEBUG = True$/DEBUG = False/' mapcache/settings.py")
+
+def run():
+	local("python manage.py runserver [::]:8000")

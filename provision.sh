@@ -7,7 +7,7 @@ apt-get install -y python-psycopg2 python-gdal nginx python-virtualenv fabric uw
 a2enmod cgid
 rm /etc/apache2/sites-enabled/*
 rm /etc/nginx/sites-enabled/default
-sed -i 's/^\(Listen\) 80$/\1 8080/' /etc/apache2/ports.conf
+sed -i 's/^\(Listen\) 80$/\1 8080\n\1 7654/' /etc/apache2/ports.conf
 sed -i 's/^# *\(es_AR.UTF-8\)/\1/' /etc/locale.gen
 pip install simpleflock requests
 /usr/sbin/locale-gen

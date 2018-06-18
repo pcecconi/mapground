@@ -1,39 +1,12 @@
 # -*- coding: utf-8 -*-
 import urlparse 
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'secret-key'
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = []
-
-# Database
-# https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'mapground-db',
-         'USER': 'mapground-user',
-         'PASSWORD': 'mapground-password',
-         'HOST': 'localhost', 
-     }
-}
-
-DEFAULT_DB_CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'"%(DATABASES['default']['HOST'],DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['PASSWORD'])
-
-POSTGIS_VERSION = ( 2, 1 )
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
+ALLOWED_HOSTS = ['*']
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/
@@ -42,7 +15,10 @@ LANGUAGE_CODE = 'es-AR'
 
 SITE_HEADER = '<b>Map</b>Ground'
 SITE_TITLE = 'MapGround'
-SITE_URL = 'http://localhost:8080/'
+if not DEBUG:
+    SITE_URL = 'http://localhost:8080/'
+else: 
+    SITE_URL = 'http://localhost:8000/'
 
 TIME_ZONE = 'UTC'
 
@@ -58,9 +34,6 @@ CANTIDAD_DE_ULTIMOS_MAPAS = 5
 # Para staging:
 MAPCACHE_URL = SITE_URL+'/mapcache/'
 
-MAPAS_PATH = '/var/local/mapground/mapfiles/'
-MEDIA_ROOT = '/var/local/mapground/media/'
-
 # Para desarrollo seria algo asi como:
 #
 # MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'
@@ -73,3 +46,11 @@ WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL,'layers/wxs/')
 
 VISOR_INITIAL_EXTENT = '-135 -60 135 60'
 VISOR = True
+
+if DEBUG:
+    from settings_dev_db import *
+    MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'
+else:
+    from settings_local_db import *
+    MAPAS_PATH = '/var/local/mapground/mapfiles/'
+    MEDIA_ROOT = '/var/local/mapground/media/'
