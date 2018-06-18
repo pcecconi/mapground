@@ -6,6 +6,8 @@ venv
 MapGround/static
 MapGround/media/*
 settings_local.py
+settings_local_db.py
+settings_dev_db.py
 mapground_nginx.conf
 mapground_uwsgi.ini
 mapground_apache.conf
