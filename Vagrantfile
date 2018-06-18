@@ -9,6 +9,9 @@ Vagrant.configure("2") do |config|
   # The most common configuration options are documented and commented below.
   # For a complete reference, please see the online documentation at
   # https://docs.vagrantup.com.
+  unless Vagrant::DEFAULT_SERVER_URL.frozen?
+    Vagrant::DEFAULT_SERVER_URL.replace('https://vagrantcloud.com')
+  end
 
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://vagrantcloud.com/search.
