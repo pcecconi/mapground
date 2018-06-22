@@ -1,7 +1,9 @@
-# -*- coding: utf-8 -*- 
-from django import forms
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.contrib import admin
 from django.contrib import messages
+from django import forms
 from maps.models import Mapa, MapServerLayer, TMSBaseLayer, ArchivoSLD
 from utils.commons import normalizar_texto
 from users.models import ManejadorDePermisos

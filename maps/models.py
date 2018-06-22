@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# from __future__ import unicode_literals   # NO DESCOMENTAR! ROMPE TODO!
+
 from django.db import models, connection, connections
 from django.contrib.auth.models import User
 from django.conf import settings
@@ -178,7 +180,7 @@ class Mapa(models.Model):
     tipo_de_mapa = models.CharField('Tipo de Mapa', choices=TIPO_DE_MAPA_ENUM, max_length=30, null=False, blank=True, default='')   
 
     tms_base_layer = models.ForeignKey(TMSBaseLayer, verbose_name='Capa Base', null=True, blank=True, on_delete=models.SET_NULL)    
-    capas = models.ManyToManyField(Capa,null=True,blank=True,through='MapServerLayer') 
+    capas = models.ManyToManyField(Capa, blank=True, through='MapServerLayer') 
     
     size = models.CharField('Size', null=False, blank=True, max_length=100)
     extent = models.CharField('Extent', null=False, blank=True, max_length=100)
@@ -187,7 +189,7 @@ class Mapa(models.Model):
     # seguir agregando tags de mapserver
 
     publico = models.BooleanField(u'Público?', null=False, default=False)
-    categorias = models.ManyToManyField(Categoria, null=True, blank=True, verbose_name=u'Categorías')
+    categorias = models.ManyToManyField(Categoria, blank=True, verbose_name=u'Categorías')
     escala = models.ForeignKey(Escala, null=True, blank=True, on_delete=models.SET_NULL)
     palabras_claves = models.TextField(u'Palabras Claves', null=False, blank=True, max_length=10000,default='')
     

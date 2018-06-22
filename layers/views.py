@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 # core
 from django.http import HttpResponse,HttpResponseRedirect, HttpResponseForbidden
@@ -20,7 +21,7 @@ from layerimport.models import TablaGeografica
 from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, EscalaForm, AreaTematicaForm
 from mapcache.settings import MAPSERVER_URL
 from users.models import ManejadorDePermisos, PermisoDeCapa, PermisoDeCapaPorGrupo
-#utils
+# utils
 from utils.commons import normalizar_texto, aplicar_callback, paginar_y_elegir_pagina
 from datetime import datetime
 

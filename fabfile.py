@@ -64,7 +64,9 @@ def setup_dev():
 	local("sudo ln -s /etc/apache2/sites-available/mapground_dev.conf /etc/apache2/sites-enabled/mapground_dev.conf")
  	local("deactivate; virtualenv --system-site-packages venv; source venv/bin/activate; pip install -r requirements.txt", shell='/bin/bash')
  	# local("cp venv_path_extensions.pth venv/lib/python2.7/site-packages/")
-	local("source venv/bin/activate; python manage.py syncdb --noinput", shell='/bin/bash')
+	# local("source venv/bin/activate; python manage.py syncdb --noinput", shell='/bin/bash')
+	local("source venv/bin/activate; python manage.py makemigrations", shell='/bin/bash')
+	local("source venv/bin/activate; python manage.py migrate", shell='/bin/bash')
 	local("source venv/bin/activate; python manage.py loaddata layers/fixtures/initial_data.json", shell='/bin/bash')
 	local("source venv/bin/activate; python manage.py loaddata MapGround/fixtures/user.json", shell='/bin/bash')
 	local('source venv/bin/activate; mapcache/manage.py add world_borders', shell='/bin/bash')
@@ -118,7 +120,8 @@ def setup_prod():
 		local("sudo ln -s /etc/apache2/sites-available/mapground.conf /etc/apache2/sites-enabled/mapground.conf")
 	 	local("deactivate; virtualenv --system-site-packages venv; source venv/bin/activate; pip install -r requirements.txt", shell='/bin/bash')
 		local('source venv/bin/activate; sudo mapcache/manage.py add world_borders')
-		local("source venv/bin/activate; python manage.py syncdb --noinput; python manage.py collectstatic", shell='/bin/bash')
+		# local("source venv/bin/activate; python manage.py syncdb --noinput; python manage.py collectstatic", shell='/bin/bash')
+		local("source venv/bin/activate; python manage.py makemigrations; python manage.py migrate", shell='/bin/bash')
 		local("source venv/bin/activate; python manage.py loaddata MapGround/fixtures/user.json", shell='/bin/bash')
 		local("source venv/bin/activate; python manage.py loaddata layers/fixtures/initial_data.json", shell='/bin/bash')
 		local('sudo chown -R www-data:www-data /var/local/mapground /var/cache/mapground;')
@@ -135,7 +138,7 @@ def dev():
 	local("sed -i 's/DEBUG = False$/DEBUG = True/' mapcache/settings.py")
 
 def prod():
-	local("sed -i 's/DEBUG = True$/DEBUG False/' MapGround/settings_local.py")
+	local("sed -i 's/DEBUG = True$/DEBUG = False/' MapGround/settings_local.py")
 	local("sed -i 's/DEBUG = True$/DEBUG = False/' mapcache/settings.py")
 
 def runserver():

@@ -1,8 +1,12 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
 from django.views.generic import CreateView, DeleteView, ListView
 from .models import Archivo
 from .response import JSONResponse, response_mimetype
 from .serialize import serialize
+
 
 class ArchivoCreateView(CreateView):
     model = Archivo

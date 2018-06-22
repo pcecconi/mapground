@@ -1,10 +1,8 @@
-from django.conf.urls import patterns, url
-from django.contrib.auth.decorators import login_required
-
+from django.conf.urls import url
 from maps import views
 
-urlpatterns = patterns('',
-    url(r'^$', views.index, name='index'), 
+urlpatterns = [
+    url(r'^$', views.index, name='index'),
     url(r'^ultimos$', views.ultimos, name='ultimos'),
     url(r'^embeddable/(?P<id_mapa>.+)/$', views.embeddable, name='embeddable'),
     url(r'^detalle_mapa/(?P<id_mapa>.+)/$', views.detalle_mapa, name='detalle_mapa'),
@@ -20,4 +18,4 @@ urlpatterns = patterns('',
     url(r'^detalle_escala/(?P<escalaid>[0-9]+)/$', views.detalle_escala, name='detalle_escala'),
     url(r'^visor/(?P<id_mapa>.+)/$', views.visor, name='visor'),
     url(r'^visor/$', views.visor, name='visor'),
-)
+]

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 # core
 from django.db import models, transaction
 from django.contrib.auth.models import User
@@ -249,7 +251,7 @@ class Metadatos(models.Model):
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000) # abstract
     escala = models.ForeignKey(Escala, null=True, blank=True, on_delete=models.SET_NULL)
     palabras_claves = models.TextField(u'Palabras Claves', null=False, blank=True, max_length=10000)
-    categorias = models.ManyToManyField('Categoria',null=True,blank=True, verbose_name=u'Categorías')
+    categorias = models.ManyToManyField('Categoria',blank=True, verbose_name=u'Categorías')
     area_tematica = models.ForeignKey('AreaTematica', null=True, blank=True, on_delete=models.SET_NULL, verbose_name=u'Área Temática')
     
     fecha_de_relevamiento = models.CharField('Fecha de Relevamiento',null=False, blank=True, max_length=50)

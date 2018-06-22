@@ -1,4 +1,7 @@
-# encoding: utf-8
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
+from django.shortcuts import render
 from django.shortcuts import render_to_response, HttpResponseRedirect
 from django.template import RequestContext
 from fileupload.models import Archivo

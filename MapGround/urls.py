@@ -1,10 +1,28 @@
-from django.conf.urls import patterns, include, url
+"""MapGround URL Configuration.
+
+The `urlpatterns` list routes URLs to views. For more information please see:
+    https://docs.djangoproject.com/en/1.11/topics/http/urls/
+Examples:
+Function views
+    1. Add an import:  from my_app import views
+    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
+Class-based views
+    1. Add an import:  from other_app.views import Home
+    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
+Including another URLconf
+    1. Import the include() function: from django.conf.urls import url, include
+    2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
+"""
+
+from django.conf.urls import include, url
 from django.http import HttpResponseRedirect
 from django.contrib import admin
+from django.contrib.auth import views
+from django.views.static import serve
 from django.conf import settings
 admin.autodiscover()
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Examples:
     # url(r'^$', 'MapGround.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
@@ -14,13 +32,15 @@ urlpatterns = patterns('',
     url(r'^upload/', include('fileupload.urls', namespace="fileupload")),
     url(r'^import/', include('layerimport.urls', namespace='layerimport')),
     url(r'^users/', include('users.urls', namespace='users')),
-    
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login'),
-    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout_then_login'),
-)
 
-import os
-urlpatterns += patterns('',
-    (r'^media/(.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT }),
-)
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^accounts/login/$', views.login, name='login'),
+    url(r'^accounts/logout/$', views.logout_then_login, name='logout'),
+
+    url(r'^media/(.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+
+]
+
+# urlpatterns += [
+#     (r'^media/(.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
+# ]
