@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load capas_tags %}
+{% load static %}
 
 {% block css %}
 {% endblock %}
@@ -240,7 +241,7 @@
 {% block javascript %}
 {{ block.super }}
 
-<script src="{{ STATIC_URL }}js/mapground.js"></script>
+<script src="{% static "js/mapground.js" %}"></script>
 
 {% endblock %}
 
