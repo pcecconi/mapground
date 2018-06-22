@@ -1,14 +1,15 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block extrastyle %}
 {{ block.super }}
 
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}libs/leaflet/leaflet.css" />
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.css" />
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-sidebar-master/src/L.Control.Sidebar.css" />
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}js/leaflet-layersconfig/LayersConfig.control.css" />
+<link rel="stylesheet" type="text/css" href="{% static "libs/leaflet/leaflet.css" %}"/>
+<link rel="stylesheet" type="text/css" href="{% static "assets/js/leaflet-minimap/src/Control.MiniMap.css" %}"/>
+<link rel="stylesheet" type="text/css" href="{% static "assets/js/leaflet-sidebar-master/src/L.Control.Sidebar.css" %}"/>
+<link rel="stylesheet" type="text/css" href="{% static "js/leaflet-layersconfig/LayersConfig.control.css" %}"/>
 <!--
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/abstract.control.css" media="all">
+<link rel="stylesheet" type="text/css" href="{% static "css/abstract.control.css" %}" media="all">
 -->
 <style>
   .mg-layers {
@@ -127,19 +128,19 @@
 {% block javascript %}
 {{ block.super }}
 
-<script type="text/javascript" src="{{ STATIC_URL }}js/mapground.js"></script>
+<script type="text/javascript" src="{% static "js/mapground.js" %}"></script>
 
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script type="text/javascript" src="{{ STATIC_URL }}libs/leaflet/leaflet.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/bootstrap-treeview-1.2.0/src/js/bootstrap-treeview.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/leaflet-sidebar-master/src/L.Control.Sidebar.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/leaflet-layersconfig/LayersConfig.control.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/sortable-master/Sortable.min.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}assets/js/sortable-master/jquery.binding.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}js/visor.js"></script>
+    <script type="text/javascript" src="{% static "libs/leaflet/leaflet.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/leaflet-minimap/src/Control.MiniMap.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/bootstrap-treeview-1.2.0/src/js/bootstrap-treeview.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/leaflet-sidebar-master/src/L.Control.Sidebar.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/leaflet-layersconfig/LayersConfig.control.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/sortable-master/Sortable.min.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/sortable-master/jquery.binding.js" %}"></script>
+    <script type="text/javascript" src="{% static "js/visor.js" %}"></script>
     <script type="text/javascript">
     // Definicion del namespace
     var mg = mg || {};

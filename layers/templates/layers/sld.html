@@ -114,7 +114,7 @@
 {% block javascript %}
 {{ block.super }}
 
-<script src="{{ STATIC_URL }}assets/js/bootstrap-filestyle.min.js"></script>
+<script src="{% static "assets/js/bootstrap-filestyle.min.js" %}"></script>
 <script>
 	$(":file").filestyle({buttonText: "&nbsp;Elegir archivo...", input: false, iconName: "glyphicon-file"});
 </script>

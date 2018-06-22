@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% load capas_tags %}
+{% load static %}
 
 {% block extrastyle %}
 {{ block.super }}
 
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}libs/leaflet/leaflet.css" />
+<link rel="stylesheet" type="text/css" href="{% static "libs/leaflet/leaflet.css" %}"/>
 <!--
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.css" />
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/abstract.control.css" media="all">
+<link rel="stylesheet" type="text/css" href="{% static "assets/js/leaflet-minimap/src/Control.MiniMap.css" %}"/>
+<link rel="stylesheet" type="text/css" href="{% static "css/abstract.control.css" %}" media="all">
 -->
 {% endblock %}
 
@@ -187,14 +188,14 @@
 {% block javascript %}
 {{ block.super }}
 
-<script type="text/javascript" src="{{ STATIC_URL }}js/mapground.js"></script>
+<script type="text/javascript" src="{% static "js/mapground.js" %}"></script>
 <!--
-<script type="text/javascript" src="{{ STATIC_URL }}libs/leaflet/leaflet.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}assets/js/proj4leaflet/lib/proj4-compressed.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}assets/js/proj4leaflet/src/proj4leaflet.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.js"></script>
-<script type="text/javascript" src="{{ STATIC_URL }}js/abstract.control.js"></script>    
-<script type="text/javascript" src="{{ STATIC_URL }}js/mapa.js"></script>
+<script type="text/javascript" src="{% static "libs/leaflet/leaflet.js" %}"></script>
+<script type="text/javascript" src="{% static "assets/js/proj4leaflet/lib/proj4-compressed.js" %}"></script>
+<script type="text/javascript" src="{% static "assets/js/proj4leaflet/src/proj4leaflet.js" %}"></script>
+<script type="text/javascript" src="{% static "assets/js/leaflet-minimap/src/Control.MiniMap.js" %}"></script>
+<script type="text/javascript" src="{% static "js/abstract.control.js" %}"></script>    
+<script type="text/javascript" src="{% static "js/mapa.js" %}"></script>
 
 <script type="text/javascript">
     $(document).ready(function() {

@@ -1,13 +1,14 @@
 {% extends "base.html" %}
 {% load mapas_tags %}
+{% load static %}
 
 {% block extrastyle %}
 {{ block.super }}
 
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}libs/leaflet/leaflet.css" />
+<link rel="stylesheet" type="text/css" href="{% static "libs/leaflet/leaflet.css" %}"/>
 <!--
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}assets/js/leaflet-minimap/src/Control.MiniMap.css" />
-<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/abstract.control.css" media="all">
+<link rel="stylesheet" type="text/css" href="{% static "assets/js/leaflet-minimap/src/Control.MiniMap.css" %}"/>
+<link rel="stylesheet" type="text/css" href="{% static "css/abstract.control.css" %}" media="all">
 -->
 {% endblock %}
 
@@ -64,7 +65,7 @@
 {% block javascript %}
 {{ block.super }}
 
-<script type="text/javascript" src="{{ STATIC_URL }}js/mapground.js"></script>
+<script type="text/javascript" src="{% static "js/mapground.js" %}"></script>
 
 <div class="modal fade" id="modal-eliminar" tabindex="-1" role="dialog" aria-labelledby="Eliminar Mapa" aria-hidden="true">
   <div class="modal-dialog">
