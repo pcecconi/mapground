@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% load common_tags %}
+{% load static %}
 
 {% block title %}{{ title }}{% if title %} | {% endif %}{% settings_value "SITE_TITLE" %}{% endblock %}
 
 {% block branding %}
-<h1 id="site-name" class="navbar-inverse"><a href="/"><img src="{{ STATIC_URL }}img/logo-inverse.png"/>{% settings_value "SITE_HEADER" %}</a></h1>
+<h1 id="site-name" class="navbar-inverse"><a href="/"><img src="{% static "img/logo-inverse.png" %}"/>{% settings_value "SITE_HEADER" %}</a></h1>
 {% endblock %}
 
 {% block nav-global %}{% endblock %}
