@@ -1,5 +1,6 @@
 from django import template
 from django.conf import settings
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -11,6 +12,6 @@ def settings_value(name):
 		'SITE_TITLE': 'MapGround'
 	}
 	if name in defaults:
-		return getattr(settings, name, defaults[name])
+		return mark_safe(getattr(settings, name, defaults[name]))
 	else:
 		return ''
