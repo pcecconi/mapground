@@ -14,10 +14,10 @@ import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-# OJO: En 1.11 es como el BASE_PATH nuestro:
+# OJO: En Django 1.11 es como el BASE_PATH nuestro:
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# El de arriba es el default de Django pero no sirve para algunos usos
+# El de arriba es el default de Django pero no sirve para algunos usos (comentario de la 1.6)
 BASE_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
@@ -45,7 +45,7 @@ INSTALLED_APPS = (
     'users',
 )
 
-# original, django 1.6
+# original del proyecto, en django 1.6
 # MIDDLEWARE_CLASSES = (
 #     'django.contrib.sessions.middleware.SessionMiddleware',
 #     'django.middleware.common.CommonMiddleware',
@@ -57,7 +57,7 @@ INSTALLED_APPS = (
 #     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
 # )
 
-# django 1.11, cambia keyword y valores
+# nuevo en django 1.11, cambian keyword y valores
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -74,6 +74,7 @@ MIDDLEWARE = [
 # Password validation
 # https://docs.djangoproject.com/en/1.11/ref/settings/#auth-password-validators
 
+# nuevo en django 1.11
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -111,10 +112,12 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Django 1.6 deprecated
 # TEMPLATE_DIRS = (
 #     os.path.join(BASE_PATH, "templates"),
 # )
 
+# nueva estructura de Django 1.11
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
