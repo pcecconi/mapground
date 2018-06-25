@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
-from django.shortcuts import render
 from django.views.generic import CreateView, DeleteView, ListView
 from .models import Archivo
 from .response import JSONResponse, response_mimetype
@@ -36,13 +35,13 @@ class ArchivoDeleteView(DeleteView):
 
 class ArchivoListView(ListView):
     model = Archivo
-    
+
     def get_queryset(self):
-        #return Archivo.objects.filter(owner=self.request.user)
+        # return Archivo.objects.filter(owner=self.request.user)
         return Archivo.objects.owned_by(self.request.user)
 
     def render_to_response(self, context, **response_kwargs):
-        files = [ serialize(p) for p in self.get_queryset() ]
+        files = [serialize(p) for p in self.get_queryset()]
         data = {'files': files}
         response = JSONResponse(data, mimetype=response_mimetype(self.request))
         response['Content-Disposition'] = 'inline; filename=files.json'

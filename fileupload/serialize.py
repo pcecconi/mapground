@@ -40,5 +40,3 @@ def serialize(instance, file_attr='file'):
         'deleteUrl': reverse('fileupload:upload-delete', args=[instance.pk]),
         'deleteType': 'DELETE',
     }
-
-

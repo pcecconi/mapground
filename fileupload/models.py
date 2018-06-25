@@ -6,9 +6,11 @@ from os import path
 from django.conf import settings
 from django_extras.contrib.auth.models import SingleOwnerMixin
 
+
 def getUploadPath(inst, filename):
-    return settings.MEDIA_ROOT+'uploaded/'+str(inst.owner)+'/'+filename
-    #return settings.MEDIA_ROOT+filename
+    return settings.MEDIA_ROOT + 'uploaded/' + str(inst.owner) + '/' + filename
+    # return settings.MEDIA_ROOT+filename
+
 
 class Archivo(SingleOwnerMixin, models.Model):
     """This is a small demo using just two fields. The slug field is really not
@@ -21,7 +23,7 @@ class Archivo(SingleOwnerMixin, models.Model):
     slug = models.SlugField(max_length=50, blank=True)
     nombre = models.CharField(max_length=128, blank=True)
     extension = models.CharField(max_length=15, blank=True)
-    #owner = models.ForeignKey(settings.AUTH_USER_MODEL)
+    # owner = models.ForeignKey(settings.AUTH_USER_MODEL)
 
     def __unicode__(self):
         return self.file.name
