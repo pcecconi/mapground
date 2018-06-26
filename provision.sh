@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 apt-get update
-apt-get install -y uwsgi apache2 postgresql-9.6-postgis-2.3 postgis
+apt-get install -y uwsgi apache2 postgresql-10-postgis-2.4 postgis
 service apache2 stop
 apt-get install -y python-psycopg2 python-gdal nginx locate python-virtualenv fabric uwsgi-plugin-python python-mapscript cgi-mapserver mapserver-bin mapcache-cgi mapcache-tools imagemagick python-lxml curl build-essential libssl-dev python-pip locales
 a2enmod cgid
