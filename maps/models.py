@@ -427,52 +427,52 @@ class Mapa(models.Model):
         output_csv.setOption('FILENAME', self.dame_filename+'.csv')
         mapa.appendOutputFormat(output_csv)
 
-        mapa.configoptions['MS_ERRORFILE']=MAPA_ERRORFILE
-        mapa.configoptions['PROJ_LIB']=settings.PROJ_LIB
-        mapa.configoptions['MS_OPENLAYERS_JS_URL']=settings.MS_OPENLAYERS_JS_URL
+        mapa.setConfigOption('MS_ERRORFILE',MAPA_ERRORFILE) 
+        mapa.setConfigOption('PROJ_LIB',settings.PROJ_LIB)
+        mapa.setConfigOption('MS_OPENLAYERS_JS_URL',settings.MS_OPENLAYERS_JS_URL)
 
         mapa.legend.template = 'templates/legend.html' # TODO: general o solo WMS?
-        mapa.web.validation['TEMPLATE']='[a-z/.]+' # TODO: general o solo WMS?
+        # mapa.web.updateFromString('VALIDATION\n \'TEMPLATE\'  \'[a-z/.]+\' \n END') # TODO: general o solo WMS?
         mapa.web.template = 'templates/mapa-interactivo.html' # TODO: general o solo WMS?
         
         mapa.web.imagepath = settings.MAP_WEB_IMAGEPATH
         mapa.web.imageurl = settings.MAP_WEB_IMAGEURL
         # mapa.web.template = 'blank.html' # siempre?
         # NOTA: algunos mapas que hicimos para SSPTIP usan wms_* en lugar de ows_*, no se si estan mal o hay alguna diferencia
-        mapa.web.metadata['ows_title'] = unicode(self.dame_titulo).encode('UTF-8')
-        mapa.web.metadata['ows_abstract'] = unicode(self.dame_descripcion.replace('\r\n', ' ')).encode('UTF-8')
-        mapa.web.metadata['ows_attribution_title'] = unicode(self.dame_fuente.replace('\r\n', ' ')).encode('UTF-8')
-        mapa.web.metadata['ows_contactorganization'] = unicode(self.dame_contacto.replace('\r\n', ' ')).encode('UTF-8')
+        mapa.setMetaData('ows_title', unicode(self.dame_titulo).encode('UTF-8'))
+        mapa.setMetaData('ows_abstract', unicode(self.dame_descripcion.replace('\r\n', ' ')).encode('UTF-8'))
+        mapa.setMetaData('ows_attribution_title', unicode(self.dame_fuente.replace('\r\n', ' ')).encode('UTF-8'))
+        mapa.setMetaData('ows_contactorganization', unicode(self.dame_contacto.replace('\r\n', ' ')).encode('UTF-8'))
 
         if self.tipo_de_mapa=='public_layers':
-            mapa.web.metadata['wms_onlineresource'] = urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/')
-            mapa.web.metadata['wfs_onlineresource'] = urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/')
+            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/'))
+            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/'))
         elif self.tipo_de_mapa=='user':
-            mapa.web.metadata['wms_onlineresource'] = urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/')
-            mapa.web.metadata['wfs_onlineresource'] = urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/')
+            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/'))
+            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/'))
         elif self.tipo_de_mapa=='layer_original_srs':
-            mapa.web.metadata['wms_onlineresource'] = urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/')
-            mapa.web.metadata['wfs_onlineresource'] = urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/')
+            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/'))
+            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/'))
         else:
-            mapa.web.metadata['wms_onlineresource'] = urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
-            mapa.web.metadata['wfs_onlineresource'] = urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
+            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/'))
+            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/'))
 
-        mapa.web.metadata['mg_onlineresource'] = unicode(self.dame_tilesurl).encode('UTF-8')
-        mapa.web.metadata['mg_siteurl'] = unicode(settings.SITE_URL).encode('UTF-8')
+        mapa.setMetaData('mg_onlineresource', unicode(self.dame_tilesurl).encode('UTF-8'))
+        mapa.setMetaData('mg_siteurl', unicode(settings.SITE_URL).encode('UTF-8'))
         if self.tms_base_layer:
-            mapa.web.metadata['mg_baselayerurl'] = self.tms_base_layer.url
-            mapa.web.metadata['mg_tmsbaselayer'] = str(self.tms_base_layer.tms)
+            mapa.setMetaData('mg_baselayerurl', self.tms_base_layer.url)
+            mapa.setMetaData('mg_tmsbaselayer', str(self.tms_base_layer.tms))
         else:
-            mapa.web.metadata['mg_baselayerurl'] = settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png'
-            mapa.web.metadata['mg_tmsbaselayer'] = str(True)
-        mapa.web.metadata['mg_mapid'] = unicode(self.id_mapa)
+            mapa.setMetaData('mg_baselayerurl', settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png')
+            mapa.setMetaData('mg_tmsbaselayer', str(True))
+        mapa.setMetaData('mg_mapid', unicode(self.id_mapa))
 
-        mapa.web.metadata['ows_srs'] = 'epsg:%s epsg:4326'%(proj) # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
-        mapa.web.metadata['wfs_getfeature_formatlist'] = 'geojson,shapezip,csv'
-        mapa.web.metadata['ows_encoding'] = 'UTF-8' # siempre
-        mapa.web.metadata['ows_enable_request'] = '*'
-        mapa.web.metadata['labelcache_map_edge_buffer'] = '-10'
-        #mapa.web.metadata['wms_feature_info_mime_type', 'application/json; subtype=geojson')
+        mapa.setMetaData('ows_srs', 'epsg:%s epsg:4326'%(proj)) # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
+        mapa.setMetaData('wfs_getfeature_formatlist', 'geojson,shapezip,csv')
+        mapa.setMetaData('ows_encoding', 'UTF-8') # siempre
+        mapa.setMetaData('ows_enable_request', '*')
+        mapa.setMetaData('labelcache_map_edge_buffer', '-10')
+        #mapa.setMetaData('wms_feature_info_mime_type', 'application/json; subtype=geojson')
         
         if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general'):
             mapserverlayers = self.mapserverlayer_set.all().order_by('orden_de_capa','capa__metadatos__titulo')
@@ -483,7 +483,7 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layerObj('WMS')
             else:
                 l=msl.dame_mapserver_layerObj()
-                l.metadata['ows_srs'] = 'epsg:%s epsg:4326'%(proj)
+                l.setMetaData('ows_srs','epsg:%s epsg:4326'%(proj))
             pos=mapa.insertLayer(l)
             
         return mapa
@@ -653,12 +653,12 @@ class MapServerLayer(models.Model):
             layer.connectiontype = mapscript.MS_WMS
             layer.connection = '%s?map=%s.map'%(MAPSERVER_URL, os.path.join(settings.MAPAS_PATH, self.capa.id_capa))
             
-            layer.metadata['wms_srs'] = 'epsg:3857'
-            layer.metadata['wms_name'] = self.capa.nombre
-            layer.metadata['wms_server_version'] = '1.1.1'
-            layer.metadata['wms_format'] = 'image/png'
+            layer.setMetaData('wms_srs', 'epsg:3857')
+            layer.setMetaData('wms_name', self.capa.nombre)
+            layer.setMetaData('wms_server_version', '1.1.1')
+            layer.setMetaData('wms_format', 'image/png')
             if self.archivo_sld is not None:
-                layer.metadata['wms_sld_url'] = (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url))
+                layer.setMetaData('wms_sld_url', (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)))
         
         elif connectiontype=='POSTGIS':
             layer.type=self.dame_layer_type
@@ -676,18 +676,18 @@ class MapServerLayer(models.Model):
             if proj!='':
                 layer.setProjection('epsg:%s'%(proj))
             
-            layer.metadata['ows_title'] = self.capa.dame_titulo.encode('utf-8')
-            layer.metadata['gml_types'] = 'auto'
-            #layer.metadata['ows_srs','%s epsg:4326'%(proj)) # este campo lo llena el mapa 
-            layer.metadata['gml_include_items'] = 'all' # por ahora queda asi, y ademas se suman los campos especificos
-            layer.metadata['gml_featureid'] = 'gid' 
-            layer.metadata['wms_enable_request'] = '*'
-            layer.metadata['wfs_enable_request'] = '*'
+            layer.setMetaData('ows_title', self.capa.dame_titulo.encode('utf-8'))
+            layer.setMetaData('gml_types', 'auto')
+            #layer.setMetaData('ows_srs','%s epsg:4326'%(proj)) # este campo lo llena el mapa 
+            layer.setMetaData('gml_include_items','all') # por ahora queda asi, y ademas se suman los campos especificos
+            layer.setMetaData('gml_featureid','gid') 
+            layer.setMetaData('wms_enable_request', '*')
+            layer.setMetaData('wfs_enable_request', '*')
             include_items, items_aliases = self.capa.metadatos.dame_gml_atributos() #TODO: revisar condiciones sobre item aliases
             if len(include_items)>0:
-                layer.metadata['gml_include_items'] = ','.join(include_items)
+                layer.setMetaData('gml_include_items',','.join(include_items))
             for alias in items_aliases:
-                layer.metadata['gml_%s_alias'%(alias[0])] = alias[1]
+                layer.setMetaData('gml_%s_alias'%(alias[0]),alias[1])
             
             if self.texto_input!='':
                 try:
