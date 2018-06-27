@@ -4,7 +4,7 @@
 from django.db import models, connection, connections
 from django.contrib.auth.models import User
 from django.conf import settings
-import mapscript
+# import mapscript
 from layerimport.models import TablaGeografica
 from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala
 import os
@@ -27,26 +27,11 @@ import time
 from lxml import etree
 from mapcache.settings import MAPSERVER_URL
 from subprocess import call
+from utils.mapserver import getMSMapObj
 
-#CAPA_DEFAULT_SRS = 4326
-#MAPA_DEFAULT_SRS = 22173
 MAPA_DEFAULT_SRS = 3857
-#MAPA_DEFAULT_SIZE = (800,600)
 MAPA_DEFAULT_SIZE = (110, 150)
-#MAPA_DEFAULT_EXTENT = (92000,90500,113500,112000) 
-#MAPA_DEFAULT_EXTENT = (-180.0,-90.0,180.0,90.0)
-#MAPA_DEFAULT_EXTENT = (-99.730966, -81.833764, -12.144851, -13.093764)
-#MAPA_DEFAULT_EXTENT = (2315520, 2543567, 5144120, 7827023) #22173
-MAPA_DEFAULT_EXTENT = (-20037508.3427892480, -20037508.3427892480, 20037508.3427892480, 20037508.3427892480) #3857 whole world
-#MAPA_DEFAULT_EXTENT = (-6520000, -4125000, -6490000, -4098000) #3857 CABA
-# MAPA_DEFAULT_EXTENT = (-8500000, -7500000,-5950000,-2400000) #3857 ARGENTINA
 MAPA_DEFAULT_IMAGECOLOR = '#C6E2F2' # debe ser formato Hexa
-
-MAPA_FONTSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'fonts.txt')
-MAPA_SYMBOLSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'symbols.txt')
-MAPA_DATA_PATH = '../data'
-MAPA_ERRORFILE = os.path.join(settings.MAPAS_PATH, 'map-error.log')
-
 
 TIPO_DE_MAPA_ENUM = (
     ('', ''),
@@ -361,132 +346,74 @@ class Mapa(models.Model):
     @property
     def dame_projection(self):
         return unicode(self.srs) if self.srs!='' else str(MAPA_DEFAULT_SRS)
-    
-    def dame_mapserver_mapObj(self):
-        mapa = mapscript.mapObj()
-        mapa.name='mapa_'+unicode(self.id_mapa)
 
-        es_hexa, color = self.dame_imagecolor
-        try:
-            if es_hexa:
-                mapa.imagecolor.setHex(color)
-            else:
-                mapa.imagecolor.setRGB(*(color))
-        except:
-            mapa.imagecolor.setHex(MAPA_DEFAULT_IMAGECOLOR)
-        
-        mapa.setSymbolSet(MAPA_SYMBOLSET_FILENAME)
-        mapa.setFontSet(MAPA_FONTSET_FILENAME)
-        mapa.shapepath=MAPA_DATA_PATH
-
-        mapa.outputformat.transparent=True
-            
-        proj=self.dame_projection
-        mapa.setProjection('epsg:%s'%(proj))
-        if proj=='4326':
-            mapa.units=mapscript.MS_DD
-        else:
-            mapa.units=mapscript.MS_METERS
-
-        mapa.legend.updateFromString('LEGEND\n  KEYSIZE 20 10\n  KEYSPACING 5 5\n  LABEL\n    SIZE 10\n    OFFSET 0 0\n    SHADOWSIZE 1 1\n    TYPE TRUETYPE\n  FONT "Swz721lc"\nEND # LABEL\n  STATUS OFF\nEND # LEGEND\n\n')
-        # primero seteamos extent, luego size. sino hay un comportamiento extranio y el extent no se respeta, quizas para igualar relaciones de aspecto entre ambos
-        try:
-            mapa.setExtent(*(self.dame_mapserver_extent(int(proj)))) # si tiene un extent overrideado
-        except:
-            if self.tipo_de_mapa in ('user', 'public_layers'): # en estos casos no los calculamos
-                mapa.setExtent(*(MAPA_DEFAULT_EXTENT))
-            else:
-                try:
-                    ext = self.dame_extent(',', proj)
-                    mapa.setExtent(*(map(lambda x: float(x), ext.split(','))))
-                except:
-                    mapa.setExtent(*(MAPA_DEFAULT_EXTENT))
-        try:
-            mapa.setSize(*(self.dame_mapserver_size))
-        except:
-            mapa.setSize(*(MAPA_DEFAULT_SIZE))
-                    
-        output_geojson=mapscript.outputFormatObj('OGR/GEOJSON', 'GeoJson')
-        output_geojson.setMimetype('application/json; subtype=geojson')
-        output_geojson.setOption('STORAGE', 'stream')
-        output_geojson.setOption('FORM', 'SIMPLE')
-        mapa.appendOutputFormat(output_geojson)
-
-        output_shapefile=mapscript.outputFormatObj('OGR/ESRI Shapefile', 'ShapeZip')
-        output_shapefile.setMimetype('application/shapefile')
-        output_shapefile.setOption('STORAGE', 'filesystem')
-        output_shapefile.setOption('FORM', 'zip')
-        output_shapefile.setOption('FILENAME', self.dame_filename+'.zip')
-        mapa.appendOutputFormat(output_shapefile)
-
-        output_csv=mapscript.outputFormatObj('OGR/CSV', 'CSV')
-        output_csv.setMimetype('text/csv')
-        # output_csv.setOption('LCO:GEOMETRY', 'AS_WKT')
-        output_csv.setOption('STORAGE', 'filesystem')
-        output_csv.setOption('FORM', 'simple')
-        output_csv.setOption('FILENAME', self.dame_filename+'.csv')
-        mapa.appendOutputFormat(output_csv)
-
-        mapa.setConfigOption('MS_ERRORFILE',MAPA_ERRORFILE) 
-        mapa.setConfigOption('PROJ_LIB',settings.PROJ_LIB)
-        mapa.setConfigOption('MS_OPENLAYERS_JS_URL',settings.MS_OPENLAYERS_JS_URL)
-
-        mapa.legend.template = 'templates/legend.html' # TODO: general o solo WMS?
-        # mapa.web.updateFromString('VALIDATION\n \'TEMPLATE\'  \'[a-z/.]+\' \n END') # TODO: general o solo WMS?
-        mapa.web.template = 'templates/mapa-interactivo.html' # TODO: general o solo WMS?
-        
-        mapa.web.imagepath = settings.MAP_WEB_IMAGEPATH
-        mapa.web.imageurl = settings.MAP_WEB_IMAGEURL
-        # mapa.web.template = 'blank.html' # siempre?
-        # NOTA: algunos mapas que hicimos para SSPTIP usan wms_* en lugar de ows_*, no se si estan mal o hay alguna diferencia
-        mapa.setMetaData('ows_title', unicode(self.dame_titulo).encode('UTF-8'))
-        mapa.setMetaData('ows_abstract', unicode(self.dame_descripcion.replace('\r\n', ' ')).encode('UTF-8'))
-        mapa.setMetaData('ows_attribution_title', unicode(self.dame_fuente.replace('\r\n', ' ')).encode('UTF-8'))
-        mapa.setMetaData('ows_contactorganization', unicode(self.dame_contacto.replace('\r\n', ' ')).encode('UTF-8'))
-
+    @property
+    def dame_wxs_url(self):
         if self.tipo_de_mapa=='public_layers':
-            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/'))
-            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/'))
+            return urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/')
         elif self.tipo_de_mapa=='user':
-            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/'))
-            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/'))
+            return urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/')
         elif self.tipo_de_mapa=='layer_original_srs':
-            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/'))
-            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/'))
-        else:
-            mapa.setMetaData('wms_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/'))
-            mapa.setMetaData('wfs_onlineresource', urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/'))
+            return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/')
 
-        mapa.setMetaData('mg_onlineresource', unicode(self.dame_tilesurl).encode('UTF-8'))
-        mapa.setMetaData('mg_siteurl', unicode(settings.SITE_URL).encode('UTF-8'))
-        if self.tms_base_layer:
-            mapa.setMetaData('mg_baselayerurl', self.tms_base_layer.url)
-            mapa.setMetaData('mg_tmsbaselayer', str(self.tms_base_layer.tms))
-        else:
-            mapa.setMetaData('mg_baselayerurl', settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png')
-            mapa.setMetaData('mg_tmsbaselayer', str(True))
-        mapa.setMetaData('mg_mapid', unicode(self.id_mapa))
-
-        mapa.setMetaData('ows_srs', 'epsg:%s epsg:4326'%(proj)) # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
-        mapa.setMetaData('wfs_getfeature_formatlist', 'geojson,shapezip,csv')
-        mapa.setMetaData('ows_encoding', 'UTF-8') # siempre
-        mapa.setMetaData('ows_enable_request', '*')
-        mapa.setMetaData('labelcache_map_edge_buffer', '-10')
-        #mapa.setMetaData('wms_feature_info_mime_type', 'application/json; subtype=geojson')
-        
+        return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
+    
+    def dame_mapserver_map_def(self):
+        es_hexa, color = self.dame_imagecolor
+        srid = self.dame_projection
+        bbox = self.dame_extent(',', srid)
+        mapExtent = self.dame_mapserver_extent(int(srid))
+        wxs_url = self.dame_wxs_url
+        layers = []
         if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general'):
             mapserverlayers = self.mapserverlayer_set.all().order_by('orden_de_capa','capa__metadatos__titulo')
         else: #'public_layers'
             mapserverlayers = self.mapserverlayer_set.filter(capa__wxs_publico=True).order_by('orden_de_capa')
         for msl in mapserverlayers:
             if self.tipo_de_mapa=='general':
-                l=msl.dame_mapserver_layerObj('WMS')
+                l=msl.dame_mapserver_layer_def('WMS')
             else:
-                l=msl.dame_mapserver_layerObj()
-                l.setMetaData('ows_srs','epsg:%s epsg:4326'%(proj))
-            pos=mapa.insertLayer(l)
-            
-        return mapa
+                l=msl.dame_mapserver_layer_def()
+                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid)
+            layers.append(l)
+
+        data = {
+            "idMapa": self.id_mapa,
+            "imageColor": {
+                "type": "hex" if es_hexa else "rgb",
+                "color": color
+            },
+            "srid": srid,
+            "mapFullExtent": mapExtent,
+            "mapBoundingBox": map(lambda x: float(x), bbox.split(',')) if bbox!="" else mapExtent,
+            "mapSize": self.dame_mapserver_size,
+            "fileName": self.dame_filename,
+            "mapType": self.tipo_de_mapa,
+            "metadata": {
+                "ows_title": unicode(self.dame_titulo).encode('UTF-8'),
+                "ows_abstract": unicode(self.dame_descripcion.replace('\r\n', ' ')).encode('UTF-8'),
+                "ows_attribution_title": unicode(self.dame_fuente.replace('\r\n', ' ')).encode('UTF-8'),
+                "ows_contactorganization": unicode(self.dame_contacto.replace('\r\n', ' ')).encode('UTF-8'),
+                "wms_onlineresource": wxs_url,
+                "wfs_onlineresource": wxs_url,
+                "mg_onlineresource": unicode(self.dame_tilesurl).encode('UTF-8'),
+                "mg_siteurl": unicode(settings.SITE_URL).encode('UTF-8'),
+                "mg_baselayerurl": self.tms_base_layer.url if self.tms_base_layer else settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png',
+                "mg_tmsbaselayer": str(self.tms_base_layer.tms) if self.tms_base_layer else str(True),
+                "mg_mapid": unicode(self.id_mapa),
+                "ows_srs": 'epsg:%s epsg:4326'%(srid), # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
+                "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
+                "ows_encoding": 'UTF-8', # siempre
+                "ows_enable_request": '*',
+                "labelcache_map_edge_buffer": '-10'
+            },
+            "layers": layers
+        }
+        
+        return data
+
+    def dame_mapserver_mapObj(self):
+        return getMSMapObj(self.dame_mapserver_map_def())
 
     def escribir_imagen_y_mapfile(self):
         print '...Grabando mapa e imagen de %s (tipo %s)'%(self.id_mapa, self.tipo_de_mapa)
@@ -498,21 +425,6 @@ class Mapa(models.Model):
             print "......imagen creada: %s"%(thumb)
         if self.tipo_de_mapa in ('general', 'layer'):
             self.generar_legend()
-#         if self.tipo_de_mapa == 'layer_original_srs':
-#             if not os.path.isfile(os.path.join(settings.MEDIA_ROOT, self.id_mapa+'.png')):
-#                 self.capas.first().generar_thumbnail()
-#                 print "......imagen creada" 
-# #                 mapa=mapscript.mapObj(os.path.join(settings.MAPAS_PATH, self.id_mapa+'.map')) #reload del mapa para fixear capas de puntos
-# #                 try:
-# #                     mapa.draw().save(os.path.join(settings.MEDIA_ROOT, self.id_mapa+'.png'))
-# #                     print "......imagen creada"
-# #                 except:
-# #                     print "......Fallo la creacion de la imagen!"
-# #                     pass
-#             else:
-#                 print ".....(imagen ya existente, no se regenera)"
-#         elif self.tipo_de_mapa == 'general':
-#             self.generar_thumbnail()
         return mapa
 
     def agregar_a_mapcache(self):
@@ -557,18 +469,6 @@ class Mapa(models.Model):
         #print wms_url
         thumb=os.path.join(settings.MEDIA_ROOT, self.id_mapa+'.png')
         return urlToFile(wms_url, thumb)
-        # try:
-        #     proxy = urllib2.ProxyHandler({})
-        #     opener = urllib2.build_opener(proxy)
-        #     urllib2.install_opener(opener)
-
-        #     with open(thumb,'wb') as f:
-        #         f.write(urllib2.urlopen(wms_url).read())
-        #         f.close()
-        #     return thumb
-        # except:
-        #     print "Error generando preview de mapa %s"%(self.id_mapa)
-        #     return ''
 
     def generar_legend(self):
         # capa = self.capas.first()
@@ -616,9 +516,11 @@ class MapServerLayer(models.Model):
     def __unicode__(self):
         return '%s.%s (%s)'%(unicode(self.mapa),unicode(self.capa),unicode(self.orden_de_capa))
 
-    @property
-    def dame_layer_type(self):
-        return eval('mapscript.MS_LAYER_'+self.capa.tipo_de_geometria.mapserver_type) #medio feo...
+    def dame_layer_connection(self, connectiontype):
+        if connectiontype == 'WMS':
+            return '%s?map=%s.map'%(MAPSERVER_URL, os.path.join(settings.MAPAS_PATH, self.capa.id_capa))
+        else:
+            return self.capa.dame_connection_string
 
     def dame_data(self, srid=None):
         if srid!=None:
@@ -639,93 +541,25 @@ class MapServerLayer(models.Model):
         ManejadorDeMapas.delete_mapfile(self.mapa.id_mapa)
         return True
 
-
+    def dame_mapserver_layer_def(self, connectiontype='POSTGIS'):
+        include_items, items_aliases = self.capa.metadatos.dame_gml_atributos()
+        srid = 4326 if self.mapa.tipo_de_mapa in ('public_layers','user') and self.capa.srid!=4326 else int(self.capa.dame_projection)
+        data = {
+            "connectionType": connectiontype,
+            "layerName": self.capa.nombre,
+            "layerTitle": self.capa.dame_titulo.encode('utf-8'),
+            "layerConnection": self.dame_layer_connection(connectiontype),
+            "layerData": self.dame_data(srid),
+            "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
+            "layerType": 'RASTER' if connectiontype == 'WMS' else self.capa.tipo_de_geometria.mapserver_type,
+            "srid": srid,
+            "metadataIncludeItems": include_items,
+            "metadataAliases": items_aliases,
+            "layerDefinitionOverride": self.texto_input,
+            "metadata": {}
+        }
+        return data
     
-    def dame_mapserver_layerObj(self, connectiontype='POSTGIS'):
-        layer = mapscript.layerObj()
-        layer.name=self.capa.nombre
-        layer.status = mapscript.MS_ON
-        layer.group = 'default' #siempre        
-        layer.template = 'blank.html' 
-                
-        if connectiontype=='WMS':
-            layer.type=mapscript.MS_LAYER_RASTER
-            layer.connectiontype = mapscript.MS_WMS
-            layer.connection = '%s?map=%s.map'%(MAPSERVER_URL, os.path.join(settings.MAPAS_PATH, self.capa.id_capa))
-            
-            layer.setMetaData('wms_srs', 'epsg:3857')
-            layer.setMetaData('wms_name', self.capa.nombre)
-            layer.setMetaData('wms_server_version', '1.1.1')
-            layer.setMetaData('wms_format', 'image/png')
-            if self.archivo_sld is not None:
-                layer.setMetaData('wms_sld_url', (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)))
-        
-        elif connectiontype=='POSTGIS':
-            layer.type=self.dame_layer_type
-            
-            # layer.sizeunits = mapscript.MS_INCHES
-            layer.addProcessing('LABEL_NO_CLIP=ON') 
-            layer.addProcessing('CLOSE_CONNECTION=DEFER')
-            layer.connectiontype = mapscript.MS_POSTGIS
-            layer.connection = self.capa.dame_connection_string
-    
-            srid = 4326 if self.mapa.tipo_de_mapa in ('public_layers','user') and self.capa.srid!=4326 else None
-            layer.data = self.dame_data(srid)
-            #proj='epsg:%s'%(unicode(srid)) if srid!=None else self.capa.dame_projection
-            proj=unicode(srid) if srid!=None else self.capa.dame_projection
-            if proj!='':
-                layer.setProjection('epsg:%s'%(proj))
-            
-            layer.setMetaData('ows_title', self.capa.dame_titulo.encode('utf-8'))
-            layer.setMetaData('gml_types', 'auto')
-            #layer.setMetaData('ows_srs','%s epsg:4326'%(proj)) # este campo lo llena el mapa 
-            layer.setMetaData('gml_include_items','all') # por ahora queda asi, y ademas se suman los campos especificos
-            layer.setMetaData('gml_featureid','gid') 
-            layer.setMetaData('wms_enable_request', '*')
-            layer.setMetaData('wfs_enable_request', '*')
-            include_items, items_aliases = self.capa.metadatos.dame_gml_atributos() #TODO: revisar condiciones sobre item aliases
-            if len(include_items)>0:
-                layer.setMetaData('gml_include_items',','.join(include_items))
-            for alias in items_aliases:
-                layer.setMetaData('gml_%s_alias'%(alias[0]),alias[1])
-            
-            if self.texto_input!='':
-                try:
-                    layer.updateFromString(self.texto_input)
-                except:
-                    pass
-            else:
-                self.agregar_simbologia_basica(layer)
-        return layer
-
-    def agregar_simbologia_basica(self, layer):
-        class1 = mapscript.classObj(layer)
-        class1.name = 'Default'
-        style = mapscript.styleObj(class1)
-        if layer.type==mapscript.MS_LAYER_POINT:
-            style.symbolname='circle'
-            style.size=8
-            style.minsize=8
-            style.maxsize=10
-            style.maxwidth=2
-            style.outlinecolor.setRGB(0, 0, 255)
-            style.color.setRGB(150, 150, 150)
-        elif layer.type==mapscript.MS_LAYER_POLYGON:
-            style.outlinecolor.setRGB(250, 50, 50)
-            style.color.setRGB(150, 150, 150)
-        elif layer.type==mapscript.MS_LAYER_LINE:
-            style.color.setRGB(80, 80, 80)
-            style.width=4
-            style.minwidth=4
-            style.maxwidth=6
-            style2 = mapscript.styleObj(class1)
-            style2.color.setRGB(255, 255, 0)
-            style2.width=2
-            style2.minwidth=2
-            style2.maxwidth=4
-
-                
-
 
 @receiver(post_save, sender=Capa)
 def onCapaPostSave(sender, instance, created, **kwargs):
@@ -757,16 +591,6 @@ def onCapaPostSave(sender, instance, created, **kwargs):
 
         # actualizamos el mapa de usuario
         ManejadorDeMapas.delete_mapfile(instance.owner.username)
-        
-#         #mapa_usuario, created = Mapa.objects.get_or_create(owner=instance.owner,nombre=instance.owner.username,id_mapa=instance.owner.username, tipo_de_mapa='user')
-#         try:
-#             mapa_usuario=Mapa.objects.get(owner=instance.owner,nombre=instance.owner.username,id_mapa=instance.owner.username, tipo_de_mapa='user')
-#         except:
-#             mapa_usuario=Mapa(owner=instance.owner,nombre=instance.owner.username,id_mapa=instance.owner.username, tipo_de_mapa='user')
-#             mapa_usuario.save(escribir_imagen_y_mapfile=False)
-#         MapServerLayer(mapa=mapa_usuario,capa=instance,orden_de_capa=len(mapa_usuario.capas.all())+1).save() 
-#         mapa_usuario.save()
-
 
         # actualizamos el mapa de capas públicas
         ManejadorDeMapas.delete_mapfile('mapground_public_layers')
