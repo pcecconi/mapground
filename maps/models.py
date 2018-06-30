@@ -673,12 +673,12 @@ def onArchivoSLDPostSave(sender, instance, **kwargs):
         try:
             root = tree.getroot()
             root.findall('*/{http://www.opengis.net/se}Name')[0].text = instance.capa.nombre
-            sizes = root.findall('.//{http://www.opengis.net/se}Size')
-            for s in sizes:
-                s.text = str(float(s.text)*3.5)
-            stroke_widths = root.findall(".//{http://www.opengis.net/se}SvgParameter[@name='stroke-width']")
-            for s in stroke_widths:
-                s.text = str(float(s.text)*3.5)
+            # sizes = root.findall('.//{http://www.opengis.net/se}Size')
+            # for s in sizes:
+            #     s.text = str(float(s.text)*3.5)
+            # stroke_widths = root.findall(".//{http://www.opengis.net/se}SvgParameter[@name='stroke-width']")
+            # for s in stroke_widths:
+            #     s.text = str(float(s.text)*3.5)
             properties = root.findall('.//{http://www.opengis.net/ogc}PropertyName')
             for p in properties:
                 p.text = p.text.lower()

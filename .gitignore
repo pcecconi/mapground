@@ -21,3 +21,4 @@ mapfiles/map-error.log
 mapfiles/*.map
 .vagrant
 .vscode
+*console.log
