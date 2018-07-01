@@ -71,7 +71,7 @@ h3 {
 }
 
 .th-large .thumbnail >.actions {
-	display: none;
+	display: block;
 }
 .thumbnail>.actions {
 	position: absolute;
