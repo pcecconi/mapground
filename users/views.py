@@ -6,7 +6,7 @@ from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from proxy import views
 from layers.views import logged_in_or_basicauth
-from mapcache.settings import MAPSERVER_URL
+# from mapcache.settings import MAPSERVER_URL
 from django.contrib.auth.models import User, Group
 from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
@@ -16,7 +16,7 @@ from django.http import HttpResponse,HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from layers.models import Capa
 from maps.models import Mapa, ManejadorDeMapas
-
+from utils import mapserver
 import os
 
 
@@ -27,8 +27,9 @@ def wxs(request, username):
         return HttpResponseForbidden()
     
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.get_mapfile(username)
-    remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
+    mapfile=ManejadorDeMapas.commit_mapfile(username)
+    # remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
+    remote_url = mapserver.get_wms_url(username)
     return views.proxy_view(request, remote_url, extra_requests_args)
 
 @login_required

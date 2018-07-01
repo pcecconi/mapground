@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.conf import settings
-from mapcache.settings import MAPSERVER_URL
+# from mapcache.settings import MAPSERVER_URL
 import os
 import mapscript
 
@@ -17,7 +17,33 @@ MAPA_ERRORFILE = os.path.join(settings.MAPAS_PATH, 'map-error.log')
 class MS_LAYER_TYPE: 
     MS_LAYER_POINT, MS_LAYER_LINE, MS_LAYER_POLYGON, MS_LAYER_RASTER, MS_LAYER_ANNOTATION, MS_LAYER_QUERY, MS_LAYER_CIRCLE, MS_LAYER_TILEINDEX, MS_LAYER_CHART = range(9)
 
-def getMSMapObj(data):
+def __agregar_simbologia_basica__(layer):
+    class1 = mapscript.classObj(layer)
+    class1.name = 'Default'
+    style = mapscript.styleObj(class1)
+    if layer.type==mapscript.MS_LAYER_POINT:
+        style.symbolname='circle'
+        style.size=8
+        style.minsize=8
+        style.maxsize=10
+        style.maxwidth=2
+        style.outlinecolor.setRGB(0, 0, 255)
+        style.color.setRGB(150, 150, 150)
+    elif layer.type==mapscript.MS_LAYER_POLYGON:
+        style.outlinecolor.setRGB(250, 50, 50)
+        style.color.setRGB(150, 150, 150)
+    elif layer.type==mapscript.MS_LAYER_LINE:
+        style.color.setRGB(80, 80, 80)
+        style.width=4
+        style.minwidth=4
+        style.maxwidth=6
+        style2 = mapscript.styleObj(class1)
+        style2.color.setRGB(255, 255, 0)
+        style2.width=2
+        style2.minwidth=2
+        style2.maxwidth=4
+
+def create_mapfile(data, save=True):
     mapa = mapscript.mapObj()
     mapa.name='mapa_'+unicode(data['idMapa'])
 
@@ -99,13 +125,17 @@ def getMSMapObj(data):
 
     try:
         for layer_def in data['layers']:
-            mapa.insertLayer(getMSLayerObj(layer_def))
+            mapa.insertLayer(create_ms_layer(layer_def))
     except:
         print "Failed to insert layers on mapfile"
     
+    if save:
+        mapa.save(os.path.join(settings.MAPAS_PATH, data['idMapa']+'.map'))
+        print "......mapa guardado %s"%(data['idMapa']+'.map')
+
     return mapa
 
-def getMSLayerObj(data):
+def create_ms_layer(data):
     layer = mapscript.layerObj()
     layer.name = data['layerName']
     layer.status = mapscript.MS_ON
@@ -158,7 +188,7 @@ def getMSLayerObj(data):
             except:
                 pass
         else:
-            agregar_simbologia_basica(layer)
+            __agregar_simbologia_basica__(layer)
             
     try:
         for k, v in data['metadata'].iteritems():
@@ -168,28 +198,57 @@ def getMSLayerObj(data):
 
     return layer
 
-def agregar_simbologia_basica(layer):
-    class1 = mapscript.classObj(layer)
-    class1.name = 'Default'
-    style = mapscript.styleObj(class1)
-    if layer.type==mapscript.MS_LAYER_POINT:
-        style.symbolname='circle'
-        style.size=8
-        style.minsize=8
-        style.maxsize=10
-        style.maxwidth=2
-        style.outlinecolor.setRGB(0, 0, 255)
-        style.color.setRGB(150, 150, 150)
-    elif layer.type==mapscript.MS_LAYER_POLYGON:
-        style.outlinecolor.setRGB(250, 50, 50)
-        style.color.setRGB(150, 150, 150)
-    elif layer.type==mapscript.MS_LAYER_LINE:
-        style.color.setRGB(80, 80, 80)
-        style.width=4
-        style.minwidth=4
-        style.maxwidth=6
-        style2 = mapscript.styleObj(class1)
-        style2.color.setRGB(255, 255, 0)
-        style2.width=2
-        style2.minwidth=2
-        style2.maxwidth=4
+def get_wms_url(id_mapa):
+    return '%s?map=%s.map'%(
+        settings.MAPSERVER_URL, # url mapserver cgi
+        os.path.join(settings.MAPAS_PATH, id_mapa) # absolute mapfile path
+    )
+
+def get_wms_request_url(id_mapa, layers, srs, width, height, extent, sld_url=''):
+    wms_req_url = '%s&LAYERS=%s&SRS=epsg:%s&MAP_RESOLUTION=96&SERVICE=WMS&FORMAT=image/png&REQUEST=GetMap&HEIGHT=%d&FORMAT_OPTIONS=dpi:96&WIDTH=%d&VERSION=1.1.1&BBOX=%s&STYLES=&TRANSPARENT=TRUE&DPI=96'
+    url = wms_req_url%(
+        get_wms_url(id_mapa),
+        layers,
+        srs,
+        height,
+        width,
+        extent
+    )
+    if sld_url!='':
+        url += '&sld='+sld_url
+    return url
+
+def get_legend_graphic_url(id_mapa, layer_name, sld_url=''):
+    legend_url = '%s&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=%s&STYLE='
+    url = legend_url%(
+        get_wms_url(id_mapa),
+        layer_name
+    )
+    if sld_url!='':
+        url += '&sld='+sld_url
+    return url
+
+def get_map_browser_url(id_mapa):
+    return '%s&mode=browse&layers=all'%(
+        get_wms_url(id_mapa)
+    )
+
+def get_featureinfo_url(id_mapa, bbox, width, height, query_layers, i, j):
+    req_url = '%s&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&BBOX=%s&CRS=epsg:3857&WIDTH=%s&HEIGHT=%s&LAYERS=default&STYLES=&FORMAT=image/png&QUERY_LAYERS=%s&INFO_FORMAT=application/vnd.ogc.gml&I=%s&J=%s'
+    return req_url%(
+        get_wms_url(id_mapa),
+        bbox,
+        width,
+        height,
+        query_layers,
+        i,
+        j
+    )
+
+def get_feature_url(id_mapa, typename, outputformat):
+    req_url = '%s&SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=%s&outputformat=%s'
+    return req_url%(
+        get_wms_url(id_mapa),
+        typename,
+        outputformat
+    )

@@ -9,7 +9,7 @@ from django.contrib.auth.decorators import login_required
 from proxy import views
 from maps.models import Mapa, ManejadorDeMapas, TMSBaseLayer, MapServerLayer
 from maps.forms import MapaForm
-from mapcache.settings import MAPSERVER_URL
+# from mapcache.settings import MAPSERVER_URL
 from django.shortcuts import get_object_or_404
 
 from layers.models import Categoria, Escala, Capa
@@ -22,6 +22,7 @@ import urllib2
 # from utils.xml_to_json import xml_to_json
 import xml.etree.cElementTree as etree
 import json
+from utils import mapserver
 
 # @login_required
 def index(request):
@@ -111,7 +112,7 @@ def detalle_mapa(request, id_mapa):
     ManejadorDePermisos.anotar_permiso_a_mapa(request.user, mapa)
     if mapa.permiso is None:
         return HttpResponseRedirect(reverse('maps:index'))
-    ManejadorDeMapas.get_mapfile(id_mapa) 
+    ManejadorDeMapas.commit_mapfile(id_mapa) 
     return render(request, 'maps/detalle_mapa.html', {'mapa': mapa, 'MAPCACHE_URL': settings.MAPCACHE_URL })
 
 @login_required
@@ -278,12 +279,13 @@ def embeddable(request, id_mapa):
         return HttpResponseForbidden()
     	
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.get_mapfile(id_mapa)
+    mapfile=ManejadorDeMapas.commit_mapfile(id_mapa)
     if m.tipo_de_mapa == 'general':
     	for c in m.capas.all():
-    		ManejadorDeMapas.get_mapfile(c.id_capa)
+    		ManejadorDeMapas.commit_mapfile(c.id_capa)
     
-    remote_url = MAPSERVER_URL+'?map='+mapfile +'&mode=browse&layers=all'
+    # remote_url = MAPSERVER_URL+'?map='+mapfile +'&mode=browse&layers=all'
+    remote_url = mapserver.get_map_browser_url(id_mapa)
     # print remote_url
     return views.proxy_view(request, remote_url, extra_requests_args)
 
@@ -303,10 +305,10 @@ def getfeatureinfo(request, id_mapa):
         return HttpResponseForbidden()
         
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.get_mapfile(id_mapa)
+    mapfile=ManejadorDeMapas.commit_mapfile(id_mapa)
     if m.tipo_de_mapa == 'general':
         for c in m.capas.all():
-            ManejadorDeMapas.get_mapfile(c.id_capa)
+            ManejadorDeMapas.commit_mapfile(c.id_capa)
     
     bbox=request.GET.get('BBOX')
     w=request.GET.get('WIDTH')
@@ -319,7 +321,8 @@ def getfeatureinfo(request, id_mapa):
     for msl in m.mapserverlayer_set.filter(feature_info=True).order_by('-orden_de_capa'):
         c=msl.capa
         id_layer=c.nombre
-        remote_url = MAPSERVER_URL+'?map='+mapfile +'&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&BBOX=%s&CRS=epsg:3857&WIDTH=%s&HEIGHT=%s&LAYERS=default&STYLES=&FORMAT=image/png&QUERY_LAYERS=%s&INFO_FORMAT=application/vnd.ogc.gml&I=%s&J=%s'%(bbox, w, h, id_layer, i, j)
+        # remote_url = settings.MAPSERVER_URL+'?map='+mapfile +'&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&BBOX=%s&CRS=epsg:3857&WIDTH=%s&HEIGHT=%s&LAYERS=default&STYLES=&FORMAT=image/png&QUERY_LAYERS=%s&INFO_FORMAT=application/vnd.ogc.gml&I=%s&J=%s'%(bbox, w, h, id_layer, i, j)
+        remote_url = mapserver.get_featureinfo_url(id_mapa, bbox, w, h, id_layer, i, j)
         response = urllib2.urlopen(remote_url)
         parser = etree.XMLParser(encoding="utf-8")
         tree = etree.parse(response, parser=parser)
@@ -350,8 +353,9 @@ def legend(request, id_mapa):
     
     capa = mapa.capas.first()
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.get_mapfile(id_mapa)
-    remote_url = MAPSERVER_URL+'?map='+mapfile +'&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=%s&STYLE=&SLD=%s'%(capa.nombre,capa.dame_sld_default())
+    mapfile=ManejadorDeMapas.commit_mapfile(id_mapa)
+    remote_url = mapserver.get_legend_graphic_url(id_mapa, capa.nombre, capa.dame_sld_default())
+    # remote_url = MAPSERVER_URL+'?map='+mapfile +'&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=%s&STYLE=&SLD=%s'%(capa.nombre,capa.dame_sld_default())
     return views.proxy_view(request, remote_url, extra_requests_args)
 
 def visor(request, id_mapa=None):

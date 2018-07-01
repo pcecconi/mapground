@@ -19,7 +19,7 @@ from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Esca
 from maps.models import Mapa, ManejadorDeMapas
 from layerimport.models import TablaGeografica
 from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, EscalaForm, AreaTematicaForm
-from mapcache.settings import MAPSERVER_URL
+# from mapcache.settings import MAPSERVER_URL
 from users.models import ManejadorDePermisos, PermisoDeCapa, PermisoDeCapaPorGrupo
 # utils
 from utils.commons import normalizar_texto, aplicar_callback, paginar_y_elegir_pagina
@@ -28,7 +28,7 @@ from datetime import datetime
 
 import base64
 from django.contrib.auth import authenticate, login
-
+from utils import mapserver
 
 
 #############################################################################
@@ -189,7 +189,7 @@ def detalle_capa(request, id_capa):
     ManejadorDePermisos.anotar_permiso_a_capa(request.user, capa)
     if capa.permiso is None:
         return HttpResponseRedirect(reverse('layers:index'))
-    ManejadorDeMapas.get_mapfile(id_capa)        
+    ManejadorDeMapas.commit_mapfile(id_capa)        
     permisos=ManejadorDePermisos.usuarios_con_permiso_a_capa(capa)
     
     if request.user==capa.owner or request.user.is_superuser:
@@ -452,8 +452,9 @@ def wxs(request, id_capa):
         return HttpResponseForbidden()
 
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.get_mapfile(id_capa+'_layer_srs')
-    remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
+    mapfile=ManejadorDeMapas.commit_mapfile(id_capa+'_layer_srs')
+    # remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
+    remote_url = mapserver.get_wms_url(id_capa+'_layer_srs')
     sld = capa.dame_sld_default()
     if sld != None:
         remote_url = remote_url + '&SLD='+sld
@@ -462,8 +463,9 @@ def wxs(request, id_capa):
 
 def wxs_public(request):
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.get_mapfile('mapground_public_layers')
-    remote_url = MAPSERVER_URL+'?map='+mapfile
+    mapfile=ManejadorDeMapas.commit_mapfile('mapground_public_layers')
+    # remote_url = MAPSERVER_URL+'?map='+mapfile
+    remote_url = mapserver.get_wms_url('mapground_public_layers')
     return views.proxy_view(request, remote_url, extra_requests_args)
 
 # @login_required
@@ -475,8 +477,9 @@ def download(request, id_capa, format='shapezip'):
     extra_requests_args = {}
     if format not in ['shapezip', 'geojson', 'csv']:
         format = 'shapezip'
-    mapfile=ManejadorDeMapas.get_mapfile(id_capa+'_layer_srs')
-    remote_url = MAPSERVER_URL+'?map='+mapfile+'&SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME='+capa.nombre+'&outputformat='+format
+    mapfile=ManejadorDeMapas.commit_mapfile(id_capa+'_layer_srs')
+    # remote_url = MAPSERVER_URL+'?map='+mapfile+'&SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME='+capa.nombre+'&outputformat='+format
+    remote_url = mapserver.get_feature_url(id_capa+'_layer_srs', capa.nombre, format)
     print remote_url
     return views.proxy_view(request, remote_url, extra_requests_args)
 

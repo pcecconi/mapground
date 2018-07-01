@@ -44,6 +44,8 @@ WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL,'layers/wxs/')
 VISOR_INITIAL_EXTENT = '-135 -60 135 60'
 VISOR = True
 
+MAPSERVER_URL = 'http://localhost:8080/cgi-bin/mapserv'
+
 if DEBUG:
     from settings_dev_db import *
     MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'

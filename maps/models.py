@@ -25,9 +25,8 @@ import urllib
 import urllib2
 import time
 from lxml import etree
-from mapcache.settings import MAPSERVER_URL
 from subprocess import call
-from utils.mapserver import getMSMapObj
+from utils import mapserver
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -81,8 +80,8 @@ class ManejadorDeMapas:
         
 
     @classmethod
-    def get_mapfile(cls,id_mapa):
-        print "ManejadorDeMapas.get_mapfile: %s" %(id_mapa)
+    def commit_mapfile(cls,id_mapa):
+        print "ManejadorDeMapas.commit_mapfile: %s" %(id_mapa)
         mapfile_full_path=os.path.join(settings.MAPAS_PATH, id_mapa+'.map')
         if not os.path.isfile(mapfile_full_path):
             if id_mapa=='mapground_public_layers':
@@ -91,7 +90,7 @@ class ManejadorDeMapas:
                 try:
                     mapa=Mapa.objects.get(id_mapa=id_mapa)
                 except:
-                    print "....ManejadorDeMapas.get_mapfile: ERROR: mapa inexistente %s" %(mapfile_full_path) 
+                    print "....ManejadorDeMapas.commit_mapfile: ERROR: mapa inexistente %s" %(mapfile_full_path) 
                     return ''
                 if mapa.tipo_de_mapa=='user':
                     cls.regenerar_mapas_de_usuarios([mapa.owner])
@@ -214,7 +213,7 @@ class Mapa(models.Model):
             self.id_mapa = '%s_%s'%(self.owner.username,self.nombre)
 
         try:
-            msm=self.dame_mapserver_mapObj()
+            msm=self.createMapfile(False)
             self.texto_output=msm.convertToString()[0:9999]
         except:
             self.texto_output=''
@@ -222,7 +221,8 @@ class Mapa(models.Model):
             self.actualizar_input_search_index()
         super(Mapa, self).save(*args, **kwargs)
         if escribir_imagen_y_mapfile:
-            mapa = self.escribir_imagen_y_mapfile()
+            self.create_mapfile(True)
+            self.generar_thumbnail_y_legend()
             if self.tipo_de_mapa in ('layer', 'general'):
                 self.agregar_a_mapcache()
         return True
@@ -412,20 +412,20 @@ class Mapa(models.Model):
         
         return data
 
-    def dame_mapserver_mapObj(self):
-        return getMSMapObj(self.dame_mapserver_map_def())
+    def create_mapfile(self, save=True):
+        return mapserver.create_mapfile(self.dame_mapserver_map_def(), save)
 
-    def escribir_imagen_y_mapfile(self):
+    def generar_thumbnail_y_legend(self):
         print '...Grabando mapa e imagen de %s (tipo %s)'%(self.id_mapa, self.tipo_de_mapa)
-        mapa=self.dame_mapserver_mapObj()
-        mapa.save(os.path.join(settings.MAPAS_PATH, self.id_mapa+'.map'))
-        print "......mapa guardado %s"%(self.id_mapa+'.map')
+        # mapa=self.dame_mapserver_mapObj()
+        # mapa.save(os.path.join(settings.MAPAS_PATH, self.id_mapa+'.map'))
+        # print "......mapa guardado %s"%(self.id_mapa+'.map')
         if self.tipo_de_mapa in ('layer_original_srs', 'general'):
             thumb = self.generar_thumbnail()
             print "......imagen creada: %s"%(thumb)
         if self.tipo_de_mapa in ('general', 'layer'):
             self.generar_legend()
-        return mapa
+        return True
 
     def agregar_a_mapcache(self):
         manage.remove([self.id_mapa])
@@ -452,18 +452,18 @@ class Mapa(models.Model):
         manage.add([self.id_mapa+params])
 
     def generar_thumbnail(self):
-        mapfile=ManejadorDeMapas.get_mapfile(self.id_mapa)
-        wms_url = '%s?map=%s'%(MAPSERVER_URL, mapfile)
+        mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
         if self.tipo_de_mapa == 'general':
             for c in self.capas.all():  # es necesario regenerar todo mapfile inexistente
-                ManejadorDeMapas.get_mapfile(c.id_capa)
-            wms_url += '&LAYERS=%s&SRS=epsg:%s&MAP_RESOLUTION=96&SERVICE=WMS&FORMAT=image/png&REQUEST=GetMap&HEIGHT=%d&FORMAT_OPTIONS=dpi:96&WIDTH=%d&VERSION=1.1.1&BBOX=%s&STYLES=&TRANSPARENT=TRUE&DPI=96'%('default', self.srs, 150, 110, self.dame_extent(',','3857'))
+                ManejadorDeMapas.commit_mapfile(c.id_capa)
+            wms_url = mapserver.get_wms_request_url(self.id_mapa, 'default', self.srs, 150, 110, self.dame_extent(',','3857'))
         elif self.tipo_de_mapa=='layer_original_srs':
             c=self.capas.first()
-            wms_url += '&LAYERS=%s&SRS=epsg:%s&MAP_RESOLUTION=96&SERVICE=WMS&FORMAT=image/png&REQUEST=GetMap&HEIGHT=%d&FORMAT_OPTIONS=dpi:96&WIDTH=%d&VERSION=1.1.1&BBOX=%s&STYLES=&TRANSPARENT=TRUE&DPI=96'%(c.nombre, str(c.srid), 150, 110, c.dame_extent())
+            wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 150, 110, c.dame_extent())
             try:
                 sld=c.archivosld_set.filter(default=True)[0]
-                wms_url+='&sld=%s'%(urlparse.urljoin(settings.SITE_URL, sld.filename.url))
+                sld_url = getSldUrl(sld.filename.url)
+                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 150, 110, c.dame_extent(), sld_url)
             except:
                 pass 
         #print wms_url
@@ -472,12 +472,12 @@ class Mapa(models.Model):
 
     def generar_legend(self):
         # capa = self.capas.first()
-        mapfile=ManejadorDeMapas.get_mapfile(self.id_mapa)
+        mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
         filelist = []
         for mslayer in self.mapserverlayer_set.all():
             try:
                 sld = urlparse.urljoin(settings.SITE_URL, mslayer.archivo_sld.filename.url) if mslayer.archivo_sld else mslayer.capa.dame_sld_default()
-                url = MAPSERVER_URL+'?map='+mapfile +'&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=%s&STYLE=&SLD=%s'%(mslayer.capa.nombre,sld)
+                url = mapserver.get_legend_graphic_url(self.id_mapa, mslayer.capa.nombre, sld)
                 filename=os.path.join(settings.MEDIA_ROOT, self.id_mapa+('_legend_%i.png'%mslayer.orden_de_capa))
                 filelist.append(filename)
                 urlToFile(url, filename)
@@ -518,7 +518,7 @@ class MapServerLayer(models.Model):
 
     def dame_layer_connection(self, connectiontype):
         if connectiontype == 'WMS':
-            return '%s?map=%s.map'%(MAPSERVER_URL, os.path.join(settings.MAPAS_PATH, self.capa.id_capa))
+            return mapserver.get_wms_url(self.capa.id_capa)
         else:
             return self.capa.dame_connection_string
 
@@ -638,6 +638,8 @@ def onMapaPostDelete(sender, instance, **kwargs):
     except:
         pass    
 
+def getSldUrl(sld_file_url):
+    return urlparse.urljoin(settings.SITE_URL, sld_file_url)
 
 def generarThumbnailSLD(capa, sld):
     e = map(float, capa.dame_extent(',', 3857).split(','))
@@ -646,9 +648,9 @@ def generarThumbnailSLD(capa, sld):
     z = (ey - ex)/2 if ey > ex else (ex - ey)/2
     e2 = [e[0], e[1]+z, e[2], e[3]-z] if ey > ex else [e[0]+z, e[1], e[2]-z, e[3]]
     extent = ','.join(map(str, e2))
-    sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
-    mapfile = ManejadorDeMapas.get_mapfile(capa.id_capa)
-    wms_url = '%s?map=%s&LAYERS=%s&SRS=epsg:3857&MAP_RESOLUTION=96&SERVICE=WMS&FORMAT=image/png&REQUEST=GetMap&HEIGHT=%d&FORMAT_OPTIONS=dpi:96&WIDTH=%d&VERSION=1.1.1&BBOX=%s&STYLES=&TRANSPARENT=TRUE&DPI=96&sld=%s'%(MAPSERVER_URL, mapfile, capa.nombre, 150, 150, extent, sld_url)
+    sld_url = getSldUrl(sld.filename.url)
+    mapfile = ManejadorDeMapas.commit_mapfile(capa.id_capa)
+    wms_url = mapserver.get_wms_request_url(capa.id_capa, capa.nombre, '3857', 150, 150, extent, sld_url)
     print wms_url
     thumb = os.path.splitext(sld.filename.path)[0]+'.png'
     try:
