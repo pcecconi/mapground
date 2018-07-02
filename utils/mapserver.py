@@ -198,16 +198,16 @@ def create_ms_layer(data):
 
     return layer
 
-def get_wms_url(id_mapa):
+def get_wms_url(map_id):
     return '%s?map=%s.map'%(
         settings.MAPSERVER_URL, # url mapserver cgi
-        os.path.join(settings.MAPAS_PATH, id_mapa) # absolute mapfile path
+        os.path.join(settings.MAPAS_PATH, map_id) # absolute mapfile path
     )
 
-def get_wms_request_url(id_mapa, layers, srs, width, height, extent, sld_url=''):
+def get_wms_request_url(map_id, layers, srs, width, height, extent, sld_url=''):
     wms_req_url = '%s&LAYERS=%s&SRS=epsg:%s&MAP_RESOLUTION=96&SERVICE=WMS&FORMAT=image/png&REQUEST=GetMap&HEIGHT=%d&FORMAT_OPTIONS=dpi:96&WIDTH=%d&VERSION=1.1.1&BBOX=%s&STYLES=&TRANSPARENT=TRUE&DPI=96'
     url = wms_req_url%(
-        get_wms_url(id_mapa),
+        get_wms_url(map_id),
         layers,
         srs,
         height,
@@ -218,25 +218,25 @@ def get_wms_request_url(id_mapa, layers, srs, width, height, extent, sld_url='')
         url += '&sld='+sld_url
     return url
 
-def get_legend_graphic_url(id_mapa, layer_name, sld_url=''):
+def get_legend_graphic_url(map_id, layer_name, sld_url=''):
     legend_url = '%s&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=%s&STYLE='
     url = legend_url%(
-        get_wms_url(id_mapa),
+        get_wms_url(map_id),
         layer_name
     )
-    if sld_url!='':
+    if sld_url and sld_url!='':
         url += '&sld='+sld_url
     return url
 
-def get_map_browser_url(id_mapa):
+def get_map_browser_url(map_id):
     return '%s&mode=browse&layers=all'%(
-        get_wms_url(id_mapa)
+        get_wms_url(map_id)
     )
 
-def get_featureinfo_url(id_mapa, bbox, width, height, query_layers, i, j):
+def get_featureinfo_url(map_id, bbox, width, height, query_layers, i, j):
     req_url = '%s&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&BBOX=%s&CRS=epsg:3857&WIDTH=%s&HEIGHT=%s&LAYERS=default&STYLES=&FORMAT=image/png&QUERY_LAYERS=%s&INFO_FORMAT=application/vnd.ogc.gml&I=%s&J=%s'
     return req_url%(
-        get_wms_url(id_mapa),
+        get_wms_url(map_id),
         bbox,
         width,
         height,
@@ -245,10 +245,10 @@ def get_featureinfo_url(id_mapa, bbox, width, height, query_layers, i, j):
         j
     )
 
-def get_feature_url(id_mapa, typename, outputformat):
+def get_feature_url(map_id, typename, outputformat):
     req_url = '%s&SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=%s&outputformat=%s'
     return req_url%(
-        get_wms_url(id_mapa),
+        get_wms_url(map_id),
         typename,
         outputformat
     )

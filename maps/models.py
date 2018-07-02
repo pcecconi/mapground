@@ -19,7 +19,7 @@ from djorm_pgfulltext.models import SearchManager
 from djorm_pgfulltext.fields import VectorField
 # misc
 from utils.commons import normalizar_texto, urlToFile, coordConvert
-from mapcache import manage
+# from mapcache import manage
 import urlparse
 import urllib
 import urllib2
@@ -27,6 +27,7 @@ import time
 from lxml import etree
 from subprocess import call
 from utils import mapserver
+from mapcache import mapcache
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -428,28 +429,36 @@ class Mapa(models.Model):
         return True
 
     def agregar_a_mapcache(self):
-        manage.remove([self.id_mapa])
-        params = ''
+        # manage.remove([self.id_mapa])
+        mapcache.remove_map(self.id_mapa)
+        # params = ''
+        sld_url = ''
         if self.tipo_de_mapa == 'layer':
             capa = self.mapserverlayer_set.first().capa
-            params = ':%s:%d'%(capa.nombre, MAPA_DEFAULT_SRS)
+            # params = ':%s:%d'%(capa.nombre, MAPA_DEFAULT_SRS)
+            layers = capa.nombre
+            srid = MAPA_DEFAULT_SRS
             for sld in capa.archivosld_set.all():
-                manage.remove([self.id_mapa+('$%d'%sld.id)])
+                # manage.remove([self.id_mapa+('$%d'%sld.id)])
+                mapcache.remove_map(self.id_mapa, sld.id)
                 sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
-                if sld.default:
-                    params = ':%s:%d:%s'%(capa.nombre, MAPA_DEFAULT_SRS, sld_url)
-                pars = ':%s:%d:%s$%d'%(capa.nombre, MAPA_DEFAULT_SRS, sld_url, sld.id)
-                print 'Mapcache capa: %s sld %d params: %s'%(capa.nombre, sld.id, pars)
-                manage.add([self.id_mapa+pars])
+                # if sld.default:
+                #     params = ':%s:%d:%s'%(capa.nombre, MAPA_DEFAULT_SRS, sld_url)
+                # pars = ':%s:%d:%s$%d'%(capa.nombre, MAPA_DEFAULT_SRS, sld_url, sld.id)
+                # print 'Mapcache capa: %s sld %d params: %s'%(capa.nombre, sld.id, pars)
+                mapcache.add_map(self.id_mapa, layers, srid, sld.id, sld_url)
+                # manage.add([self.id_mapa+pars])
             # default_sld = capa.dame_sld_default()
             # if default_sld is not None:
             #     params = ':%s:%d:%s'%(capa.nombre, MAPA_DEFAULT_SRS, default_sld)
             # else:
             #     params = ':%s:%d'%(capa.nombre, MAPA_DEFAULT_SRS)
         elif self.tipo_de_mapa == 'general':
-            params = ':%s:%d'%('default', MAPA_DEFAULT_SRS)
+            layers = 'default'
+            # params = ':%s:%d'%('default', MAPA_DEFAULT_SRS)
                 
-        manage.add([self.id_mapa+params])
+        # manage.add([self.id_mapa+params])
+        mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
 
     def generar_thumbnail(self):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
@@ -475,13 +484,14 @@ class Mapa(models.Model):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
         filelist = []
         for mslayer in self.mapserverlayer_set.all():
+            sld = urlparse.urljoin(settings.SITE_URL, mslayer.archivo_sld.filename.url) if mslayer.archivo_sld else mslayer.capa.dame_sld_default()
+            url = mapserver.get_legend_graphic_url(self.id_mapa, mslayer.capa.nombre, sld)
+            filename=os.path.join(settings.MEDIA_ROOT, self.id_mapa+('_legend_%i.png'%mslayer.orden_de_capa))
+            filelist.append(filename)
             try:
-                sld = urlparse.urljoin(settings.SITE_URL, mslayer.archivo_sld.filename.url) if mslayer.archivo_sld else mslayer.capa.dame_sld_default()
-                url = mapserver.get_legend_graphic_url(self.id_mapa, mslayer.capa.nombre, sld)
-                filename=os.path.join(settings.MEDIA_ROOT, self.id_mapa+('_legend_%i.png'%mslayer.orden_de_capa))
-                filelist.append(filename)
                 urlToFile(url, filename)
             except:
+                print '\nFailed to create legend file %s\n'%filename
                 return False
         try:
             call('convert %s -background "rgba(0,0,0,0)" -append %s'%(' '.join(filelist), os.path.join(settings.MEDIA_ROOT, self.id_mapa+'_legend.png')), shell=True)
@@ -628,7 +638,8 @@ def onCapaPostDelete(sender, instance, **kwargs):
 def onMapaPostDelete(sender, instance, **kwargs):
     print 'onMapaPostDelete %s'%(str(instance))
     if instance.tipo_de_mapa == 'layer':
-        manage.remove([instance.id_mapa])
+        # manage.remove([instance.id_mapa])
+        mapcache.remove_map(instance.id_mapa)
     try:
         os.remove(os.path.join(settings.MAPAS_PATH, instance.id_mapa+'.map'))
     except:
