@@ -19,7 +19,6 @@ from djorm_pgfulltext.models import SearchManager
 from djorm_pgfulltext.fields import VectorField
 # misc
 from utils.commons import normalizar_texto, urlToFile, coordConvert
-# from mapcache import manage
 import urlparse
 import urllib
 import urllib2
@@ -429,9 +428,7 @@ class Mapa(models.Model):
         return True
 
     def agregar_a_mapcache(self):
-        # manage.remove([self.id_mapa])
         mapcache.remove_map(self.id_mapa)
-        # params = ''
         sld_url = ''
         if self.tipo_de_mapa == 'layer':
             capa = self.mapserverlayer_set.first().capa
@@ -439,25 +436,12 @@ class Mapa(models.Model):
             layers = capa.nombre
             srid = MAPA_DEFAULT_SRS
             for sld in capa.archivosld_set.all():
-                # manage.remove([self.id_mapa+('$%d'%sld.id)])
                 mapcache.remove_map(self.id_mapa, sld.id)
                 sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
-                # if sld.default:
-                #     params = ':%s:%d:%s'%(capa.nombre, MAPA_DEFAULT_SRS, sld_url)
-                # pars = ':%s:%d:%s$%d'%(capa.nombre, MAPA_DEFAULT_SRS, sld_url, sld.id)
-                # print 'Mapcache capa: %s sld %d params: %s'%(capa.nombre, sld.id, pars)
                 mapcache.add_map(self.id_mapa, layers, srid, sld.id, sld_url)
-                # manage.add([self.id_mapa+pars])
-            # default_sld = capa.dame_sld_default()
-            # if default_sld is not None:
-            #     params = ':%s:%d:%s'%(capa.nombre, MAPA_DEFAULT_SRS, default_sld)
-            # else:
-            #     params = ':%s:%d'%(capa.nombre, MAPA_DEFAULT_SRS)
         elif self.tipo_de_mapa == 'general':
             layers = 'default'
-            # params = ':%s:%d'%('default', MAPA_DEFAULT_SRS)
                 
-        # manage.add([self.id_mapa+params])
         mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
 
     def generar_thumbnail(self):
