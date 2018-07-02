@@ -70,7 +70,7 @@ def setup_dev():
 	local("source venv/bin/activate; python manage.py loaddata layers/fixtures/initial_data.json", shell='/bin/bash')
 	local("source venv/bin/activate; python manage.py loaddata MapGround/fixtures/user.json", shell='/bin/bash')
 	local('source venv/bin/activate; mapcache/manage.py add world_borders', shell='/bin/bash')
-	local('sudo chown -R www-data:www-data /var/cache/mapground_dev;')
+	local('sudo chown -R www-data:www-data /var/cache/mapground_dev; sudo chmod g+rwxs /var/cache/mapground_dev')
 	local('sudo chmod 666 /var/local/mapground_dev/mapcache.xml;')
 	local('sudo service apache2 restart')
 	# local('sudo -u postgres psql -c "alter role %s createdb; alter role %s superuser;"' % (dbname, dbname))

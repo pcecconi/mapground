@@ -13,4 +13,8 @@ pip install simpleflock requests
 /usr/sbin/locale-gen
 export LC_ALL=es_AR.UTF-8; export LANGUAGE=es_AR.UTF-8; export LANG=es_AR.UTF-8
 dpkg-reconfigure --frontend=noninteractive locales
+getent passwd vagrant > /dev/null
+if [ $? -eq 0 ]; then
+    usermod -a -G www-data vagrant
+fi
 # update-locale LC_CTYPE=es_AR.UTF-8
