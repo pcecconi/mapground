@@ -44,17 +44,6 @@ def add_map(map_id, layers, srid=DEFAULT_SRID, sld_id='', sld=''):
     tree = ET.parse(MAPCACHE_CONFIG)
     root = tree.getroot()
     map_name = __build_map_name(map_id, sld_id)
-    # if len(params) > 3:
-    #     sld = ':'.join(params[3:])
-    #     sld_hash = sld.split('$')
-    #     if len(sld_hash) > 1:
-    #         sld_id = '$'+sld_hash[1]
-    #         sld = sld_hash[0]
-    #     else:
-    #         sld_id = ''
-    # else:
-    #     sld = ''
-    #     sld_id = ''
     if len(root.findall("*[@name='"+map_name+"']")) == 0:
         if isfile(os.path.join(MAPFILES_DIR, map_id+'.map')):
             d=dict(mapname=map_name, cache_path=settings.MAPCACHE_CACHE_ROOT, map_path=MAPFILES_DIR)
@@ -81,9 +70,6 @@ def add_map(map_id, layers, srid=DEFAULT_SRID, sld_id='', sld=''):
                 print ('\nMapCache: No se pudo escribir %s')%(MAPCACHE_CONFIG)
 
             print ('\nMapCache: + %s\n')%(map_name)
-            # update_demo()
-            # call('service apache2 reload', shell=True)
-            # mk_preview([map_id])
         else:
             print '\nMapCache: Error: No se encontro el mapa: %s\n'%map_name
     else:
