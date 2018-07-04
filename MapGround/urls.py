@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 """MapGround URL Configuration.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -21,6 +24,10 @@ from django.contrib.auth import views
 from django.views.static import serve
 from django.conf import settings
 admin.autodiscover()
+
+admin.site.site_header = 'Administración de MapGround'
+admin.site.site_title = 'Administración de MapGround'
+admin.site.index_title = 'Módulos de Administración'
 
 urlpatterns = [
     # Examples:
