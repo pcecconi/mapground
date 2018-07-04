@@ -18,7 +18,7 @@ from djorm_pgfulltext.fields import VectorField
 # misc
 import os
 from utils.commons import normalizar_texto
-from mapcache.settings import MAPSERVER_URL
+# from mapcache.settings import MAPSERVER_URL
 import urllib2
 import urlparse
 from lxml import etree
