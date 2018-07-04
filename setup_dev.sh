@@ -10,6 +10,9 @@ export LC_ALL='es_AR.UTF-8'
 export LANGUAGE='es_AR.UTF-8'
 export LANG='es_AR.UTF-8'
 
+CACHE_DIR='/var/cache/mapground_dev'
+FILES_DIR='/var/local/mapground_dev'
+
 for i in "$@"
 do
 case $i in
@@ -50,18 +53,18 @@ sed -e "s/mapground-db/${dbname}/g" MapGround/settings_db.py.template | sed -e "
 cp MapGround/settings_local.py.template MapGround/settings_local.py
 chown $DEV_USER MapGround/settings_dev_db.py MapGround/settings_local.py
 
-rm -rf /var/cache/mapground_dev 2>/dev/null
-rm -rf /var/local/mapground_dev 2>/dev/null
+rm -rf ${CACHE_DIR} 2>/dev/null
+rm -rf ${FILES_DIR} 2>/dev/null
 
-mkdir /var/cache/mapground_dev
-mkdir /var/local/mapground_dev
-mkdir /var/local/mapground_dev/media
-cp -r mapfiles /var/local/mapground_dev
-touch /var/local/mapground_dev/mapfiles/map-error.log
-chmod 666 /var/local/mapground_dev/mapfiles/map-error.log
-cp -r data /var/local/mapground_dev
-chown -R $DEV_USER /var/local/mapground_dev
-cp mapcache/mapcache.xml.template /var/local/mapground_dev/mapcache.xml
+mkdir ${CACHE_DIR}
+mkdir ${FILES_DIR}
+mkdir ${FILES_DIR}/media
+cp -r mapfiles ${FILES_DIR}
+touch ${FILES_DIR}/mapfiles/map-error.log
+chmod 666 ${FILES_DIR}/mapfiles/map-error.log
+cp -r data ${FILES_DIR}
+chown -R $DEV_USER ${FILES_DIR}
+cp mapcache/mapcache.xml.template ${FILES_DIR}/mapcache.xml
 
 sed -e "s:/mapground/:/mapground_dev/:g" mapground_apache.conf.template > /etc/apache2/sites-available/mapground_dev.conf
 sed -i "s/^<VirtualHost \*:8080>$/<VirtualHost *:7654>/" /etc/apache2/sites-available/mapground_dev.conf
@@ -80,8 +83,8 @@ python manage.py add_tileset world_borders
 
 deactivate
 
-chown -R www-data:www-data /var/cache/mapground_dev
-chmod g+rwxs /var/cache/mapground_dev
-chmod 666 /var/local/mapground_dev/mapcache.xml
+chown -R www-data:www-data ${CACHE_DIR}
+chmod g+rwxs ${CACHE_DIR}
+chmod 666 ${FILES_DIR}/mapcache.xml
 
 service apache2 restart

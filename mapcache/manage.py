@@ -15,12 +15,12 @@ import simpleflock
 uso = "\nUso: manage add|remove|mk_preview <mapname>[:<srid>] [ <mapname>[:srid] .. <mapname>[:srid] ]\n"
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 
-cache_path = CACHE_ROOT
-MAPCACHE_CONFIG = os.path.join(MAPCACHE_BASE, 'mapcache.xml')
-map_path = os.path.join(MAPCACHE_BASE, 'mapfiles')
-preview_dir = os.path.join(MAPCACHE_BASE, 'media', 'maps_prev')
+# cache_path = CACHE_ROOT
+# MAPCACHE_CONFIG = os.path.join(MAPCACHE_BASE, 'mapcache.xml')
+# map_path = os.path.join(MAPCACHE_BASE, 'mapfiles')
+# preview_dir = os.path.join(MAPCACHE_BASE, 'media', 'maps_prev')
 
-MAPCACHE_TEMPLATES_DIR = os.path.join(curr_dir, 'templates')
+# MAPCACHE_TEMPLATES_DIR = os.path.join(curr_dir, 'templates')
 
 default_srid = '3857'
 

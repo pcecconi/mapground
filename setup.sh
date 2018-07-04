@@ -10,6 +10,9 @@ export LC_ALL='es_AR.UTF-8'
 export LANGUAGE='es_AR.UTF-8'
 export LANG='es_AR.UTF-8'
 
+CACHE_DIR='/var/cache/mapground'
+FILES_DIR='/var/local/mapground'
+
 for i in "$@"
 do
 case $i in
@@ -67,18 +70,18 @@ sed -e "s/\DEBUG = True$/DEBUG = False/" MapGround/settings_local.py.template > 
 sed -e "s:/path/to/your/mapground:${DIR}:g" mapground_uwsgi.ini.template > mapground_uwsgi.ini
 chown $DEV_USER MapGround/settings_local_db.py MapGround/settings_local.py mapground_uwsgi.ini
 
-rm -rf /var/cache/mapground 2>/dev/null
-rm -rf /var/local/mapground 2>/dev/null
+rm -rf ${CACHE_DIR} 2>/dev/null
+rm -rf ${FILES_DIR} 2>/dev/null
 
-mkdir /var/cache/mapground
-mkdir /var/local/mapground
-mkdir /var/local/mapground/media
-cp -r mapfiles /var/local/mapground
-touch /var/local/mapground/mapfiles/map-error.log
-chmod 666 /var/local/mapground/mapfiles/map-error.log
-cp -r data /var/local/mapground
-# chown -R ${USER:=$(/usr/bin/id -run)}:$USER /var/local/mapground
-cp mapcache/mapcache.xml.template /var/local/mapground/mapcache.xml
+mkdir ${CACHE_DIR}
+mkdir ${FILES_DIR}
+mkdir ${FILES_DIR}/media
+cp -r mapfiles ${FILES_DIR}
+touch ${FILES_DIR}/mapfiles/map-error.log
+chmod 666 ${FILES_DIR}/mapfiles/map-error.log
+cp -r data ${FILES_DIR}
+# chown -R ${USER:=$(/usr/bin/id -run)}:$USER ${FILES_DIR}
+cp mapcache/mapcache.xml.template ${FILES_DIR}/mapcache.xml
 
 cp mapground_uwsgi.ini /etc/uwsgi/apps-available/mapground.ini
 rm /etc/uwsgi/apps-enabled/mapground.ini 2>/dev/null
@@ -102,7 +105,7 @@ python manage.py add_tileset world_borders
 
 deactivate
 
-chown -R www-data:www-data /var/local/mapground /var/cache/mapground
+chown -R www-data:www-data ${FILES_DIR} ${CACHE_DIR}
 
 service uwsgi restart
 service apache2 restart
