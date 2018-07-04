@@ -40,7 +40,7 @@ def remove_map(map_id, sld_id=''):
     except:
 		print "MapCache: Failed to remove map '%s'"%(map_name)
 
-def add_map(map_id, layers, srid=DEFAULT_SRID, sld_id='', sld=''):
+def add_map(map_id, layers='default', srid=DEFAULT_SRID, sld_id='', sld=''):
     tree = ET.parse(MAPCACHE_CONFIG)
     root = tree.getroot()
     map_name = __build_map_name(map_id, sld_id)

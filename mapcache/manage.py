@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+# ****************** DEPRECADO ************************************** #
+
 import sys, os
 import xml.etree.ElementTree as ET
 from os.path import isfile

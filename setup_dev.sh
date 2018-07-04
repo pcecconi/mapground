@@ -62,7 +62,6 @@ chmod 666 /var/local/mapground_dev/mapfiles/map-error.log
 cp -r data /var/local/mapground_dev
 chown -R $DEV_USER /var/local/mapground_dev
 cp mapcache/mapcache.xml.template /var/local/mapground_dev/mapcache.xml
-sed -e 's/DEBUG = False$/DEBUG = True/' mapcache/settings.py.template > mapcache/settings.py
 
 sed -e "s:/mapground/:/mapground_dev/:g" mapground_apache.conf.template > /etc/apache2/sites-available/mapground_dev.conf
 sed -i "s/^<VirtualHost \*:8080>$/<VirtualHost *:7654>/" /etc/apache2/sites-available/mapground_dev.conf
@@ -73,11 +72,11 @@ sudo -u ${DEV_USER} bash -c 'virtualenv --system-site-packages venv; source venv
 
 source venv/bin/activate
 
-./mapcache/manage.py add world_borders
 # python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata MapGround/fixtures/user.json
 python manage.py loaddata layers/fixtures/initial_data.json
+python manage.py add_tileset world_borders
 
 deactivate
 

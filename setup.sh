@@ -94,11 +94,11 @@ sudo -u ${DEV_USER} bash -c 'virtualenv --system-site-packages venv; source venv
 
 source venv/bin/activate
 
-./mapcache/manage.py add world_borders
 # python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata MapGround/fixtures/user.json
 python manage.py loaddata layers/fixtures/initial_data.json
+python manage.py add_tileset world_borders
 
 deactivate
 
