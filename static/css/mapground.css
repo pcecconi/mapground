@@ -10,6 +10,9 @@
 	max-width: 440px;
 	font-size:24px;
 }
+input[type="checkbox"] {
+	height: auto;
+}
 h3 {
 	font-size: 18px;
 }
