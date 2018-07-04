@@ -20,7 +20,7 @@ class Archivo(SingleOwnerMixin, models.Model):
 
     """
     file = models.FileField(max_length=255, upload_to=getUploadPath)
-    slug = models.SlugField(max_length=50, blank=True)
+    slug = models.SlugField(max_length=255, blank=True)
     nombre = models.CharField(max_length=128, blank=True)
     extension = models.CharField(max_length=15, blank=True)
     # owner = models.ForeignKey(settings.AUTH_USER_MODEL)
