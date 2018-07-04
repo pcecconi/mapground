@@ -101,6 +101,7 @@ source venv/bin/activate
 python manage.py migrate
 python manage.py loaddata MapGround/fixtures/user.json
 python manage.py loaddata layers/fixtures/initial_data.json
+python manage.py collectstatic
 python manage.py add_tileset world_borders
 
 deactivate
