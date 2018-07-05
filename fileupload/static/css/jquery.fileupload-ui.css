@@ -72,11 +72,14 @@
   bottom: 1em;
   color: #ccc;
   font-size: 200%;
-  position: absolute;
-  text-align: center;
   top: 8em;
   right: 0.5em;
   left: 0.5em;
+  height: 420px;
+  display: flex;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
 }
 .drop-area > p {
     font-weight: bold;

@@ -27,18 +27,18 @@ def __agregar_simbologia_basica__(layer):
         style.minsize=8
         style.maxsize=10
         style.maxwidth=2
-        style.outlinecolor.setRGB(0, 0, 255)
-        style.color.setRGB(150, 150, 150)
+        style.outlinecolor.setRGB(30, 30, 30)
+        style.color.setRGB(31, 120, 180)
     elif layer.type==mapscript.MS_LAYER_POLYGON:
-        style.outlinecolor.setRGB(250, 50, 50)
-        style.color.setRGB(150, 150, 150)
+        style.outlinecolor.setRGB(179, 170, 138)
+        style.color.setRGB(247, 240, 201)
     elif layer.type==mapscript.MS_LAYER_LINE:
-        style.color.setRGB(80, 80, 80)
+        style.color.setRGB(76, 38, 0)
         style.width=4
         style.minwidth=4
         style.maxwidth=6
         style2 = mapscript.styleObj(class1)
-        style2.color.setRGB(255, 255, 0)
+        style2.color.setRGB(255, 206, 128)
         style2.width=2
         style2.minwidth=2
         style2.maxwidth=4
