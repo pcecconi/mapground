@@ -97,7 +97,7 @@ sudo -u ${DEV_USER} bash -c 'virtualenv --system-site-packages venv; source venv
 
 source venv/bin/activate
 
-# python manage.py makemigrations
+python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata MapGround/fixtures/user.json
 python manage.py loaddata layers/fixtures/initial_data.json

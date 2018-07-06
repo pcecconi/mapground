@@ -54,7 +54,8 @@ class Capa(SingleOwnerMixin, models.Model):
     srid = models.IntegerField('SRID', null=False, blank=False)
     extent_minx_miny=models.PointField(u'(Minx, Miny)', null=True, blank=True) # extent en 4326 calculado por postgres en el signal de creacion
     extent_maxx_maxy=models.PointField(u'(Maxx, Maxy)', null=True, blank=True) # extent en 4326 calculado por postgres en el signal de creacion
-    
+    layer_srs_extent=models.CharField('Original SRS Extent', null=False, blank=False, max_length=255, default='') # extent en el srid original calculado por postgres en el signal de creacion
+
     timestamp_alta = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de alta')
     timestamp_modificacion = models.DateTimeField(auto_now=True, verbose_name='Fecha de última modificación')
     objects = models.GeoManager()
@@ -105,8 +106,12 @@ class Capa(SingleOwnerMixin, models.Model):
 
     def dame_extent(self, separador=',', srid=4326):
         # heuristica para arreglar thumbnails: corta por la mitad a la antartida (lo maximo es -90)
-        if self.extent_minx_miny.y < -70:
-            self.extent_minx_miny.y = -70
+        # print 'layer.dame_extent(srid=%i), original srid: %i'%(srid, self.srid)
+        if srid==self.srid:
+            return self.layer_srs_extent.replace(' ', separador)
+        if srid==3857:
+            if self.extent_minx_miny.y < -70:
+                self.extent_minx_miny.y = -70
         min = self.extent_minx_miny.transform(srid, clone=True)
         max = self.extent_maxx_maxy.transform(srid, clone=True)
         if separador==[]:
@@ -334,9 +339,9 @@ def onCapaPreSave(sender, instance, **kwargs):
         cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" %(instance.campo_geom,instance.esquema, instance.tabla))
         rows=cursor.fetchone()
         instance.tipo_de_geometria=TipoDeGeometria.objects.get(postgres_type=rows[0])
-        #cursor.execute("SELECT st_extent(%s) from %s.%s;" %(instance.campo_geom,instance.esquema, instance.tabla))
-        #rows=cursor.fetchone()
-        #instance.extent=rows[0].replace('BOX(','').replace(')','').replace(',',' ')
+        cursor.execute("SELECT st_extent(%s) from %s.%s;" %(instance.campo_geom,instance.esquema, instance.tabla))
+        rows=cursor.fetchone()
+        instance.layer_srs_extent=rows[0].replace('BOX(','').replace(')','').replace(',',' ')
         cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" %(instance.campo_geom,instance.esquema, instance.tabla))
         rows=cursor.fetchone()
         extent_capa=rows[0].replace('BOX(','').replace(')','').replace(',',' ').split(' ')

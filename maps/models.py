@@ -452,11 +452,11 @@ class Mapa(models.Model):
             wms_url = mapserver.get_wms_request_url(self.id_mapa, 'default', self.srs, 110, 150, self.dame_extent(',','3857'))
         elif self.tipo_de_mapa=='layer_original_srs':
             c=self.capas.first()
-            wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent())
+            wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs))
             try:
                 sld=c.archivosld_set.filter(default=True)[0]
                 sld_url = getSldUrl(sld.filename.url)
-                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(), sld_url)
+                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs), sld_url)
             except:
                 pass 
         #print wms_url
