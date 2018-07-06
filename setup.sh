@@ -101,7 +101,7 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py loaddata MapGround/fixtures/user.json
 python manage.py loaddata layers/fixtures/initial_data.json
-python manage.py collectstatic
+python manage.py collectstatic --noinput
 python manage.py add_tileset world_borders
 
 deactivate

@@ -43,6 +43,49 @@ body {
 	}
 }
 
+.nav-tabs {
+  border-bottom: 1px solid #12a0d4;
+}
+.nav-tabs > li > a:hover {
+  border-bottom: 1px solid #2d6ca2;
+}
+.nav-tabs > li.active > a {
+  background-color: #2d6ca2;
+  color: #fff;
+  border: 1px solid #2d6ca2;
+  background-image: -webkit-linear-gradient(top,#428bca 0,#2d6ca2 100%);
+
+  background-image: -o-linear-gradient(top,#428bca 0,#2d6ca2 100%);
+  
+  background-image: -webkit-gradient(linear,left top,left bottom,from(#428bca),to(#2d6ca2));
+  
+  background-image: linear-gradient(to bottom,#428bca 0,#2d6ca2 100%);
+  
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff428bca', endColorstr='#ff2d6ca2', GradientType=0);
+  
+  filter: progid:DXImageTransform.Microsoft.gradient(enabled=false);
+  
+  background-repeat: repeat-x;
+}
+.nav-tabs > li.active > a:hover {
+  background-color: #2d6ca2;
+  color: #fff;
+  border: 1px solid #2d6ca2;
+}
+.nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus {
+  color: #fff;
+  background-color: #2d6ca2;
+}
+
+a {
+  color: #2d6ca2;
+}
+
+a:hover, a:focus {
+  color: #555;
+  text-decoration: underline;
+}
+
 @font-face {
   font-family: 'Roboto Condensed';
   font-style: normal;
