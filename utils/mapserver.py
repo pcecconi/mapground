@@ -30,8 +30,8 @@ def __agregar_simbologia_basica__(layer):
         style.outlinecolor.setRGB(30, 30, 30)
         style.color.setRGB(31, 120, 180)
     elif layer.type==mapscript.MS_LAYER_POLYGON:
-        style.outlinecolor.setRGB(179, 170, 138)
-        style.color.setRGB(247, 240, 201)
+        style.outlinecolor.setRGB(126, 109, 83)
+        style.color.setRGB(210, 182, 138)
     elif layer.type==mapscript.MS_LAYER_LINE:
         style.color.setRGB(76, 38, 0)
         style.width=4
