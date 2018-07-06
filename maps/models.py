@@ -449,14 +449,14 @@ class Mapa(models.Model):
         if self.tipo_de_mapa == 'general':
             for c in self.capas.all():  # es necesario regenerar todo mapfile inexistente
                 ManejadorDeMapas.commit_mapfile(c.id_capa)
-            wms_url = mapserver.get_wms_request_url(self.id_mapa, 'default', self.srs, 150, 110, self.dame_extent(',','3857'))
+            wms_url = mapserver.get_wms_request_url(self.id_mapa, 'default', self.srs, 110, 150, self.dame_extent(',','3857'))
         elif self.tipo_de_mapa=='layer_original_srs':
             c=self.capas.first()
-            wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 150, 110, c.dame_extent())
+            wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent())
             try:
                 sld=c.archivosld_set.filter(default=True)[0]
                 sld_url = getSldUrl(sld.filename.url)
-                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 150, 110, c.dame_extent(), sld_url)
+                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(), sld_url)
             except:
                 pass 
         #print wms_url

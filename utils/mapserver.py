@@ -216,6 +216,7 @@ def get_wms_request_url(map_id, layers, srs, width, height, extent, sld_url=''):
     )
     if sld_url!='':
         url += '&sld='+sld_url
+    print "get_wms_request_url: %s"%url
     return url
 
 def get_legend_graphic_url(map_id, layer_name, sld_url=''):

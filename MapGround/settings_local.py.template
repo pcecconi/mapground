@@ -44,8 +44,6 @@ WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL,'layers/wxs/')
 VISOR_INITIAL_EXTENT = '-135 -60 135 60'
 VISOR = True
 
-MAPSERVER_URL = 'http://localhost:8080/cgi-bin/mapserv'
-
 if DEBUG:
     from settings_dev_db import *
     MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'
@@ -53,6 +51,7 @@ if DEBUG:
     MEDIA_ROOT = '/var/local/mapground_dev/media/'
     MAPCACHE_CONFIG_ROOT = '/var/local/mapground_dev/'
     MAPCACHE_CACHE_ROOT = '/var/cache/mapground_dev/'
+    MAPSERVER_URL = 'http://localhost:7654/cgi-bin/mapserv'
 else:
     from settings_local_db import *
     MAPCACHE_URL = SITE_URL+'/mapcache/'
@@ -60,3 +59,4 @@ else:
     MEDIA_ROOT = '/var/local/mapground/media/'
     MAPCACHE_CONFIG_ROOT = '/var/local/mapground/'
     MAPCACHE_CACHE_ROOT = '/var/cache/mapground/'
+    MAPSERVER_URL = 'http://localhost:8080/cgi-bin/mapserv'
