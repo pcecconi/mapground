@@ -9,7 +9,7 @@ register = template.Library()
 @register.simple_tag
 def settings_value(name):
     defaults = {
-        'SITE_HEADER': '<b>Map</b>Glass',
+        'SITE_HEADER': '<b>Map</b>Ground',
         'SITE_TITLE': 'MapGround'
     }
     if name in defaults:
