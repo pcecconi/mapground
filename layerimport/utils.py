@@ -228,17 +228,6 @@ def import_layer(filename, schema, table, encoding='LATIN1'):
 
     return srid
 
+# TODO: podria reemplazarse por normalizar_texto?
 def nombre_tabla(request, nombre):
     return unicode(request.user)+'_'+((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
-
-# normaliza un string quitándole acentos y caracteres especiales
-def normalizar_texto(texto):
-    texto = unicode(texto).lower()
-    texto = ''.join((c for c in unicodedata.normalize('NFD', texto) if unicodedata.category(c) != 'Mn')) # reemplazamos ñ y acentos por n y sin acentos
-    #texto = re.sub(unicode(r'[^\w\d\sáÁäÄéÉëËíÍïÏóÓöÖúÚüÜÿŸñÑ]','utf-8'),lambda mo: '',texto)
-
-    texto = re.sub(unicode(r'[^\w\d\s]','utf-8'),lambda mo: '', re.sub('([,;:./-])(?!\s)', r'\1 ', re.sub('\.(?!(\S[^. ])|\d)', '', texto))) #separa siglas separadas por . , : . / -
-#    texto = re.sub(unicode(r'[^\w\d\s]','utf-8'),lambda mo: ' ',texto) # reemplazamos caracteres especiales por espacios
-    texto = re.sub(unicode(r'[\s_]+','utf-8'), lambda mo: '_', texto) # reemplazamos cadenas de espacios o de _ por un _
-    texto = texto.strip('_')
-    return texto    
