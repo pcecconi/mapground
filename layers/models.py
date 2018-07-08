@@ -26,8 +26,8 @@ from lxml import etree
 # geodjango
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
-from layerimport.models import TablaGeografica
 from django_extras.contrib.auth.models import SingleOwnerMixin
+
 
 class TipoDeGeometria(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50) #Punto/Linea/Poligono/Raster
@@ -39,13 +39,14 @@ class TipoDeGeometria(models.Model):
     def __unicode__(self):
         return unicode(self.nombre)
 
+
 class Capa(SingleOwnerMixin, models.Model):
     # owner = models.ForeignKey(User, null=False,blank=False) #TODO:!
     nombre = models.CharField('Nombre', null=False, blank=False, max_length=255) # puede repetirse para distintos usuarios
     id_capa = models.CharField('Id capa', null=False, blank=False, unique=True, max_length=255)
     slug = models.SlugField('Slug', null=False, blank=True, max_length=255)
     conexion_postgres = models.ForeignKey(u'ConexionPostgres', null=True, blank=True)
-    campo_geom = models.CharField(u'Campo de Geometría', null=False, blank=False, max_length=30,default='geom')
+    campo_geom = models.CharField(u'Campo de Geometría', null=False, blank=False, max_length=30, default='geom')
     esquema = models.CharField('Esquema', null=False, blank=False, max_length=100)
     tabla = models.CharField('Tabla', null=False, blank=False, max_length=100)
     wxs_publico = models.BooleanField(u'WMS/WFS Público?', null=False, default=False)
@@ -159,6 +160,7 @@ class Capa(SingleOwnerMixin, models.Model):
         super(Capa, self).save(*args, **kwargs)
         return True
 
+
 class Categoria(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=255)
@@ -168,6 +170,7 @@ class Categoria(models.Model):
         ordering = ['nombre']        
     def __unicode__(self):
         return unicode(self.nombre)
+
 
 class AreaTematica(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)
@@ -179,6 +182,7 @@ class AreaTematica(models.Model):
     def __unicode__(self):
         return unicode(self.nombre)
 
+
 class Escala(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=100)
     class Meta:
@@ -187,6 +191,7 @@ class Escala(models.Model):
         ordering = ['nombre']        
     def __unicode__(self):
         return unicode(self.nombre)
+
 
 class Atributo(models.Model):
     nombre_del_campo = models.CharField('Nombre del Campo', null=False, blank=False, max_length=50) #debe ser r/o
@@ -354,20 +359,6 @@ def onMetadatosPostSave(sender, instance, created, **kwargs):
     print 'onMetadatosPostSave'
     instance.capa.save()  # forzamos la actualizacion de la fecha de ultima modificacion de la capa y posterior borrado de mapfile
 
-@receiver(post_save, sender=TablaGeografica)
-def onTablaGeograficaPostSave(sender, instance, **kwargs):
-    print 'onTablaGeograficaPostSave %s'%(str(instance))
-    Capa.objects.create(
-        owner = instance.owner,
-        nombre = instance.nombre_normalizado,
-        id_capa = instance.tabla,
-        conexion_postgres = None,
-        esquema = instance.esquema,
-        tabla = instance.tabla,
-        tipo_de_geometria = TipoDeGeometria.objects.all()[0],
-        srid = instance.srid,
-    )
-
 
 def get_sld_filename(instance, filename):
     return os.path.join('sld', instance.id_archivo_sld)
@@ -387,7 +378,7 @@ class ArchivoSLD(models.Model):
         verbose_name_plural = 'Archivos SLD'
     def __unicode__(self):
         return unicode(self.id_archivo_sld)
-   
+
 
 @receiver(pre_save, sender=ArchivoSLD)
 def onArchivoSLDPreSave(sender, instance, **kwargs):
