@@ -27,6 +27,7 @@ from lxml import etree
 from subprocess import call
 from utils import mapserver
 from mapcache import mapcache
+from .tasks import add_tileset, rm_tileset
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -436,13 +437,16 @@ class Mapa(models.Model):
             layers = capa.nombre
             srid = MAPA_DEFAULT_SRS
             for sld in capa.archivosld_set.all():
-                mapcache.remove_map(self.id_mapa, sld.id)
+                # mapcache.remove_map(self.id_mapa, sld.id)
+                rm_tileset(self.id_mapa, sld.id)
                 sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
-                mapcache.add_map(self.id_mapa, layers, srid, sld.id, sld_url)
+                # mapcache.add_map(self.id_mapa, layers, srid, sld.id, sld_url)
+                add_tileset(self.id_mapa, layers, srid, sld.id, sld_url)
         elif self.tipo_de_mapa == 'general':
             layers = 'default'
                 
-        mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
+        # mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
+        add_tileset(self.id_mapa, layers, srid, '', sld_url)
 
     def generar_thumbnail(self):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)

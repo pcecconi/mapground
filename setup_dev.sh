@@ -12,6 +12,7 @@ export LANG='es_AR.UTF-8'
 
 CACHE_DIR='/var/cache/mapground_dev'
 FILES_DIR='/var/local/mapground_dev'
+LOG_DIR='/var/log/mapground'
 
 for i in "$@"
 do
@@ -55,9 +56,11 @@ chown $DEV_USER MapGround/settings_dev_db.py MapGround/settings_local.py
 
 rm -rf ${CACHE_DIR} 2>/dev/null
 rm -rf ${FILES_DIR} 2>/dev/null
+rm -rf ${LOG_DIR} 2>/dev/null
 
 mkdir ${CACHE_DIR}
 mkdir ${FILES_DIR}
+mkdir ${LOG_DIR}
 mkdir ${FILES_DIR}/media
 cp -r mapfiles ${FILES_DIR}
 touch ${FILES_DIR}/mapfiles/map-error.log
@@ -70,6 +73,8 @@ sed -e "s:/mapground/:/mapground_dev/:g" mapground_apache.conf.template > /etc/a
 sed -i "s/^<VirtualHost \*:8080>$/<VirtualHost *:7654>/" /etc/apache2/sites-available/mapground_dev.conf
 rm /etc/apache2/sites-enabled/mapground_dev.conf 2>/dev/null
 ln -s /etc/apache2/sites-available/mapground_dev.conf /etc/apache2/sites-enabled/mapground_dev.conf
+
+./setup_tasks.sh
 
 sudo -u ${DEV_USER} bash -c 'virtualenv --system-site-packages venv; source venv/bin/activate; pip install -r requirements.txt'
 

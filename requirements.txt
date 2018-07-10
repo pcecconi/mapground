@@ -6,3 +6,4 @@ pytz==2018.4
 django-extras==0.3
 djorm-ext-pgfulltext==0.10
 django-proxy==1.1.0
+django-background-tasks==1.1.13

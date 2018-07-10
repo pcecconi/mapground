@@ -37,6 +37,7 @@ INSTALLED_APPS = (
     # --- fin defauls 1.11
     'django.contrib.humanize',
     'django.contrib.gis',
+    'background_task',
     'commons',
     'fileupload',
     'layerimport',
