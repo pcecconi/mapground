@@ -99,7 +99,7 @@ DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 DEV_USER="$(ls -ld $0 | awk '{print $3}')"
 
-sed -e "s/mapground-db/${dbname}/g" MapGround/settings_db.py.template | sed -e "s/mapground-user/${dbname}/g" - | sed -e "s/mapground-password/${dbpass}/g" - | sed -e "s/secret-key/${SECRET_KEY}/g" > MapGround/settings_local_db.py
+sed -e "s/mapground-db/${dbname}/g" MapGround/settings_db.py.template | sed -e "s/mapground-user/${dbname}/g" - | sed -e "s/mapground-password/${dbpass}/g" - | sed -e "s/mapground-host/${dbhost}/g" - | sed -e "s/secret-key/${SECRET_KEY}/g" > MapGround/settings_local_db.py
 sed -e "s/\DEBUG = True$/DEBUG = False/" MapGround/settings_local.py.template > MapGround/settings_local.py
 sed -i "s:/var/local/mapground:${FILES_DIR}:g" MapGround/settings_local.py
 sed -i "s:/var/cache/mapground:${CACHE_DIR}:g" MapGround/settings_local.py

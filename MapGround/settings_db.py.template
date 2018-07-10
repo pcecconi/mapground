@@ -17,7 +17,7 @@ DATABASES = {
          'NAME': 'mapground-db',
          'USER': 'mapground-user',
          'PASSWORD': 'mapground-password',
-         'HOST': 'localhost', 
+         'HOST': 'mapground-host', 
      }
 }
 
