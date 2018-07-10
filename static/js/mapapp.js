@@ -135,6 +135,21 @@ mg.MapApp = (function() {
                         continuousWorld: true
                     }).addTo(mapa);
 
+                    var layerRedrawTimeout = null,
+                        numRedraws = 0;
+
+                    layer.on('tileerror', function(ev) {
+                        if (!layerRedrawTimeout && numRedraws < 10) {
+                            layerRedrawTimeout = setTimeout(function() { 
+                                console.log('Retrying layer drawing...');
+                                layer.redraw(); 
+                                numRedraws++;
+                                layerRedrawTimeout = null;
+                            }, 1000);
+                        }
+                        // console.log('ev, numRedraws');
+                    });
+
                     L.control.scale({imperial: false}).addTo(mapa);
 
                     mapa.addControl(new mg.Abstract(c, '<p class="legend_title">Referencias</p>\
