@@ -13,9 +13,11 @@ export LANG='es_AR.UTF-8'
 for i in "$@"
 do
 case $i in
+    -c=*|--cluster=*)
+    cluster="${i#*=}"
+    ;;
     -d=*|--dbname=*)
     dbname="${i#*=}"
-
     ;;
     -u=*|--dbuser=*)
     dbuser="${i#*=}"
@@ -36,6 +38,13 @@ if [ -z "$dbpass" ]; then
 read -s -p "Ingrese el password para asignar al usuario de la base de datos:" dbpass;
 echo;
 fi
+
+if ! [ -z "$cluster"]; then
+echo "Creating cluster on '$cluster'...";
+pg_dropcluster 10 main --stop
+pg_createcluster -d $cluster --start-conf auto 10 main --start
+fi
+
 echo "Creando base '$dbname' con usuario '$dbuser'..."
 
 sudo -u postgres bash -c "dropdb $dbname; dropuser $dbuser" 2>/dev/null

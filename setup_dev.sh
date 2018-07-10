@@ -10,13 +10,17 @@ export LC_ALL='es_AR.UTF-8'
 export LANGUAGE='es_AR.UTF-8'
 export LANG='es_AR.UTF-8'
 
-CACHE_DIR='/var/cache/mapground_dev'
-FILES_DIR='/var/local/mapground_dev'
 LOG_DIR='/var/log/mapground'
 
 for i in "$@"
 do
 case $i in
+    -f=*|--files=*)
+    files="${i#*=}"
+    ;;
+    -c=*|--cache=*)
+    cache="${i#*=}"
+    ;;
     -d=*|--dbname=*)
     dbname="${i#*=}"
     ;;
@@ -31,6 +35,20 @@ case $i in
     ;;
 esac
 done
+
+if [ -z "$files" ]; then 
+FILES_DIR='/var/local/mapground_dev';
+else 
+FILES_DIR=$files;
+fi
+echo "Using '${FILES_DIR}' for storing app files..."
+
+if [ -z "$cache" ]; then
+CACHE_DIR='/var/cache/mapground_dev';
+else 
+CACHE_DIR=$cache; 
+fi
+echo "Using '${CACHE_DIR}' for storing tiles cache..."
 
 if [ -z "$dbname" ]; then dbname='mapground_dev'; echo "Base de datos por defecto: $dbname"; fi
 if [ -z "$dbuser" ]; then dbuser='mapground_dev'; echo "Usuario de base de datos por defecto: $dbuser"; fi
@@ -51,7 +69,9 @@ DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 DEV_USER="$(ls -ld $0 | awk '{print $3}')"
 
 sed -e "s/mapground-db/${dbname}/g" MapGround/settings_db.py.template | sed -e "s/mapground-user/${dbname}/g" - | sed -e "s/mapground-password/${dbpass}/g" - | sed -e "s/secret-key/${SECRET_KEY}/g" > MapGround/settings_dev_db.py
-cp MapGround/settings_local.py.template MapGround/settings_local.py
+sed -e "s:/var/local/mapground_dev:${FILES_DIR}:g" MapGround/settings_local.py.template > MapGround/settings_local.py
+sed -i "s:/var/cache/mapground_dev:${CACHE_DIR}:g" MapGround/settings_local.py
+# cp MapGround/settings_local.py.template MapGround/settings_local.py
 chown $DEV_USER MapGround/settings_dev_db.py MapGround/settings_local.py
 
 rm -rf ${CACHE_DIR} 2>/dev/null
@@ -69,7 +89,7 @@ cp -r data ${FILES_DIR}
 chown -R $DEV_USER ${FILES_DIR}
 cp mapcache/mapcache.xml.template ${FILES_DIR}/mapcache.xml
 
-sed -e "s:/mapground/:/mapground_dev/:g" mapground_apache.conf.template > /etc/apache2/sites-available/mapground_dev.conf
+sed -e "s:/var/local/mapground:${FILES_DIR}:g" mapground_apache.conf.template > /etc/apache2/sites-available/mapground_dev.conf
 sed -i "s/^<VirtualHost \*:8080>$/<VirtualHost *:7654>/" /etc/apache2/sites-available/mapground_dev.conf
 rm /etc/apache2/sites-enabled/mapground_dev.conf 2>/dev/null
 ln -s /etc/apache2/sites-available/mapground_dev.conf /etc/apache2/sites-enabled/mapground_dev.conf
