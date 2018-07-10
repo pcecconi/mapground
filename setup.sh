@@ -36,6 +36,9 @@ case $i in
     -s=*|--siteurl=*)
     siteurl="${i#*=}"
     ;;
+    -l=*|--cluster=*)
+    cluster="${i#*=}"
+    ;;
     *)
             # unknown option
     ;;
@@ -63,11 +66,13 @@ SITE_URL=$siteurl;
 fi
 echo "Using '${SITE_URL}' for SITE_URL..."
 
+if [ -z "$cluster" ]; then cluster_param=''; else cluster_param="-c=${cluster}"; echo "Directorio para cluster DB: $cluster"; fi
+
 if [ -z "$dbname" ]; then dbname='mapground'; echo "Base de datos por defecto: $dbname"; fi
 if [ -z "$dbuser" ]; then dbuser='mapground'; echo "Usuario de base de datos por defecto: $dbuser"; fi
 
 if [ -z "$dbhost" ]; then
-   echo "Uso: setup.sh -h=<database host> [[-d=<database name>] [-u=<database user>] [-p=<database pass>] [-s=<site url>] [-f=<files directory>] [-c=<tiles cache directory>]]" 1>&2
+   echo "Uso: setup.sh -h=<database host> [[-d=<database name>] [-u=<database user>] [-p=<database pass>] [-s=<site url>] [-f=<files directory>] [-c=<tiles cache directory>] [-l=<cluster DB directory>]]" 1>&2
    exit 1
 fi
 
@@ -80,7 +85,7 @@ if [ "$dbhost" = "localhost" ]; then
     echo;
   fi
 
-  ./setup_db.sh -d=$dbname -u=$dbuser -p=$dbpass ;
+  ./setup_db.sh -d=$dbname -u=$dbuser -p=$dbpass ${cluster_param};
 fi
 
 if [ -z "$dbpass" ]; then
