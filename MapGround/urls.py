@@ -25,8 +25,8 @@ from django.views.static import serve
 from django.conf import settings
 admin.autodiscover()
 
-admin.site.site_header = 'Administración de MapGround'
-admin.site.site_title = 'Administración de MapGround'
+admin.site.site_header = 'Administración de la IDE'
+admin.site.site_title = 'Administración de la IDE'
 admin.site.index_title = 'Módulos de Administración'
 
 urlpatterns = [
