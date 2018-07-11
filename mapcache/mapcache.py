@@ -40,6 +40,21 @@ def remove_map(map_id, sld_id=''):
     except:
 		print "MapCache: Failed to remove map '%s'"%(map_name)
 
+def remove_tileset(map_id, sld_id=''):
+    map_name = __build_map_name(map_id, sld_id)
+    print '\nMapCache: - tileset '+map_name+'\n'
+    try:
+        tileset = os.path.join(settings.MAPCACHE_CACHE_ROOT, map_name+'.mbtiles')
+        if isfile(tileset):
+            try:
+                os.remove(tileset)
+            except:
+                print '\nMapCache: Failed to remove tileset for "%s"'%(map_name)
+        else:
+            print '\nMapCache: Tileset "%s" was not found.'%(map_name)
+    except:
+		print "MapCache: Failed to remove tileset '%s'"%(map_name)
+
 def add_map(map_id, layers='default', srid=DEFAULT_SRID, sld_id='', sld=''):
     tree = ET.parse(MAPCACHE_CONFIG)
     root = tree.getroot()
