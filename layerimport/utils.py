@@ -128,7 +128,8 @@ def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
         raise MapGroundException(e)
 
     tmp_filename = '/tmp/data'+get_random_string()
-    shp2pgsql_call = ('shp2pgsql -s %s -W %s -a -D -N skip "%s" %s.%s 2>/dev/null | awk \'NR<5 {print >> "/dev/stdout"; next } $0!="COMMIT;" {print > "%s"} END{print}\' - | sed "s:stdin:\'%s\':g"') % (srid, encoding, 
+    tmp_copy_filename = tmp_filename+'_copy'
+    shp2pgsql_call = ('shp2pgsql -s %s -W %s -a -D -N skip "%s" %s.%s 2>/dev/null | awk \'NR<5 {print >> "/dev/stdout"; next } {print > "%s"} END{print}\' - | sed "s:stdin:\'%s\':g"') % (srid, encoding, 
             shapefile, schema, table, tmp_filename, tmp_filename)
 
     try: 
@@ -154,14 +155,27 @@ def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
         raise MapGroundException(e)
 
     try: 
-        cur = connection.cursor()
-        cur.execute(copy_query)
+        copy_query+='COMMIT;'
+        with open(tmp_copy_filename, 'w') as text_file:
+            text_file.write(copy_query.replace('COPY', '\\copy'))     
+        copy_call = 'PGPASSWORD="%s" psql -d %s -U %s -w -h %s -f %s' % (DATABASES['default']['PASSWORD'],
+        DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['HOST'], tmp_copy_filename)
+        fout, ferr = StringIO(), StringIO()
+        exitcode = teed_call(copy_call, stdout=fout, stderr=ferr, shell=True)
+        # print copy_call
+        err = ferr.getvalue()
+        if exitcode != 0:
+            raise MapGroundException(err)
+        # cur = connection.cursor()
+        # cur.execute(copy_query)
     except Exception, e:
         os.remove(tmp_filename)
+        os.remove(tmp_copy_filename)
         raise MapGroundException(e)
 
     try:
         os.remove(tmp_filename)
+        os.remove(tmp_copy_filename)
     except:
         pass
 
