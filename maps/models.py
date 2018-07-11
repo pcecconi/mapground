@@ -429,7 +429,8 @@ class Mapa(models.Model):
         return True
 
     def agregar_a_mapcache(self):
-        mapcache.remove_map(self.id_mapa)
+        rm_tileset(self.id_mapa)
+        # mapcache.remove_map(self.id_mapa)
         sld_url = ''
         if self.tipo_de_mapa == 'layer':
             capa = self.mapserverlayer_set.first().capa
