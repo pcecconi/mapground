@@ -52,6 +52,7 @@ echo "Using '${CACHE_DIR}' for storing tiles cache..."
 
 if [ -z "$dbname" ]; then dbname='mapground_dev'; echo "Base de datos por defecto: $dbname"; fi
 if [ -z "$dbuser" ]; then dbuser='mapground_dev'; echo "Usuario de base de datos por defecto: $dbuser"; fi
+if [ -z "$dbhost" ]; then dbhost='localhost'; fi
 
 echo "Configurando base de datos en localhost...";
 
@@ -68,7 +69,7 @@ DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 DEV_USER="$(ls -ld $0 | awk '{print $3}')"
 
-sed -e "s/mapground-db/${dbname}/g" MapGround/settings_db.py.template | sed -e "s/mapground-user/${dbname}/g" - | sed -e "s/mapground-password/${dbpass}/g" - | sed -e "s/secret-key/${SECRET_KEY}/g" > MapGround/settings_dev_db.py
+sed -e "s/mapground-db/${dbname}/g" MapGround/settings_db.py.template | sed -e "s/mapground-user/${dbname}/g" - | sed -e "s/mapground-password/${dbpass}/g" - | sed -e "s/mapground-host/${dbhost}/g" | sed -e "s/secret-key/${SECRET_KEY}/g" > MapGround/settings_dev_db.py
 sed -e "s:/var/local/mapground_dev:${FILES_DIR}:g" MapGround/settings_local.py.template > MapGround/settings_local.py
 sed -i "s:/var/cache/mapground_dev:${CACHE_DIR}:g" MapGround/settings_local.py
 # cp MapGround/settings_local.py.template MapGround/settings_local.py
