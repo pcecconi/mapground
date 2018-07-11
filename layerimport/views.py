@@ -73,7 +73,7 @@ def LayerImportView(request, filename):
                     tipo_de_geometria=TipoDeGeometria.objects.all()[0],
                     srid=tabla_geografica.srid)
 
-            except:
+            except Exception as e:
                 ok = False
                 error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
 
