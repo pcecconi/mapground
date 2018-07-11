@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 apt-get update
-apt-get install -y uwsgi apache2 
+apt-get install -y uwsgi apache2 postgresql-client
 service apache2 stop
-apt-get install -y python-psycopg2 python-gdal nginx locate python-virtualenv fabric uwsgi-plugin-python python-mapscript cgi-mapserver mapserver-bin mapcache-cgi mapcache-tools imagemagick python-lxml curl build-essential libssl-dev python-pip locales
+apt-get install -y python-psycopg2 python-gdal nginx locate python-virtualenv fabric uwsgi-plugin-python python-mapscript cgi-mapserver mapserver-bin mapcache-cgi mapcache-tools imagemagick python-lxml curl build-essential libssl-dev python-pip locales postgis
+apt-get remove postgresql-10
 a2enmod cgid
 rm /etc/apache2/sites-enabled/* 2> /dev/null
 rm /etc/nginx/sites-enabled/default 2> /dev/null
