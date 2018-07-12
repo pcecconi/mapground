@@ -430,6 +430,8 @@ class Mapa(models.Model):
 
     def agregar_a_mapcache(self):
         # rm_tileset(self.id_mapa)
+        # Si estamos en una arquitectura distribuida los tiles son locales
+        mapcache.remove_tileset(self.id_mapa)
         sld_url = ''
         if self.tipo_de_mapa == 'layer':
             capa = self.mapserverlayer_set.first().capa
@@ -439,6 +441,8 @@ class Mapa(models.Model):
             for sld in capa.archivosld_set.all():
                 # mapcache.remove_map(self.id_mapa, sld.id)
                 # rm_tileset(self.id_mapa, sld.id)
+                # Si estamos en una arquitectura distribuida los tiles son locales
+                mapcache.remove_tileset(self.id_mapa, sld.id)
                 sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
                 # mapcache.add_map(self.id_mapa, layers, srid, sld.id, sld_url)
                 add_or_replace_tileset(self.id_mapa, layers, srid, sld.id, sld_url)
