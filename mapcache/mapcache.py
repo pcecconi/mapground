@@ -89,3 +89,17 @@ def add_map(map_id, layers='default', srid=DEFAULT_SRID, sld_id='', sld=''):
             print '\nMapCache: Error: No se encontro el mapa: %s\n'%map_name
     else:
         print '\nMapCache: Error: %s ya existe.\n'%map_name
+
+def add_or_replace_map(map_id, layers='default', srid=DEFAULT_SRID, sld_id='', sld=''):
+    map_name = __build_map_name(map_id, sld_id)
+    print '\nMapCache: += '+map_name+'\n'
+    try:
+        tree = ET.parse(MAPCACHE_CONFIG)
+        root = tree.getroot()
+        elems = root.findall("*[@name='"+map_name+"']")
+        if len(elems) > 0:
+            remove_map(map_id, sld_id)
+        add_map(map_id, layers, srid, sld_id, sld)
+    except:
+		print "MapCache: Failed to add or replace map '%s'"%(map_name)
+

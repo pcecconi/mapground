@@ -27,7 +27,7 @@ from lxml import etree
 from subprocess import call
 from utils import mapserver
 from mapcache import mapcache
-from .tasks import add_tileset, rm_tileset
+from .tasks import add_tileset, rm_tileset, add_or_replace_tileset
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -429,9 +429,7 @@ class Mapa(models.Model):
         return True
 
     def agregar_a_mapcache(self):
-        rm_tileset(self.id_mapa)
-        # Si estamos en una arquitectura distribuida los tiles son locales
-        mapcache.remove_tileset(self.id_mapa)
+        # rm_tileset(self.id_mapa)
         sld_url = ''
         if self.tipo_de_mapa == 'layer':
             capa = self.mapserverlayer_set.first().capa
@@ -440,17 +438,15 @@ class Mapa(models.Model):
             srid = MAPA_DEFAULT_SRS
             for sld in capa.archivosld_set.all():
                 # mapcache.remove_map(self.id_mapa, sld.id)
-                rm_tileset(self.id_mapa, sld.id)
-                # Si estamos en una arquitectura distribuida los tiles son locales
-                mapcache.remove_tileset(self.id_mapa, sld.id)
+                # rm_tileset(self.id_mapa, sld.id)
                 sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
                 # mapcache.add_map(self.id_mapa, layers, srid, sld.id, sld_url)
-                add_tileset(self.id_mapa, layers, srid, sld.id, sld_url)
+                add_or_replace_tileset(self.id_mapa, layers, srid, sld.id, sld_url)
         elif self.tipo_de_mapa == 'general':
             layers = 'default'
                 
         # mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
-        add_tileset(self.id_mapa, layers, srid, '', sld_url)
+        add_or_replace_tileset(self.id_mapa, layers, srid, '', sld_url)
 
     def generar_thumbnail(self):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
