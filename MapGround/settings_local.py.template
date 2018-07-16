@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import urlparse 
+import urlparse
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -17,7 +17,7 @@ SITE_HEADER = '<b>Map</b>Ground'
 SITE_TITLE = 'MapGround'
 if DEBUG:
     SITE_URL = 'http://localhost:8000/'
-else: 
+else:
     SITE_URL = 'http://localhost:8080/'
 
 TIME_ZONE = 'UTC'
@@ -35,11 +35,11 @@ CANTIDAD_DE_ULTIMOS_MAPAS = 5
 #
 # MAPCACHE_URL = 'http://localhost:7654/cgi-bin/mapcache/'
 #
-# y para produccion: 
+# y para produccion:
 #
 # MAPCACHE_URL = 'http://example.com/mapcache/'
 
-WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL,'layers/wxs/')
+WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL, 'layers/wxs/')
 
 VISOR_INITIAL_EXTENT = '-135 -60 135 60'
 VISOR = True
@@ -54,7 +54,7 @@ if DEBUG:
     MAPSERVER_URL = 'http://localhost:7654/cgi-bin/mapserv'
 else:
     from settings_local_db import *
-    MAPCACHE_URL = SITE_URL+'/mapcache/'
+    MAPCACHE_URL = SITE_URL + '/mapcache/'
     MAPAS_PATH = '/var/local/mapground/mapfiles/'
     MEDIA_ROOT = '/var/local/mapground/media/'
     MAPCACHE_CONFIG_ROOT = '/var/local/mapground/'

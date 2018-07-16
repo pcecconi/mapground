@@ -13,17 +13,17 @@ SECRET_KEY = 'secret-key'
 
 DATABASES = {
     'default': {
-         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-         'NAME': 'mapground-db',
-         'USER': 'mapground-user',
-         'PASSWORD': 'mapground-password',
-         'HOST': 'mapground-host', 
-     }
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'mapground-db',
+        'USER': 'mapground-user',
+        'PASSWORD': 'mapground-password',
+        'HOST': 'mapground-host',
+    }
 }
 
-DEFAULT_DB_CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'"%(DATABASES['default']['HOST'],DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['PASSWORD'])
+DEFAULT_DB_CONNECTION_STRING = "host='%s' dbname='%s' user='%s' password='%s'" % (DATABASES['default']['HOST'], DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['PASSWORD'])
 
-POSTGIS_VERSION = ( 2, 3 )
+POSTGIS_VERSION = (2, 3)
 
 # DATABASES = {
 #     'default': {
