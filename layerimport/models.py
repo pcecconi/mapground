@@ -11,7 +11,6 @@ import os
 # import os, subprocess, re, glob
 
 class TablaGeografica(SingleOwnerMixin, models.Model):
-#    owner = models.ForeignKey(User,null=False,blank=False) #TODO
     nombre_normalizado = models.CharField('Nombre Normalizado', null=False, blank=False, unique=False, max_length=255)
     nombre_del_archivo = models.CharField('Nombre del Archivo', null=False, blank=False, unique=False, max_length=255)
     esquema = models.CharField('Esquema', null=False, blank=False, max_length=100)
@@ -25,7 +24,7 @@ class TablaGeografica(SingleOwnerMixin, models.Model):
         verbose_name_plural = 'Tablas geográficas'
     def __unicode__(self):
         return unicode(self.nombre_normalizado)
-	
+
 capasPendientes = []
 
 @receiver(post_save, sender=TablaGeografica)
@@ -58,4 +57,3 @@ def onLayerDelete(sender, instance, **kwargs):
 # 	 		print 'slug: ', value.slug
 # 	 		print 'file: ', value.file
 # 	 		# print 'nombre: ', value.dameNombre
-
