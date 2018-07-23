@@ -2,13 +2,12 @@
 from __future__ import unicode_literals
 
 # core
-from django.db import models, transaction
 from django.conf import settings
-from django.db import connection, connections
+from django.db import connection
 # slugs
 from django.utils.text import slugify
 # signals
-from django.db.models.signals import post_save, post_delete, pre_save
+from django.db.models.signals import post_save, pre_save  # , post_delete
 from django.dispatch import receiver
 # fts
 from djorm_pgfulltext.models import SearchManager
@@ -18,14 +17,14 @@ from djorm_pgfulltext.fields import VectorField
 import os
 from utils.commons import normalizar_texto
 # from mapcache.settings import MAPSERVER_URL
-import urllib2
 import urlparse
-from lxml import etree
+# from lxml import etree
 
 # geodjango
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from django_extras.contrib.auth.models import SingleOwnerMixin
+
 
 TIPO_DE_CAPA_ENUM = (
     ('vector', 'vector'),
@@ -37,9 +36,11 @@ class TipoDeGeometria(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)  # Punto/Linea/Poligono
     postgres_type = models.CharField(u'Postgres Type', null=False, blank=False, max_length=100)  # Point/LineString/Polygon
     mapserver_type = models.CharField(u'Mapserver Type', null=False, blank=False, max_length=50)  # POINT/LINE/POLYGON
+
     class Meta:
         verbose_name = u'Tipo de Geometría'
         verbose_name_plural = u'Tipos de Geometría'
+
     def __unicode__(self):
         return unicode(self.nombre)
 
@@ -74,31 +75,39 @@ class Capa(SingleOwnerMixin, models.Model):
     timestamp_alta = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de alta')
     timestamp_modificacion = models.DateTimeField(auto_now=True, verbose_name='Fecha de última modificación')
     objects = models.GeoManager()
+
     class Meta:
         # unique_together = (('esquema', 'tabla'),)  # ya no puede serlo por permitir nulos
         verbose_name = 'Capa'
         verbose_name_plural = 'Capas'
+
     def __unicode__(self):
         return unicode(self.nombre)
+
     @property
     def dame_titulo(self):
-        return self.metadatos.titulo if self.metadatos.titulo!='' else self.nombre
+        return self.metadatos.titulo if self.metadatos.titulo != '' else self.nombre
+
     @property
     def dame_projection(self):
         return unicode(self.srid)
+
     @property
     def dame_descripcion(self):
         if self.metadatos.descripcion == '':
             return u'Sin descripción'
         else:
             return self.metadatos.descripcion
-        #TODO: sacar de epok/commons.py funcion que trunca sin cortar palabras
+        # TODO: sacar de epok/commons.py funcion que trunca sin cortar palabras
+
     @property
     def dame_fuente(self):
         return self.metadatos.fuente
+
     @property
     def dame_contacto(self):
         return self.metadatos.contacto
+
     @property
     def dame_connection_string(self):
         if self.conexion_postgres is None:
@@ -151,12 +160,12 @@ class Capa(SingleOwnerMixin, models.Model):
                 pass
 
     def save(self, *args, **kwargs):
-#        # TODO: pensar: vamos a permitir que una capa pueda cambiar su nombre? esto cambaria el id con el tiempo, hay que actualizar las referencias en los mapfiles....si no queremos, hay que hacer algun truco:dirtyfields,compararcontra la base,etc
-#          if self.slug == '':
-#              self.slug=slugify(unicode(self.nombre)).replace("-", "_")
-        self.slug=slugify(unicode(self.nombre)).replace('-', '_')
-        #el id_capa lo setea la aplicacion que hace el upload
-#        self.id_capa=self.owner.username+'_'+self.slug         
+        # TODO: pensar: vamos a permitir que una capa pueda cambiar su nombre? esto cambaria el id con el tiempo, hay que actualizar las referencias en los mapfiles....si no queremos, hay que hacer algun truco:dirtyfields,compararcontra la base,etc
+        # if self.slug == '':
+        #     self.slug=slugify(unicode(self.nombre)).replace("-", "_")
+        self.slug = slugify(unicode(self.nombre)).replace('-', '_')
+        # el id_capa lo setea la aplicacion que hace el upload
+        # self.id_capa=self.owner.username+'_'+self.slug
 
         super(Capa, self).save(*args, **kwargs)
         return True
@@ -165,10 +174,12 @@ class Capa(SingleOwnerMixin, models.Model):
 class Categoria(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=255)
+
     class Meta:
         verbose_name = 'Categoría'
         verbose_name_plural = 'Categorías'
         ordering = ['nombre']
+
     def __unicode__(self):
         return unicode(self.nombre)
 
@@ -176,20 +187,24 @@ class Categoria(models.Model):
 class AreaTematica(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=255)
+
     class Meta:
         verbose_name = 'Área Temática'
         verbose_name_plural = 'Áreas Temáticas'
         ordering = ['nombre']
+
     def __unicode__(self):
         return unicode(self.nombre)
 
 
 class Escala(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=100)
+
     class Meta:
         verbose_name = 'Escala'
         verbose_name_plural = 'Escalas'
         ordering = ['nombre']
+
     def __unicode__(self):
         return unicode(self.nombre)
 
@@ -202,12 +217,15 @@ class Atributo(models.Model):
     publicable = models.BooleanField(null=False, default=True)
     unico = models.BooleanField(null=False, default=False)
     metadatos = models.ForeignKey('Metadatos', null=False)
+
     class Meta:
         unique_together = (('nombre_del_campo', 'metadatos'),)
         verbose_name = 'Atributo'
         verbose_name_plural = 'Atributos'
+
     def __unicode__(self):
         return unicode(self.nombre_del_campo) + ('(%s)' % (unicode(self.alias)) if self.alias != '' else '')
+
     @property
     def dame_descripcion(self):
         descr = self.descripcion[:50]
@@ -215,6 +233,7 @@ class Atributo(models.Model):
             return 'Sin descripción'
         else:
             return descr + '...'  # TODO: sacar de epok/commons.py funcion que trunca sin cortar palabras
+
     def save(self, *args, **kwargs):
         self.alias = normalizar_texto(self.alias, False)  # sacamos espacios y caracteres especiales que traen problemas en WXS pero mantenemos mayusculas y minusculas
         if self.alias != '':  # si empieza con numero le agregamos un _ al inicio
@@ -230,10 +249,12 @@ class ConexionPostgres(models.Model):
     dbname = models.CharField('Database', null=False, blank=False, max_length=50)
     user = models.CharField('User', null=False, blank=False, max_length=50)
     password = models.CharField('Password', null=False, blank=False, max_length=50)
+
     class Meta:
         verbose_name = u'Conexión Postgres'
         verbose_name_plural = 'Conexiones Postgres'
         ordering = ['nombre']
+
     def __unicode__(self):
         if self.nombre != '':
             return unicode(self.nombre)
@@ -246,6 +267,7 @@ class ConexionPostgres(models.Model):
 #            conexion='%s (%s)'%(unicode(self.nombre),conexion)
         return conexion
     # TODO: encriptamos conexiones? que implica?
+
     @property
     def dame_connection_string(self):
         return 'host=%s dbname=%s user=%s password=%s port=%s'\
@@ -278,6 +300,7 @@ class Metadatos(models.Model):
     class Meta:
         verbose_name = 'Metadatos de Capa'
         verbose_name_plural = 'Metadatos de Capas'
+
     def __unicode__(self):
         try:
             return unicode(self.capa)
@@ -286,25 +309,25 @@ class Metadatos(models.Model):
 
     # TODO: def save(self): obligar a mantener la capa original!
     def dame_gml_atributos(self):
-        include_items=[]
-        items_aliases=[]
+        include_items = []
+        items_aliases = []
         for a in self.atributo_set.all():
-            if a.publicable and a.nombre_del_campo not in ('gid','geom'):
+            if a.publicable and a.nombre_del_campo not in ('gid', 'geom'):
                 include_items.append(a.nombre_del_campo.encode('UTF-8'))
                 if a.alias != '':
-                    items_aliases.append((a.nombre_del_campo.encode('UTF-8'),a.alias.encode('UTF-8')))
+                    items_aliases.append((a.nombre_del_campo.encode('UTF-8'), a.alias.encode('UTF-8')))
         return include_items, items_aliases
 
     def dame_nombres_atributos(self):
-        include_items=[]
+        include_items = []
         for a in self.atributo_set.all():
-            if a.nombre_del_campo not in ('gid','geom'):
+            if a.nombre_del_campo not in ('gid', 'geom'):
                 include_items.append(a.nombre_del_campo)
         return include_items
 
     @property
     def dame_categorias(self):
-        res=[]
+        res = []
         for cat in self.categorias.all():
             res.append(cat.nombre)
         return res
@@ -318,42 +341,42 @@ class Metadatos(models.Model):
         textos.append(normalizar_texto(self.descripcion))
         self.input_search_index = ' '.join(textos)
 
-    def save(self, *args, **kwargs):            
+    def save(self, *args, **kwargs):
         self.actualizar_input_search_index()
         super(Metadatos, self).save(*args, **kwargs)
 
     objects = SearchManager(
-        #fields = ('nombre_capa', 'slug_capa', 'titulo', 'palabras_claves'),
-        fields = ('input_search_index',),
-        config = 'pg_catalog.spanish', # this is default
-        search_field = 'search_index', # this is default
-        auto_update_search_field = True
+        # fields = ('nombre_capa', 'slug_capa', 'titulo', 'palabras_claves'),
+        fields=('input_search_index',),
+        config='pg_catalog.spanish',  # this is default
+        search_field='search_index',  # this is default
+        auto_update_search_field=True
     )
 
 
 @receiver(pre_save, sender=Capa)
 def onCapaPreSave(sender, instance, **kwargs):
-    print 'onCapaPreSave %s'%(str(instance))
+    print 'onCapaPreSave %s' % (str(instance))
     # carga inicial de campos read only de la capa
     if instance.id is None:
         print '...carga inicial de datos read only'
         cursor = connection.cursor()
         # esta escritura (segura y recomendada) no funciona porque escapea strings con ' y no sirve para el FROM
-        #cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
-        cursor.execute("SELECT count(*) from %s.%s" %(instance.esquema, instance.tabla))
-        rows=cursor.fetchone()
-        instance.cantidad_de_registros=int(rows[0])
-        cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" %(instance.campo_geom,instance.esquema, instance.tabla))
-        rows=cursor.fetchone()
-        instance.tipo_de_geometria=TipoDeGeometria.objects.get(postgres_type=rows[0])
-        cursor.execute("SELECT st_extent(%s) from %s.%s;" %(instance.campo_geom,instance.esquema, instance.tabla))
-        rows=cursor.fetchone()
-        instance.layer_srs_extent=rows[0].replace('BOX(','').replace(')','').replace(',',' ')
-        cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" %(instance.campo_geom,instance.esquema, instance.tabla))
-        rows=cursor.fetchone()
-        extent_capa=rows[0].replace('BOX(','').replace(')','').replace(',',' ').split(' ')
-        instance.extent_minx_miny = Point(float(extent_capa[0]),float(extent_capa[1]),srid=4326)
-        instance.extent_maxx_maxy = Point(float(extent_capa[2]),float(extent_capa[3]),srid=4326)
+        # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
+        cursor.execute("SELECT count(*) from %s.%s" % (instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        instance.cantidad_de_registros = int(rows[0])
+        cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" % (instance.campo_geom, instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        instance.tipo_de_geometria = TipoDeGeometria.objects.get(postgres_type=rows[0])
+        cursor.execute("SELECT st_extent(%s) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        instance.layer_srs_extent = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ')
+        cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
+        instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
+        instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
 
 
 @receiver(post_save, sender=Metadatos)
@@ -365,37 +388,40 @@ def onMetadatosPostSave(sender, instance, created, **kwargs):
 def get_sld_filename(instance, filename):
     return os.path.join('sld', instance.id_archivo_sld)
 
+
 class ArchivoSLD(models.Model):
     id_archivo_sld = models.CharField('Id Archivo SLD', null=False, blank=False, unique=True, max_length=500)
     capa = models.ForeignKey('Capa', null=False)
-    filename = models.FileField('Nombre de Archivo',upload_to=get_sld_filename, max_length=500)
+    filename = models.FileField('Nombre de Archivo', upload_to=get_sld_filename, max_length=500)
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000)
     default = models.BooleanField(u'Activa', null=False, default=False)
     user_alta = models.CharField(u'Subido por', null=False, blank=True, max_length=50, default='')
     user_modificacion = models.CharField(u'Modificado por', null=False, blank=True, max_length=50, default='')
     timestamp_alta = models.DateTimeField('Fecha de alta', null=True, blank=True)
     timestamp_modificacion = models.DateTimeField('Fecha de última modificación', null=True, blank=True)
+
     class Meta:
         verbose_name = 'Archivo SLD'
         verbose_name_plural = 'Archivos SLD'
+
     def __unicode__(self):
         return unicode(self.id_archivo_sld)
 
 
 @receiver(pre_save, sender=ArchivoSLD)
 def onArchivoSLDPreSave(sender, instance, **kwargs):
-    print 'onArchivoSLDPreSave %s'%(str(instance))
-    #instance.id_archivo_sld = instance.capa.id_capa+'_'+instance.filename.name
-    if instance.pk is None: # si voy a crear un nuevo SLD: 
+    print 'onArchivoSLDPreSave %s' % (str(instance))
+    # instance.id_archivo_sld = instance.capa.id_capa+'_'+instance.filename.name
+    if instance.pk is None:  # si voy a crear un nuevo SLD:
         # 1 - defino el id, unico, garantizado por validacion previa en el form
-        uploaded_filename=normalizar_texto(os.path.splitext(instance.filename.name)[0])
-        instance.id_archivo_sld = (instance.capa.id_capa+'_' if not uploaded_filename.startswith(instance.capa.id_capa) else '')+uploaded_filename+'.sld'
+        uploaded_filename = normalizar_texto(os.path.splitext(instance.filename.name)[0])
+        instance.id_archivo_sld = (instance.capa.id_capa + '_' if not uploaded_filename.startswith(instance.capa.id_capa) else '') + uploaded_filename + '.sld'
         # 2 - lo marco como default si no hay otro
-        if not instance.default and len(ArchivoSLD.objects.filter(capa=instance.capa).filter(default=True))==0:
-            instance.default=True
-    else: # si voy a actualizar un SLD:
+        if not instance.default and len(ArchivoSLD.objects.filter(capa=instance.capa).filter(default=True)) == 0:
+            instance.default = True
+    else:  # si voy a actualizar un SLD:
         try:
-            # borro el SLD anterior 
+            # borro el SLD anterior
             old_filename = ArchivoSLD.objects.get(pk=instance.pk).filename
             if old_filename != instance.filename:
                 os.remove(os.path.join(settings.MEDIA_ROOT, old_filename.name))
