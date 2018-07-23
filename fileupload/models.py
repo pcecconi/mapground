@@ -23,7 +23,6 @@ class Archivo(SingleOwnerMixin, models.Model):
     slug = models.SlugField(max_length=255, blank=True)
     nombre = models.CharField(max_length=128, blank=True)
     extension = models.CharField(max_length=15, blank=True)
-    # owner = models.ForeignKey(settings.AUTH_USER_MODEL)
 
     def __unicode__(self):
         return self.file.name
