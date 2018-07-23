@@ -67,6 +67,7 @@ def LayerImportView(request, filename):
                     owner=tabla_geografica.owner,
                     nombre=tabla_geografica.nombre_normalizado,
                     id_capa=tabla_geografica.tabla,
+                    tipo_de_capa='vector',
                     conexion_postgres=None,
                     esquema=tabla_geografica.esquema,
                     tabla=tabla_geografica.tabla,

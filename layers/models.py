@@ -3,7 +3,6 @@ from __future__ import unicode_literals
 
 # core
 from django.db import models, transaction
-from django.contrib.auth.models import User
 from django.conf import settings
 from django.db import connection, connections
 # slugs
@@ -28,11 +27,16 @@ from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from django_extras.contrib.auth.models import SingleOwnerMixin
 
+TIPO_DE_CAPA_ENUM = (
+    ('vector', 'vector'),
+    ('raster', 'raster'),
+)
+
 
 class TipoDeGeometria(models.Model):
-    nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50) #Punto/Linea/Poligono/Raster
-    postgres_type = models.CharField(u'Postgres Type', null=False, blank=False, max_length=100)#Point/LineString/Polygon
-    mapserver_type = models.CharField(u'Mapserver Type', null=False, blank=False, max_length=50)#POINT/LINE/POLYGON
+    nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)  # Punto/Linea/Poligono
+    postgres_type = models.CharField(u'Postgres Type', null=False, blank=False, max_length=100)  # Point/LineString/Polygon
+    mapserver_type = models.CharField(u'Mapserver Type', null=False, blank=False, max_length=50)  # POINT/LINE/POLYGON
     class Meta:
         verbose_name = u'Tipo de Geometría'
         verbose_name_plural = u'Tipos de Geometría'
@@ -41,27 +45,37 @@ class TipoDeGeometria(models.Model):
 
 
 class Capa(SingleOwnerMixin, models.Model):
-    # owner = models.ForeignKey(User, null=False,blank=False) #TODO:!
-    nombre = models.CharField('Nombre', null=False, blank=False, max_length=255) # puede repetirse para distintos usuarios
+    nombre = models.CharField('Nombre', null=False, blank=False, max_length=255)  # puede repetirse para distintos usuarios
     id_capa = models.CharField('Id capa', null=False, blank=False, unique=True, max_length=255)
     slug = models.SlugField('Slug', null=False, blank=True, max_length=255)
-    conexion_postgres = models.ForeignKey(u'ConexionPostgres', null=True, blank=True)
-    campo_geom = models.CharField(u'Campo de Geometría', null=False, blank=False, max_length=30, default='geom')
-    esquema = models.CharField('Esquema', null=False, blank=False, max_length=100)
-    tabla = models.CharField('Tabla', null=False, blank=False, max_length=100)
-    wxs_publico = models.BooleanField(u'WMS/WFS Público?', null=False, default=False)
-    tipo_de_geometria = models.ForeignKey(u'TipoDeGeometria', null=False, blank=False) #r/o
-    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True) #r/o
-    srid = models.IntegerField('SRID', null=False, blank=False)
-    extent_minx_miny=models.PointField(u'(Minx, Miny)', null=True, blank=True) # extent en 4326 calculado por postgres en el signal de creacion
-    extent_maxx_maxy=models.PointField(u'(Maxx, Maxy)', null=True, blank=True) # extent en 4326 calculado por postgres en el signal de creacion
-    layer_srs_extent=models.CharField('Original SRS Extent', null=False, blank=False, max_length=255, default='') # extent en el srid original calculado por postgres en el signal de creacion
 
+    # vector/raster?
+    tipo_de_capa = models.CharField('Tipo de capa', choices=TIPO_DE_CAPA_ENUM, default='vector', max_length=10, null=False, blank=False)
+
+    # si es raster...
+    nombre_del_archivo = models.CharField('Nombre del archivo', null=True, default=True, max_length=255)
+
+    # si es vector...
+    conexion_postgres = models.ForeignKey(u'ConexionPostgres', null=True, blank=True)
+    tipo_de_geometria = models.ForeignKey(u'TipoDeGeometria', null=True, blank=True)  # r/o  #TODO: esto cambio
+    esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)  # TODO: esto cambio
+    tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)  # TODO: esto cambio
+    campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')  # r/o  # TODO: esto cambio
+    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # r/o
+    srid = models.IntegerField('SRID', null=False, blank=False)
+    extent_minx_miny = models.PointField(u'(Minx, Miny)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
+    extent_maxx_maxy = models.PointField(u'(Maxx, Maxy)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
+    layer_srs_extent = models.CharField('Original SRS Extent', null=False, blank=False, max_length=255, default='')  # extent en el srid original calculado por postgres en el signal de creacion
+
+    # publico? TODO: modelar aparte
+    wxs_publico = models.BooleanField(u'WMS/WFS Público?', null=False, default=False)
+
+    # automaticos...
     timestamp_alta = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de alta')
     timestamp_modificacion = models.DateTimeField(auto_now=True, verbose_name='Fecha de última modificación')
     objects = models.GeoManager()
     class Meta:
-        unique_together=(('esquema', 'tabla'),)
+        # unique_together = (('esquema', 'tabla'),)  # ya no puede serlo por permitir nulos
         verbose_name = 'Capa'
         verbose_name_plural = 'Capas'
     def __unicode__(self):
@@ -71,7 +85,7 @@ class Capa(SingleOwnerMixin, models.Model):
         return self.metadatos.titulo if self.metadatos.titulo!='' else self.nombre
     @property
     def dame_projection(self):
-        return unicode(self.srid) # if self.srid!='' else str(CAPA_DEFAULT_SRS))
+        return unicode(self.srid)
     @property
     def dame_descripcion(self):
         if self.metadatos.descripcion == '':
@@ -92,41 +106,28 @@ class Capa(SingleOwnerMixin, models.Model):
         else:
             return self.conexion_postgres.dame_connection_string
 
-#    estos metodos no los vamos a usar 
-#     @property
-#     def dame_owner_nombre(self):
-#         if self.owner.first_name!='':
-#             return self.owner.first_name
-#         elif self.owner.last_name!='':
-#             return self.owner.last_name
-#         else: 
-#             return self.owner.username
-#     @property
-#     def dame_owner_username(self):
-#         return self.owner.username
-
     def dame_extent(self, separador=',', srid=4326):
         # heuristica para arreglar thumbnails: corta por la mitad a la antartida (lo maximo es -90)
         # print 'layer.dame_extent(srid=%i), original srid: %i'%(srid, self.srid)
-        if srid==self.srid:
+        if srid == self.srid:
             return self.layer_srs_extent.replace(' ', separador)
-        if srid==3857:
+        if srid == 3857:
             if self.extent_minx_miny.y < -70:
                 self.extent_minx_miny.y = -70
         min = self.extent_minx_miny.transform(srid, clone=True)
         max = self.extent_maxx_maxy.transform(srid, clone=True)
-        if separador==[]:
-            return [min,max]
+        if separador == []:
+            return [min, max]
         else:
-            return separador.join([str(min.x), str(min.y)])+separador+separador.join([str(max.x), str(max.y)])
+            return separador.join([str(min.x), str(min.y)]) + separador + separador.join([str(max.x), str(max.y)])
 
     @property
     def dame_datos(self):
         cursor = connection.cursor()
         try:
-            cursor.execute("SELECT %s from %s.%s limit 100"%(','.join(map(lambda x: '\"%s\"'%x, self.metadatos.dame_nombres_atributos())), self.esquema, self.tabla))
+            cursor.execute("SELECT %s from %s.%s limit 100" % (','.join(map(lambda x: '\"%s\"' % x, self.metadatos.dame_nombres_atributos())), self.esquema, self.tabla))
         except:
-            cursor.execute("SELECT * from %s.%s limit 100"%(self.esquema, self.tabla))
+            cursor.execute("SELECT * from %s.%s limit 100" % (self.esquema, self.tabla))
         rows = cursor.fetchall()
         return rows
 
@@ -148,15 +149,15 @@ class Capa(SingleOwnerMixin, models.Model):
                 attr.save()
             except:
                 pass
-    
-    def save(self, *args, **kwargs):            
+
+    def save(self, *args, **kwargs):
 #        # TODO: pensar: vamos a permitir que una capa pueda cambiar su nombre? esto cambaria el id con el tiempo, hay que actualizar las referencias en los mapfiles....si no queremos, hay que hacer algun truco:dirtyfields,compararcontra la base,etc
 #          if self.slug == '':
 #              self.slug=slugify(unicode(self.nombre)).replace("-", "_")
         self.slug=slugify(unicode(self.nombre)).replace('-', '_')
         #el id_capa lo setea la aplicacion que hace el upload
 #        self.id_capa=self.owner.username+'_'+self.slug         
-        
+
         super(Capa, self).save(*args, **kwargs)
         return True
 
@@ -167,7 +168,7 @@ class Categoria(models.Model):
     class Meta:
         verbose_name = 'Categoría'
         verbose_name_plural = 'Categorías'
-        ordering = ['nombre']        
+        ordering = ['nombre']
     def __unicode__(self):
         return unicode(self.nombre)
 
@@ -178,7 +179,7 @@ class AreaTematica(models.Model):
     class Meta:
         verbose_name = 'Área Temática'
         verbose_name_plural = 'Áreas Temáticas'
-        ordering = ['nombre']        
+        ordering = ['nombre']
     def __unicode__(self):
         return unicode(self.nombre)
 
@@ -188,37 +189,37 @@ class Escala(models.Model):
     class Meta:
         verbose_name = 'Escala'
         verbose_name_plural = 'Escalas'
-        ordering = ['nombre']        
+        ordering = ['nombre']
     def __unicode__(self):
         return unicode(self.nombre)
 
 
 class Atributo(models.Model):
-    nombre_del_campo = models.CharField('Nombre del Campo', null=False, blank=False, max_length=50) #debe ser r/o
-    tipo = models.CharField('Tipo', null=False, blank=True, max_length=50) # lo que diga postgres!, debe ser r/o 
+    nombre_del_campo = models.CharField('Nombre del Campo', null=False, blank=False, max_length=50)  # debe ser r/o
+    tipo = models.CharField('Tipo', null=False, blank=True, max_length=50)  # lo que diga postgres!, debe ser r/o
     alias = models.CharField('Alias', null=False, blank=True, max_length=50)
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=1000)
     publicable = models.BooleanField(null=False, default=True)
     unico = models.BooleanField(null=False, default=False)
     metadatos = models.ForeignKey('Metadatos', null=False)
     class Meta:
-        unique_together=(('nombre_del_campo', 'metadatos'),)
+        unique_together = (('nombre_del_campo', 'metadatos'),)
         verbose_name = 'Atributo'
         verbose_name_plural = 'Atributos'
     def __unicode__(self):
-        return unicode(self.nombre_del_campo) + ('(%s)'%(unicode(self.alias)) if self.alias!='' else '')
+        return unicode(self.nombre_del_campo) + ('(%s)' % (unicode(self.alias)) if self.alias != '' else '')
     @property
     def dame_descripcion(self):
-        descr=self.descripcion[:50]
-        if descr=='':
+        descr = self.descripcion[:50]
+        if descr == '':
             return 'Sin descripción'
         else:
-            return descr+'...' #TODO: sacar de epok/commons.py funcion que trunca sin cortar palabras 
-    def save(self, *args, **kwargs):            
-        self.alias=normalizar_texto(self.alias,False) #sacamos espacios y caracteres especiales que traen problemas en WXS pero mantenemos mayusculas y minusculas
-        if self.alias!='': # si empieza con numero le agregamos un _ al inicio
+            return descr + '...'  # TODO: sacar de epok/commons.py funcion que trunca sin cortar palabras
+    def save(self, *args, **kwargs):
+        self.alias = normalizar_texto(self.alias, False)  # sacamos espacios y caracteres especiales que traen problemas en WXS pero mantenemos mayusculas y minusculas
+        if self.alias != '':  # si empieza con numero le agregamos un _ al inicio
             if self.alias[0].isdigit():
-                self.alias='_'+self.alias
+                self.alias = '_' + self.alias
         super(Atributo, self).save(*args, **kwargs)
 
 
@@ -232,47 +233,48 @@ class ConexionPostgres(models.Model):
     class Meta:
         verbose_name = u'Conexión Postgres'
         verbose_name_plural = 'Conexiones Postgres'
-        ordering = ['nombre']        
+        ordering = ['nombre']
     def __unicode__(self):
-        if self.nombre!='': 
+        if self.nombre != '':
             return unicode(self.nombre)
         """ Devuelve algo de la forma 'Nombre (user@host:port.dbname)' """
-        conexion='%s@%s'%(self.user,self.host)
-        if self.port!='':conexion+=':%s'%(self.port)
-        conexion+='.%s'%(self.dbname)
+        conexion = '%s@%s' % (self.user, self.host)
+        if self.port != '':
+            conexion += ':%s' % (self.port)
+        conexion += '.%s' % (self.dbname)
 #        if self.nombre!='':
 #            conexion='%s (%s)'%(unicode(self.nombre),conexion)
         return conexion
-    #TODO: encriptamos conexiones? que implica?
+    # TODO: encriptamos conexiones? que implica?
     @property
     def dame_connection_string(self):
         return 'host=%s dbname=%s user=%s password=%s port=%s'\
-                %(self.host, self.dbname, self.user,self.password,self.port)
+            % (self.host, self.dbname, self.user, self.password, self.port)
 
-    
+
 class Metadatos(models.Model):
-    capa = models.OneToOneField(Capa,null=False)
-    nombre_capa = models.CharField('Nombre Capa', null=False, blank=True, max_length=255) #TODO: ver si al final usamos solo slug 
+    capa = models.OneToOneField(Capa, null=False)
+    nombre_capa = models.CharField('Nombre Capa', null=False, blank=True, max_length=255)  # TODO: ver si al final usamos solo slug
     slug_capa = models.CharField('Slug Capa', null=False, blank=True, max_length=255)
-    
-    titulo = models.CharField(u'Título', null=False, blank=False, max_length=255) # title
-    fuente = models.TextField(u'Fuente', null=False, blank=True, max_length=1000) # attribution
-    contacto = models.TextField(u'Contacto', null=False, blank=True, max_length=1000) # contact organization
-    descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000) # abstract
+
+    titulo = models.CharField(u'Título', null=False, blank=False, max_length=255)  # title
+    fuente = models.TextField(u'Fuente', null=False, blank=True, max_length=1000)  # attribution
+    contacto = models.TextField(u'Contacto', null=False, blank=True, max_length=1000)  # contact organization
+    descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000)  # abstract
     escala = models.ForeignKey(Escala, null=True, blank=True, on_delete=models.SET_NULL)
     palabras_claves = models.TextField(u'Palabras Claves', null=False, blank=True, max_length=10000)
-    categorias = models.ManyToManyField('Categoria',blank=True, verbose_name=u'Categorías')
+    categorias = models.ManyToManyField('Categoria', blank=True, verbose_name=u'Categorías')
     area_tematica = models.ForeignKey('AreaTematica', null=True, blank=True, on_delete=models.SET_NULL, verbose_name=u'Área Temática')
-    
-    fecha_de_relevamiento = models.CharField('Fecha de Relevamiento',null=False, blank=True, max_length=50)
-    fecha_de_actualizacion = models.CharField(u'Fecha de Actualización',null=False, blank=True, max_length=50)
-    frecuencia_de_actualizacion = models.CharField(u'Frecuencia de Actualización', null=False, blank=True, max_length=100)    
+
+    fecha_de_relevamiento = models.CharField('Fecha de Relevamiento', null=False, blank=True, max_length=50)
+    fecha_de_actualizacion = models.CharField(u'Fecha de Actualización', null=False, blank=True, max_length=50)
+    frecuencia_de_actualizacion = models.CharField(u'Frecuencia de Actualización', null=False, blank=True, max_length=100)
     timestamp_alta = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de alta')
     timestamp_modificacion = models.DateTimeField(auto_now=True, verbose_name='Fecha de última modificación')
-    
+
     input_search_index = models.TextField(null=False, blank=True, default='')
     search_index = VectorField()
-    
+
     class Meta:
         verbose_name = 'Metadatos de Capa'
         verbose_name_plural = 'Metadatos de Capas'
@@ -280,9 +282,9 @@ class Metadatos(models.Model):
         try:
             return unicode(self.capa)
         except:
-            return 'sin capa!'#no deberia pasar por disenio
-        
-    #TODO: def save(self): obligar a mantener la capa original!
+            return 'sin capa!'  # no deberia pasar por disenio
+
+    # TODO: def save(self): obligar a mantener la capa original!
     def dame_gml_atributos(self):
         include_items=[]
         items_aliases=[]
@@ -326,7 +328,7 @@ class Metadatos(models.Model):
         config = 'pg_catalog.spanish', # this is default
         search_field = 'search_index', # this is default
         auto_update_search_field = True
-    )    
+    )
 
 
 @receiver(pre_save, sender=Capa)
@@ -399,4 +401,3 @@ def onArchivoSLDPreSave(sender, instance, **kwargs):
                 os.remove(os.path.join(settings.MEDIA_ROOT, old_filename.name))
         except:
             pass
-
