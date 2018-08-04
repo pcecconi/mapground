@@ -44,7 +44,7 @@ class TipoDeGeometria(models.Model):
     def __unicode__(self):
         return unicode(self.nombre)
 
-
+# TODO: el save de esta clase debe garantizar datos minimos necesarios de raster o bin de vector
 class Capa(SingleOwnerMixin, models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, max_length=255)  # puede repetirse para distintos usuarios
     id_capa = models.CharField('Id capa', null=False, blank=False, unique=True, max_length=255)
@@ -132,6 +132,8 @@ class Capa(SingleOwnerMixin, models.Model):
 
     @property
     def dame_datos(self):
+        if self.tipo_de_capa == 'raster':
+            return None
         cursor = connection.cursor()
         try:
             cursor.execute("SELECT %s from %s.%s limit 100" % (','.join(map(lambda x: '\"%s\"' % x, self.metadatos.dame_nombres_atributos())), self.esquema, self.tabla))
@@ -360,23 +362,26 @@ def onCapaPreSave(sender, instance, **kwargs):
     # carga inicial de campos read only de la capa
     if instance.id is None:
         print '...carga inicial de datos read only'
-        cursor = connection.cursor()
-        # esta escritura (segura y recomendada) no funciona porque escapea strings con ' y no sirve para el FROM
-        # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
-        cursor.execute("SELECT count(*) from %s.%s" % (instance.esquema, instance.tabla))
-        rows = cursor.fetchone()
-        instance.cantidad_de_registros = int(rows[0])
-        cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" % (instance.campo_geom, instance.esquema, instance.tabla))
-        rows = cursor.fetchone()
-        instance.tipo_de_geometria = TipoDeGeometria.objects.get(postgres_type=rows[0])
-        cursor.execute("SELECT st_extent(%s) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
-        rows = cursor.fetchone()
-        instance.layer_srs_extent = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ')
-        cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
-        rows = cursor.fetchone()
-        extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
-        instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
-        instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
+        if instance.tipo_de_capa == 'vector':
+            cursor = connection.cursor()
+            # esta escritura (segura y recomendada) no funciona porque escapea strings con ' y no sirve para el FROM
+            # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
+            cursor.execute("SELECT count(*) from %s.%s" % (instance.esquema, instance.tabla))
+            rows = cursor.fetchone()
+            instance.cantidad_de_registros = int(rows[0])
+            cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" % (instance.campo_geom, instance.esquema, instance.tabla))
+            rows = cursor.fetchone()
+            instance.tipo_de_geometria = TipoDeGeometria.objects.get(postgres_type=rows[0])
+            cursor.execute("SELECT st_extent(%s) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
+            rows = cursor.fetchone()
+            instance.layer_srs_extent = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ')
+            cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
+            rows = cursor.fetchone()
+            extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
+            instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
+            instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
+        elif instance.tipo_de_capa == 'raster':
+            instance.layer_srs_extent = 'TODOcon gdalinfo!'  # TODO: gdal
 
 
 @receiver(post_save, sender=Metadatos)

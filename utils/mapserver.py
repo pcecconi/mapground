@@ -7,14 +7,14 @@ import mapscript
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
 MAPA_DEFAULT_EXTENT = (-20037508.3427892480, -20037508.3427892480, 20037508.3427892480, 20037508.3427892480) #3857 whole world
-MAPA_DEFAULT_IMAGECOLOR = '#C6E2F2' # debe ser formato Hexa
+MAPA_DEFAULT_IMAGECOLOR = '#C6E2F2'  # debe ser formato Hexa
 
 MAPA_FONTSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'fonts.txt')
 MAPA_SYMBOLSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'symbols.txt')
 MAPA_DATA_PATH = '../data'
 MAPA_ERRORFILE = os.path.join(settings.MAPAS_PATH, 'map-error.log')
 
-class MS_LAYER_TYPE: 
+class MS_LAYER_TYPE:
     MS_LAYER_POINT, MS_LAYER_LINE, MS_LAYER_POLYGON, MS_LAYER_RASTER, MS_LAYER_ANNOTATION, MS_LAYER_QUERY, MS_LAYER_CIRCLE, MS_LAYER_TILEINDEX, MS_LAYER_CHART = range(9)
 
 def __agregar_simbologia_basica__(layer):
@@ -139,25 +139,29 @@ def create_ms_layer(data):
     layer = mapscript.layerObj()
     layer.name = data['layerName']
     layer.status = mapscript.MS_ON
-    layer.group = 'default' #siempre        
+    layer.group = 'default'  # siempre
     layer.template = 'blank.html' 
-            
-    if data['connectionType']=='WMS':
+
+    if data['layerType']=='RASTER':
+        layer.type=mapscript.MS_LAYER_RASTER
+        layer.data = data['layerData']
+        layer.setProjection('epsg:%s'%(unicode(data['srid'])))
+
+    elif data['connectionType']=='WMS':
         layer.type=mapscript.MS_LAYER_RASTER
         layer.connectiontype = mapscript.MS_WMS
         layer.connection = data['layerConnection']
-        
+
         layer.setMetaData('wms_srs', 'epsg:3857')
         layer.setMetaData('wms_name', data['layerName'])
         layer.setMetaData('wms_server_version', '1.1.1')
         layer.setMetaData('wms_format', 'image/png')
         if data['sldUrl'] is not None:
             layer.setMetaData('wms_sld_url', data['sldUrl'])
-    
+
     elif data['connectionType']=='POSTGIS':
         layer.type=eval('mapscript.MS_LAYER_'+data['layerType'])
-        
-        # layer.sizeunits = mapscript.MS_INCHES
+
         layer.addProcessing('LABEL_NO_CLIP=ON') 
         layer.addProcessing('CLOSE_CONNECTION=DEFER')
         layer.connectiontype = mapscript.MS_POSTGIS

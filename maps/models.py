@@ -358,7 +358,7 @@ class Mapa(models.Model):
             return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/')
 
         return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
-    
+
     def dame_mapserver_map_def(self):
         es_hexa, color = self.dame_imagecolor
         srid = self.dame_projection
@@ -368,7 +368,7 @@ class Mapa(models.Model):
         layers = []
         if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general'):
             mapserverlayers = self.mapserverlayer_set.all().order_by('orden_de_capa','capa__metadatos__titulo')
-        else: #'public_layers'
+        else:  # 'public_layers'
             mapserverlayers = self.mapserverlayer_set.filter(capa__wxs_publico=True).order_by('orden_de_capa')
         for msl in mapserverlayers:
             if self.tipo_de_mapa=='general':
@@ -377,7 +377,6 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layer_def()
                 l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid)
             layers.append(l)
-
         data = {
             "idMapa": self.id_mapa,
             "imageColor": {
@@ -525,10 +524,13 @@ class MapServerLayer(models.Model):
             return self.capa.dame_connection_string
 
     def dame_data(self, srid=None):
-        if srid!=None:
-            return "geom_proj from (select *, st_transform(%s, %d) as geom_proj from %s.%s) aa using unique gid using srid=%d"%(self.capa.campo_geom,srid,self.capa.esquema,self.capa.tabla,srid)
-        else:
-            return "%s from %s.%s"%(self.capa.campo_geom,self.capa.esquema,self.capa.tabla)
+        if self.capa.tipo_de_capa == 'vector':
+            if srid!=None:
+                return "geom_proj from (select *, st_transform(%s, %d) as geom_proj from %s.%s) aa using unique gid using srid=%d"%(self.capa.campo_geom,srid,self.capa.esquema,self.capa.tabla,srid)
+            else:
+                return "%s from %s.%s"%(self.capa.campo_geom,self.capa.esquema,self.capa.tabla)
+        elif self.capa.tipo_de_capa == 'raster':
+            return self.capa.nombre_del_archivo
 
     def save(self, srid=None, *args, **kwargs):
         if self.archivo_sld is not None and self.archivo_sld.capa != self.capa:
@@ -546,22 +548,39 @@ class MapServerLayer(models.Model):
     def dame_mapserver_layer_def(self, connectiontype='POSTGIS'):
         include_items, items_aliases = self.capa.metadatos.dame_gml_atributos()
         srid = 4326 if self.mapa.tipo_de_mapa in ('public_layers','user') and self.capa.srid!=4326 else int(self.capa.dame_projection)
-        data = {
-            "connectionType": connectiontype,
-            "layerName": self.capa.nombre,
-            "layerTitle": self.capa.dame_titulo.encode('utf-8'),
-            "layerConnection": self.dame_layer_connection(connectiontype),
-            "layerData": self.dame_data(srid),
-            "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
-            "layerType": 'RASTER' if connectiontype == 'WMS' else self.capa.tipo_de_geometria.mapserver_type,
-            "srid": srid,
-            "metadataIncludeItems": include_items,
-            "metadataAliases": items_aliases,
-            "layerDefinitionOverride": self.texto_input,
-            "metadata": {}
-        }
+        if self.capa.tipo_de_capa == 'vector':
+            data = {
+                "connectionType": connectiontype,
+                "layerName": self.capa.nombre,
+                "layerTitle": self.capa.dame_titulo.encode('utf-8'),
+                "layerConnection": self.dame_layer_connection(connectiontype),
+                "layerData": self.dame_data(srid),
+                "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
+                "layerType": 'RASTER' if connectiontype == 'WMS' else self.capa.tipo_de_geometria.mapserver_type,
+                "srid": srid,
+                "metadataIncludeItems": include_items,
+                "metadataAliases": items_aliases,
+                "layerDefinitionOverride": self.texto_input,
+                "metadata": {}
+            }
+        elif self.capa.tipo_de_capa == 'raster':
+            data = {
+                #"connectionType": connectiontype,
+                "layerName": self.capa.nombre,
+                "layerTitle": self.capa.dame_titulo.encode('utf-8'),
+                # "layerConnection": self.dame_layer_connection(connectiontype),
+                "layerData": self.dame_data(srid),
+                # "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
+                "layerType": 'RASTER',
+                "srid": srid,
+                # "metadataIncludeItems": include_items,
+                # "metadataAliases": items_aliases,
+                # "layerDefinitionOverride": self.texto_input,
+                "metadata": {}
+            }
+
         return data
-    
+
 
 @receiver(post_save, sender=Capa)
 def onCapaPostSave(sender, instance, created, **kwargs):
@@ -569,7 +588,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
     if created:
         print '...capa creada'
         # ------------ creamos y completamos metadatos y atributos
-        metadatos = Metadatos.objects.create(capa=instance,titulo=instance.nombre)        
+        metadatos = Metadatos.objects.create(capa=instance,titulo=instance.nombre)
         # devuelve <att_num, campo, tipo, default_value, uniq, pk>
         cursor = connection.cursor()
         cursor.execute("SELECT * from utils.campos_de_tabla(%s,%s)", [instance.esquema, instance.tabla])
