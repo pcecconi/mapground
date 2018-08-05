@@ -23,6 +23,7 @@ import urlparse
 # geodjango
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
+from django.contrib.gis.gdal import GDALRaster
 from django_extras.contrib.auth.models import SingleOwnerMixin
 
 
@@ -381,7 +382,12 @@ def onCapaPreSave(sender, instance, **kwargs):
             instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
             instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
         elif instance.tipo_de_capa == 'raster':
-            instance.layer_srs_extent = 'TODOcon gdalinfo!'  # TODO: gdal
+            # TODO: ABRO ARCHIVO Y VEO SI ES CORRECTO, ETC
+            raster = GDALRaster(instance.nombre_del_archivo)   # TODO: try open , etc
+            extent_capa = raster.extent
+            instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
+            instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
+            instance.layer_srs_extent = ' '.join(map(str, raster.extent))
 
 
 @receiver(post_save, sender=Metadatos)
