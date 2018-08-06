@@ -23,9 +23,9 @@ def LayersListView(request):
     l = []
     errores = []
 
-    rasters_tifs = Archivo.objects.filter(extension__in=['.tif', '.tiff', '.geotiff'])
-    for tif in rasters_tifs:
-        l.append({"nombre": tif.nombre, "tipo": "Raster"})
+    rasters = Archivo.objects.filter(extension__in=['.tif', '.tiff', '.geotiff', '.nc'])
+    for raster in rasters:
+        l.append({"nombre": raster.nombre, "tipo": "Raster"})
 
     shapes = Archivo.objects.filter(extension=".shp")
     for shp in shapes:
@@ -48,21 +48,21 @@ def LayerImportView(request, filename):
     except:
         encoding = 'LATIN1'
     try:
-        archivo = Archivo.objects.get(nombre=filename, extension=".shp") # TODO: ???? extension?
+        archivo = Archivo.objects.get(nombre=filename, extension=".shp")  # TODO: ???? extension?
     except:
         try:
-            archivo = Archivo.objects.get(nombre=filename, extension=".geotiff") # TODO: ???? extension?
+            archivo = Archivo.objects.filter(nombre=filename)[0]    # salida temporal hasta resolver lo de la extension
         except (Archivo.DoesNotExist, MapGroundException) as e:
             ok = False
             error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
-    # else:
+
     if ok:
         # if tipo == 'Raster':
-        if archivo.extension == '.geotiff':
+        if archivo.extension != '.shp':
             directorio_destino = MEDIA_ROOT + 'uploaded-rasters/' + unicode(request.user) + '/'     # TODO: idea temporal, pensar la ubicacion final de los rasters y pasarlo al settings
             path_destino = directorio_destino + nombre_tabla(request, filename) + archivo.extension    # TODO: MEJORAR ESTO
 
-            print "copiando {} a {}...".format(archivo.file.name, path_destino)
+            print 'copiando {} a {}...'.format(archivo.file.name, path_destino)
             if not os.path.exists(directorio_destino):
                 os.makedirs(directorio_destino)
             shutil.move(archivo.file.name, path_destino)    # movemos el archivo al path destino
