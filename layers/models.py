@@ -35,8 +35,8 @@ TIPO_DE_CAPA_ENUM = (
 
 class TipoDeGeometria(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)  # Punto/Linea/Poligono
-    postgres_type = models.CharField(u'Postgres Type', null=False, blank=False, max_length=100)  # Point/LineString/Polygon
-    mapserver_type = models.CharField(u'Mapserver Type', null=False, blank=False, max_length=50)  # POINT/LINE/POLYGON
+    postgres_type = models.CharField('Postgres Type', null=False, blank=False, max_length=100)  # Point/LineString/Polygon
+    mapserver_type = models.CharField('Mapserver Type', null=False, blank=False, max_length=50)  # POINT/LINE/POLYGON
 
     class Meta:
         verbose_name = u'Tipo de Geometría'
@@ -44,6 +44,7 @@ class TipoDeGeometria(models.Model):
 
     def __unicode__(self):
         return unicode(self.nombre)
+
 
 # TODO: el save de esta clase debe garantizar datos minimos necesarios de raster o bin de vector
 class Capa(SingleOwnerMixin, models.Model):
@@ -58,18 +59,18 @@ class Capa(SingleOwnerMixin, models.Model):
     nombre_del_archivo = models.CharField('Nombre del archivo', null=True, default=True, max_length=255)
 
     # si es vector...
-    conexion_postgres = models.ForeignKey(u'ConexionPostgres', null=True, blank=True)
-    tipo_de_geometria = models.ForeignKey(u'TipoDeGeometria', null=True, blank=True)  # r/o  #TODO: esto cambio
+    conexion_postgres = models.ForeignKey('ConexionPostgres', null=True, blank=True)
+    tipo_de_geometria = models.ForeignKey('TipoDeGeometria', null=True, blank=True)  # read_only  #TODO: esto cambio
     esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)  # TODO: esto cambio
     tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)  # TODO: esto cambio
-    campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')  # r/o  # TODO: esto cambio
-    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # r/o
+    campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')  # read_only  # TODO: esto cambio
+    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only
     srid = models.IntegerField('SRID', null=False, blank=False)
-    extent_minx_miny = models.PointField(u'(Minx, Miny)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
-    extent_maxx_maxy = models.PointField(u'(Maxx, Maxy)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
+    extent_minx_miny = models.PointField('(Minx, Miny)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
+    extent_maxx_maxy = models.PointField('(Maxx, Maxy)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
     layer_srs_extent = models.CharField('Original SRS Extent', null=False, blank=False, max_length=255, default='')  # extent en el srid original calculado por postgres en el signal de creacion
 
-    # publico? TODO: modelar aparte
+    # publico? TODO: me parece mejor modelarlo aparte ya que es el unico atributo variable
     wxs_publico = models.BooleanField(u'WMS/WFS Público?', null=False, default=False)
 
     # automaticos...
@@ -365,7 +366,7 @@ def onCapaPreSave(sender, instance, **kwargs):
         print '...carga inicial de datos read only'
         if instance.tipo_de_capa == 'vector':
             cursor = connection.cursor()
-            # esta escritura (segura y recomendada) no funciona porque escapea strings con ' y no sirve para el FROM
+            # esta escritura (segura y recomendada) no funciona porque internamente escapea strings con ' y no sirve para el FROM
             # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
             cursor.execute("SELECT count(*) from %s.%s" % (instance.esquema, instance.tabla))
             rows = cursor.fetchone()
@@ -388,6 +389,7 @@ def onCapaPreSave(sender, instance, **kwargs):
             instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
             instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
             instance.layer_srs_extent = ' '.join(map(str, raster.extent))
+            instance.cantidad_de_registros = 0
 
 
 @receiver(post_save, sender=Metadatos)
