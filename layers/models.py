@@ -54,17 +54,17 @@ class Capa(SingleOwnerMixin, models.Model):
 
     # vector/raster?
     tipo_de_capa = models.CharField('Tipo de capa', choices=TIPO_DE_CAPA_ENUM, default='vector', max_length=10, null=False, blank=False)
+    tipo_de_geometria = models.ForeignKey('TipoDeGeometria', null=False, blank=False)  # read_only  #TODO: esto cambio
 
     # si es raster...
     nombre_del_archivo = models.CharField('Nombre del archivo', null=True, default=True, max_length=255)
 
     # si es vector...
     conexion_postgres = models.ForeignKey('ConexionPostgres', null=True, blank=True)
-    tipo_de_geometria = models.ForeignKey('TipoDeGeometria', null=True, blank=True)  # read_only  #TODO: esto cambio
     esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)  # TODO: esto cambio
     tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)  # TODO: esto cambio
     campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')  # read_only  # TODO: esto cambio
-    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only
+    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only, 0 a n para vector, None para raster
     srid = models.IntegerField('SRID', null=False, blank=False)
     extent_minx_miny = models.PointField('(Minx, Miny)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
     extent_maxx_maxy = models.PointField('(Maxx, Maxy)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
@@ -384,12 +384,13 @@ def onCapaPreSave(sender, instance, **kwargs):
             instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
         elif instance.tipo_de_capa == 'raster':
             # TODO: ABRO ARCHIVO Y VEO SI ES CORRECTO, ETC
+            instance.tipo_de_geometria = TipoDeGeometria.objects.get(nombre='Raster')
             raster = GDALRaster(instance.nombre_del_archivo)   # TODO: try open , etc
             extent_capa = raster.extent
             instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
             instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
             instance.layer_srs_extent = ' '.join(map(str, raster.extent))
-            instance.cantidad_de_registros = 0
+            instance.cantidad_de_registros = None
 
 
 @receiver(post_save, sender=Metadatos)
