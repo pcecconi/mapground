@@ -26,10 +26,12 @@ from django.contrib.gis.geos import Point
 from django.contrib.gis.gdal import GDALRaster
 from django_extras.contrib.auth.models import SingleOwnerMixin
 
+CONST_VECTOR = 'vector'
+CONST_RASTER = 'raster'
 
 TIPO_DE_CAPA_ENUM = (
-    ('vector', 'vector'),
-    ('raster', 'raster'),
+    (CONST_VECTOR, CONST_VECTOR),
+    (CONST_RASTER, CONST_RASTER),
 )
 
 
@@ -53,7 +55,7 @@ class Capa(SingleOwnerMixin, models.Model):
     slug = models.SlugField('Slug', null=False, blank=True, max_length=255)
 
     # vector/raster?
-    tipo_de_capa = models.CharField('Tipo de capa', choices=TIPO_DE_CAPA_ENUM, default='vector', max_length=10, null=False, blank=False)
+    tipo_de_capa = models.CharField('Tipo de capa', choices=TIPO_DE_CAPA_ENUM, default=CONST_VECTOR, max_length=10, null=False, blank=False)
     tipo_de_geometria = models.ForeignKey('TipoDeGeometria', null=False, blank=False)  # read_only  #TODO: esto cambio
 
     # si es raster...
@@ -134,7 +136,7 @@ class Capa(SingleOwnerMixin, models.Model):
 
     @property
     def dame_datos(self):
-        if self.tipo_de_capa == 'raster':
+        if self.tipo_de_capa == CONST_RASTER:
             return None
         cursor = connection.cursor()
         try:
@@ -364,7 +366,7 @@ def onCapaPreSave(sender, instance, **kwargs):
     # carga inicial de campos read only de la capa
     if instance.id is None:
         print '...carga inicial de datos read only'
-        if instance.tipo_de_capa == 'vector':
+        if instance.tipo_de_capa == CONST_VECTOR:
             cursor = connection.cursor()
             # esta escritura (segura y recomendada) no funciona porque internamente escapea strings con ' y no sirve para el FROM
             # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
@@ -382,7 +384,7 @@ def onCapaPreSave(sender, instance, **kwargs):
             extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
             instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
             instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
-        elif instance.tipo_de_capa == 'raster':
+        elif instance.tipo_de_capa == CONST_RASTER:
             # TODO: ABRO ARCHIVO Y VEO SI ES CORRECTO, ETC
             instance.tipo_de_geometria = TipoDeGeometria.objects.get(nombre='Raster')
             raster = GDALRaster(instance.nombre_del_archivo)   # TODO: try open , etc

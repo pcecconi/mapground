@@ -8,7 +8,7 @@ from fileupload.models import Archivo
 from layerimport.models import TablaGeografica
 from utils.commons import normalizar_texto
 from .utils import get_shapefile_files, import_layer, nombre_tabla
-from layers.models import Capa, TipoDeGeometria
+from layers.models import Capa, TipoDeGeometria, CONST_VECTOR, CONST_RASTER
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, MEDIA_ROOT
 from MapGround import MapGroundException
 from django.core.urlresolvers import reverse
@@ -71,7 +71,7 @@ def LayerImportView(request, filename):
                 owner=request.user,
                 nombre=normalizar_texto(filename),     # ??? ??? por ahora,misma logica que tabla
                 id_capa=nombre_tabla(request, filename),     # ??? por ahora,misma logica que tabla
-                tipo_de_capa='raster',
+                tipo_de_capa=CONST_RASTER,
                 nombre_del_archivo=path_destino,  # path final, unico, normalizado
                 conexion_postgres=None,
                 esquema=None,
@@ -102,12 +102,12 @@ def LayerImportView(request, filename):
                         owner=tabla_geografica.owner,
                         nombre=tabla_geografica.nombre_normalizado,
                         id_capa=tabla_geografica.tabla,
-                        tipo_de_capa='vector',
+                        tipo_de_capa=CONST_VECTOR,
                         nombre_del_archivo=None,
                         conexion_postgres=None,
                         esquema=tabla_geografica.esquema,
                         tabla=tabla_geografica.tabla,
-                        tipo_de_geometria=TipoDeGeometria.objects.all()[0],
+                        tipo_de_geometria=TipoDeGeometria.objects.all()[0],  # uno cualquiera, pues el capa_pre_save lo calcula y lo overridea
                         srid=tabla_geografica.srid)
 
                 except Exception as e:
