@@ -24,7 +24,8 @@ def LayersListView(request):
     l = []
     errores = []
 
-    posibles_rasters = Archivo.objects.exclude(extension__in=['.shp'])
+    posibles_rasters = Archivo.objects.owned_by(request.user).exclude(extension__in=['.shp'])
+
     for posible_raster in posibles_rasters:
         try:
             raster = GDALRaster(posible_raster.file.name)
@@ -39,11 +40,11 @@ def LayersListView(request):
             # instance.layer_srs_extent = ' '.join(map(str, raster.extent))
             # instance.cantidad_de_registros = None
 
-    # rasters = Archivo.objects.filter(extension__in=['.tif', '.tiff', '.geotiff', '.nc'])
+    # rasters = Archivo.objects.owned_by(request.user).filter(extension__in=['.tif', '.tiff', '.geotiff', '.nc'])
     # for raster in rasters:
     #     l.append({"nombre": raster.nombre, "tipo": "Raster"})
 
-    shapes = Archivo.objects.filter(extension=".shp")
+    shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp")
     for shp in shapes:
         try:
             st = get_shapefile_files(unicode(shp.file))
@@ -64,10 +65,10 @@ def LayerImportView(request, filename):
     except:
         encoding = 'LATIN1'
     try:
-        archivo = Archivo.objects.get(nombre=filename, extension=".shp")  # TODO: ???? extension?
+        archivo = Archivo.objects.owned_by(request.user).get(nombre=filename, extension=".shp")  # TODO: ???? extension?
     except:
         try:
-            archivo = Archivo.objects.filter(nombre=filename)[0]    # salida temporal hasta resolver lo de la extension
+            archivo = Archivo.objects.owned_by(request.user).filter(nombre=filename)[0]    # salida temporal hasta resolver lo de la extension
         except (Archivo.DoesNotExist, MapGroundException) as e:
             ok = False
             error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
