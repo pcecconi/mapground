@@ -36,9 +36,9 @@ TIPO_DE_CAPA_ENUM = (
 
 
 class TipoDeGeometria(models.Model):
-    nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)  # Punto/Linea/Poligono
-    postgres_type = models.CharField('Postgres Type', null=False, blank=False, max_length=100)  # Point/LineString/Polygon
-    mapserver_type = models.CharField('Mapserver Type', null=False, blank=False, max_length=50)  # POINT/LINE/POLYGON
+    nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=50)  # Punto/Linea/Poligono/Raster
+    postgres_type = models.CharField('Postgres Type', null=False, blank=False, max_length=100)  # Point/LineString/Polygon/"Raster"
+    mapserver_type = models.CharField('Mapserver Type', null=False, blank=False, max_length=50)  # POINT/LINE/POLYGON/RASTER
 
     class Meta:
         verbose_name = u'Tipo de Geometría'

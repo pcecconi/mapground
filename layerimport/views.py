@@ -2,10 +2,11 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+from django.contrib.gis.gdal import GDALRaster
 from django.shortcuts import render
 from django.shortcuts import HttpResponseRedirect
 from fileupload.models import Archivo
-from layerimport.models import TablaGeografica
+from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
 from .utils import get_shapefile_files, import_layer, nombre_tabla
 from layers.models import Capa, TipoDeGeometria, CONST_VECTOR, CONST_RASTER
@@ -23,15 +24,30 @@ def LayersListView(request):
     l = []
     errores = []
 
-    rasters = Archivo.objects.filter(extension__in=['.tif', '.tiff', '.geotiff', '.nc'])
-    for raster in rasters:
-        l.append({"nombre": raster.nombre, "tipo": "Raster"})
+    posibles_rasters = Archivo.objects.exclude(extension__in=['.shp'])
+    for posible_raster in posibles_rasters:
+        try:
+            raster = GDALRaster(posible_raster.file.name)
+            l.append({'nombre': posible_raster.nombre, 'tipo': 'Raster {}'.format(raster.driver.name)})
+        except:
+            pass
+
+            # raster = GDALRaster(instance.nombre_del_archivo)   # TODO: try open , etc
+            # extent_capa = raster.extent
+            # instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
+            # instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
+            # instance.layer_srs_extent = ' '.join(map(str, raster.extent))
+            # instance.cantidad_de_registros = None
+
+    # rasters = Archivo.objects.filter(extension__in=['.tif', '.tiff', '.geotiff', '.nc'])
+    # for raster in rasters:
+    #     l.append({"nombre": raster.nombre, "tipo": "Raster"})
 
     shapes = Archivo.objects.filter(extension=".shp")
     for shp in shapes:
         try:
             st = get_shapefile_files(unicode(shp.file))
-            l.append({"nombre": shp.nombre, "tipo": "Shapefile"})
+            l.append({'nombre': shp.nombre, 'tipo': 'Shapefile'})
         except MapGroundException as e:
             errores.append(unicode(e))
 
@@ -66,6 +82,8 @@ def LayerImportView(request, filename):
             if not os.path.exists(directorio_destino):
                 os.makedirs(directorio_destino)
             shutil.move(archivo.file.name, path_destino)    # movemos el archivo al path destino
+
+
 
             c = Capa.objects.create(
                 owner=request.user,

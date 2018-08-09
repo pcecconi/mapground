@@ -21,7 +21,7 @@ class Archivo(SingleOwnerMixin, models.Model):
     """
     file = models.FileField(max_length=255, upload_to=getUploadPath)
     slug = models.SlugField(max_length=255, blank=True)
-    nombre = models.CharField(max_length=128, blank=True)
+    nombre = models.CharField(max_length=255, blank=True)
     extension = models.CharField(max_length=15, blank=True)
 
     def __unicode__(self):
@@ -35,10 +35,9 @@ class Archivo(SingleOwnerMixin, models.Model):
         super(Archivo, self).save(*args, **kwargs)
         self.slug = path.basename(self.file.name)
         self.nombre, self.extension = path.splitext(self.slug)
-        # self.owner = self.request.user
         super(Archivo, self).save(update_fields=['slug', 'nombre', 'extension'])
 
     def delete(self, *args, **kwargs):
-        """delete -- Remove to leave file."""
+        """Delete -- Remove to leave file."""
         self.file.delete(False)
         super(Archivo, self).delete(*args, **kwargs)

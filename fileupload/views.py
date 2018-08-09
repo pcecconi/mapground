@@ -37,7 +37,6 @@ class ArchivoListView(ListView):
     model = Archivo
 
     def get_queryset(self):
-        # return Archivo.objects.filter(owner=self.request.user)
         return Archivo.objects.owned_by(self.request.user)
 
     def render_to_response(self, context, **response_kwargs):
