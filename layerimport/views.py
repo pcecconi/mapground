@@ -32,7 +32,7 @@ def LayersListView(request):
             raster = GDALRaster(posible_raster.file.name)
             l.append({
                 'nombre': posible_raster.slug,
-                'formato': 'Raster {}'.format(raster.driver.name),
+                'formato': raster.driver.name,
                 'tipo': CONST_RASTER})
         except:
             pass
@@ -62,16 +62,15 @@ def LayerImportView(request, filename):
         encoding = 'LATIN1'
 
     try:
-        archivo = Archivo.objects.get(owner=request.user, slug=filename)  # ahora filename tiene "nombre.extension"
+        archivo = Archivo.objects.get(owner=request.user, slug=filename)  # filename tiene la forma "nombre.extension"
     except (Archivo.DoesNotExist, MapGroundException) as e:  # no deberia pasar...
         ok = False
         error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
     else:
-        if archivo.extension == '.shp':
+        if archivo.extension == '.shp':     # Esto podria mejorarse guardando el tipo de archivo en el modelo Archivo
             try:
-                existe = TablaGeografica.objects.get(tabla=nombre_tabla(request, filename))
+                existe = TablaGeografica.objects.get(tabla=nombre_tabla(request, filename))     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
                 ok = False
-                error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
                 error_msg = 'Ya existe una tabla suya con el nombre {0} en la base de datos.'.format(filename)
             except:
                 try:
@@ -101,50 +100,59 @@ def LayerImportView(request, filename):
                     ok = False
                     error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
         else:   # es un raster...
-            # TODO: revisar primero que no exista el archivo
 
             # El 'import' del raster consiste en moverlo al repo definitivo
             directorio_destino = MEDIA_ROOT + 'uploaded-rasters/' + unicode(request.user) + '/'     # TODO: idea temporal, pensar la ubicacion final de los rasters y pasarlo al settings
             filename_destino = directorio_destino + nombre_tabla(request, filename) + archivo.extension    # TODO: MEJORAR ESTO
+            try:
+                existe = ArchivoRaster.objects.get(nombre_del_archivo=nombre_tabla(request, filename))     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
+                ok = False
+                error_msg = 'Ya existe un raster suyo con el nombre {0} en el sistema.'.format(filename)
+            except:
+                try:
+                    print 'copiando {} a {}...'.format(archivo.file.name, filename_destino)
+                    if not os.path.exists(directorio_destino):
+                        os.makedirs(directorio_destino)
+                    shutil.move(archivo.file.name, filename_destino)    # movemos el archivo al path destino
 
-            print 'copiando {} a {}...'.format(archivo.file.name, filename_destino)
-            if not os.path.exists(directorio_destino):
-                os.makedirs(directorio_destino)
-            shutil.move(archivo.file.name, filename_destino)    # movemos el archivo al path destino
+                    # Y luego creamos los objetos...
 
-            # Y luego creamos los objetos...
+                    raster = GDALRaster(filename_destino)   # Esto no deberia pasar TODO: poner try
 
-            raster = GDALRaster(filename_destino)   # Esto no deberia pasar TODO: poner try
-            extent_capa = raster.extent
+                    extent_capa = raster.extent
 
-            archivo_raster = ArchivoRaster.objects.create(
-                owner=request.user,
-                nombre_del_archivo=nombre_tabla(request, filename),
-                path_del_archivo=filename_destino,
-                formato=raster.driver.name,
-                cantidad_de_bandas=len(raster.bands),
-                srid=raster.srs.srid if raster.srs is not None else 4326,   # TODO: pensar si esta bien
-                heigth=raster.height,
-                width=raster.width)
-            # ################### extent=raster.extent)   # TODO: agregar
+                    archivo_raster = ArchivoRaster.objects.create(
+                        owner=request.user,
+                        nombre_del_archivo=nombre_tabla(request, filename),
+                        path_del_archivo=filename_destino,
+                        formato=raster.driver.name,
+                        cantidad_de_bandas=len(raster.bands),
+                        srid=raster.srs.srid if raster.srs is not None else 4326,   # TODO: pensar si esta bien
+                        extent=' '.join(map(str, extent_capa)),
+                        heigth=raster.height,
+                        width=raster.width)
 
-            c = Capa.objects.create(
-                owner=request.user,
-                nombre=normalizar_texto(filename),     # ??? ??? por ahora,misma logica que tabla
-                id_capa=nombre_tabla(request, filename),     # ??? por ahora,misma logica que tabla
-                tipo_de_capa=CONST_RASTER,
-                nombre_del_archivo=archivo_raster.path_del_archivo,  # path final, unico, normalizado
-                conexion_postgres=None,
-                esquema=None,
-                tabla=None,
-                tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
-                srid=archivo_raster.srid,
-                extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),  # TODO:no hay que reproyectar? pensar
-                extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),  # TODO:no hay que reproyectar? pensar
-                layer_srs_extent=' '.join(map(str, extent_capa)),
-                cantidad_de_registros=None)
+                    c = Capa.objects.create(
+                        owner=request.user,
+                        nombre=normalizar_texto(filename),     # ??? ??? por ahora,misma logica que tabla
+                        id_capa=nombre_tabla(request, filename),     # ??? por ahora,misma logica que tabla
+                        tipo_de_capa=CONST_RASTER,
+                        nombre_del_archivo=archivo_raster.path_del_archivo,  # path final, unico, normalizado
+                        conexion_postgres=None,
+                        esquema=None,
+                        tabla=None,
+                        tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
+                        srid=archivo_raster.srid,
+                        extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),  # TODO:no hay que reproyectar? pensar
+                        extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),  # TODO:no hay que reproyectar? pensar
+                        layer_srs_extent=archivo_raster.extent,
+                        cantidad_de_registros=None)
 
-    if not ok:
-        return render(request, template_name, {"capa": filename, "ok": ok, "error_msg": error_msg})
-    else:
+                except Exception as e:
+                    ok = False
+                    error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
+
+    if ok:
         return HttpResponseRedirect(reverse('layers:metadatos', args=(c.id_capa,)))
+    else:
+        return render(request, template_name, {"capa": filename, "ok": ok, "error_msg": error_msg})
