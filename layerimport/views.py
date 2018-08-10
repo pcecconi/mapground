@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+from django.contrib.gis.geos import Point
 from django.contrib.gis.gdal import GDALRaster
 from django.shortcuts import render
 from django.shortcuts import HttpResponseRedirect
@@ -29,26 +30,21 @@ def LayersListView(request):
     for posible_raster in posibles_rasters:
         try:
             raster = GDALRaster(posible_raster.file.name)
-            l.append({'nombre': posible_raster.nombre, 'tipo': 'Raster {}'.format(raster.driver.name)})
+            l.append({
+                'nombre': posible_raster.slug,
+                'formato': 'Raster {}'.format(raster.driver.name),
+                'tipo': CONST_RASTER})
         except:
             pass
 
-            # raster = GDALRaster(instance.nombre_del_archivo)   # TODO: try open , etc
-            # extent_capa = raster.extent
-            # instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
-            # instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
-            # instance.layer_srs_extent = ' '.join(map(str, raster.extent))
-            # instance.cantidad_de_registros = None
-
-    # rasters = Archivo.objects.owned_by(request.user).filter(extension__in=['.tif', '.tiff', '.geotiff', '.nc'])
-    # for raster in rasters:
-    #     l.append({"nombre": raster.nombre, "tipo": "Raster"})
-
-    shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp")
-    for shp in shapes:
+    archivos_shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp")
+    for archivo_shape in archivos_shapes:
         try:
-            st = get_shapefile_files(unicode(shp.file))
-            l.append({'nombre': shp.nombre, 'tipo': 'Shapefile'})
+            st = get_shapefile_files(unicode(archivo_shape.file))   # path absoluto para determinar si es un shape completo
+            l.append({
+                'nombre': archivo_shape.slug,
+                'formato': 'Shapefile',
+                'tipo': CONST_VECTOR})
         except MapGroundException as e:
             errores.append(unicode(e))
 
@@ -64,42 +60,14 @@ def LayerImportView(request, filename):
         encoding = [item[0] for item in ENCODINGS if item[0] == request.GET['enc']][0]
     except:
         encoding = 'LATIN1'
+
     try:
-        archivo = Archivo.objects.owned_by(request.user).get(nombre=filename, extension=".shp")  # TODO: ???? extension?
-    except:
-        try:
-            archivo = Archivo.objects.owned_by(request.user).filter(nombre=filename)[0]    # salida temporal hasta resolver lo de la extension
-        except (Archivo.DoesNotExist, MapGroundException) as e:
-            ok = False
-            error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
-
-    if ok:
-        # if tipo == 'Raster':
-        if archivo.extension != '.shp':
-            directorio_destino = MEDIA_ROOT + 'uploaded-rasters/' + unicode(request.user) + '/'     # TODO: idea temporal, pensar la ubicacion final de los rasters y pasarlo al settings
-            path_destino = directorio_destino + nombre_tabla(request, filename) + archivo.extension    # TODO: MEJORAR ESTO
-
-            print 'copiando {} a {}...'.format(archivo.file.name, path_destino)
-            if not os.path.exists(directorio_destino):
-                os.makedirs(directorio_destino)
-            shutil.move(archivo.file.name, path_destino)    # movemos el archivo al path destino
-
-
-
-            c = Capa.objects.create(
-                owner=request.user,
-                nombre=normalizar_texto(filename),     # ??? ??? por ahora,misma logica que tabla
-                id_capa=nombre_tabla(request, filename),     # ??? por ahora,misma logica que tabla
-                tipo_de_capa=CONST_RASTER,
-                nombre_del_archivo=path_destino,  # path final, unico, normalizado
-                conexion_postgres=None,
-                esquema=None,
-                tabla=None,
-                tipo_de_geometria=None,
-                srid=4326)  # TODO: deshardcodear
-
-        # elif tipo == 'Shapefile':
-        elif archivo.extension == '.shp':
+        archivo = Archivo.objects.get(owner=request.user, slug=filename)  # ahora filename tiene "nombre.extension"
+    except (Archivo.DoesNotExist, MapGroundException) as e:  # no deberia pasar...
+        ok = False
+        error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
+    else:
+        if archivo.extension == '.shp':
             try:
                 existe = TablaGeografica.objects.get(tabla=nombre_tabla(request, filename))
                 ok = False
@@ -132,6 +100,49 @@ def LayerImportView(request, filename):
                 except Exception as e:
                     ok = False
                     error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
+        else:   # es un raster...
+            # TODO: revisar primero que no exista el archivo
+
+            # El 'import' del raster consiste en moverlo al repo definitivo
+            directorio_destino = MEDIA_ROOT + 'uploaded-rasters/' + unicode(request.user) + '/'     # TODO: idea temporal, pensar la ubicacion final de los rasters y pasarlo al settings
+            filename_destino = directorio_destino + nombre_tabla(request, filename) + archivo.extension    # TODO: MEJORAR ESTO
+
+            print 'copiando {} a {}...'.format(archivo.file.name, filename_destino)
+            if not os.path.exists(directorio_destino):
+                os.makedirs(directorio_destino)
+            shutil.move(archivo.file.name, filename_destino)    # movemos el archivo al path destino
+
+            # Y luego creamos los objetos...
+
+            raster = GDALRaster(filename_destino)   # Esto no deberia pasar TODO: poner try
+            extent_capa = raster.extent
+
+            archivo_raster = ArchivoRaster.objects.create(
+                owner=request.user,
+                nombre_del_archivo=nombre_tabla(request, filename),
+                path_del_archivo=filename_destino,
+                formato=raster.driver.name,
+                cantidad_de_bandas=len(raster.bands),
+                srid=raster.srs.srid if raster.srs is not None else 4326,   # TODO: pensar si esta bien
+                heigth=raster.height,
+                width=raster.width)
+            # ################### extent=raster.extent)   # TODO: agregar
+
+            c = Capa.objects.create(
+                owner=request.user,
+                nombre=normalizar_texto(filename),     # ??? ??? por ahora,misma logica que tabla
+                id_capa=nombre_tabla(request, filename),     # ??? por ahora,misma logica que tabla
+                tipo_de_capa=CONST_RASTER,
+                nombre_del_archivo=archivo_raster.path_del_archivo,  # path final, unico, normalizado
+                conexion_postgres=None,
+                esquema=None,
+                tabla=None,
+                tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
+                srid=archivo_raster.srid,
+                extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),  # TODO:no hay que reproyectar? pensar
+                extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),  # TODO:no hay que reproyectar? pensar
+                layer_srs_extent=' '.join(map(str, extent_capa)),
+                cantidad_de_registros=None)
 
     if not ok:
         return render(request, template_name, {"capa": filename, "ok": ok, "error_msg": error_msg})

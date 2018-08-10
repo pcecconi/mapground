@@ -13,7 +13,7 @@
     <!-- The table listing the layers available for import -->
     <table role="presentation" class="table table-striped"><tbody>
         {% for capa in object_list %}
-            <tr><td class="capa-importable">{{ capa.nombre }} ({{ capa.tipo }})</td>
+            <tr><td class="capa-importable">{{ capa.nombre }} ({{ capa.tipo }}: {{ capa.formato}})</td>
                 <td class="encoding">
                     <form class="form-inline">
                     <div class="form-group">
