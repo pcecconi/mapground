@@ -5,7 +5,7 @@ from django.db import models, connection, connections
 from django.contrib.auth.models import User
 from django.conf import settings
 # import mapscript
-from layerimport.models import TablaGeografica
+from layerimport.models import TablaGeografica, ArchivoRaster
 from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, CONST_VECTOR, CONST_RASTER
 import os
 # slugs
@@ -640,10 +640,16 @@ def onCapaPostDelete(sender, instance, **kwargs):
         Mapa.objects.get(id_mapa=instance.id_capa+'_layer_srs',tipo_de_mapa='layer_original_srs').delete()
     except:
         pass
-    try:
-        TablaGeografica.objects.filter(tabla=instance.id_capa)[0].delete()
-    except:
-        pass
+    if instance.tipo_de_capa == CONST_VECTOR:
+        try:
+            TablaGeografica.objects.filter(tabla=instance.id_capa)[0].delete()
+        except:
+            pass
+    elif instance.tipo_de_capa == CONST_RASTER:
+        try:
+            ArchivoRaster.objects.filter(path_del_archivo=instance.nombre_del_archivo)[0].delete()
+        except:
+            pass
 
 @receiver(post_delete, sender=Mapa)
 def onMapaPostDelete(sender, instance, **kwargs):
