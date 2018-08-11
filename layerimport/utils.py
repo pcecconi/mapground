@@ -242,6 +242,7 @@ def import_layer(filename, schema, table, encoding='LATIN1'):
 
     return srid
 
+
 # TODO: podria reemplazarse por normalizar_texto?
-def nombre_tabla(request, nombre):
-    return unicode(request.user)+'_'+((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
+def determinar_id_capa(request, nombre):
+    return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())

@@ -29,12 +29,12 @@ class TablaGeografica(SingleOwnerMixin, models.Model):
         return unicode(self.nombre_normalizado)
 
 
-@receiver(post_save, sender=TablaGeografica)
-def onTablaGeograficaPostSave(sender, **kwargs):
-    # print 'onTablaGeograficaPostSave...a.k.a. onLayerImport'
-    archivos = Archivo.objects.filter(owner=kwargs['instance'].owner, nombre=os.path.splitext(kwargs['instance'].nombre_del_archivo)[0])
-    for a in archivos:
-        a.delete()
+# @receiver(post_save, sender=TablaGeografica)
+# def onTablaGeograficaPostSave(sender, instance, created, **kwargs):
+#     # print 'onTablaGeograficaPostSave...a.k.a. onLayerImport'
+#     archivos = Archivo.objects.filter(owner=instance.owner, nombre=os.path.splitext(instance.nombre_del_archivo)[0])
+#     for a in archivos:
+#         a.delete()
 
 
 @receiver(post_delete, sender=TablaGeografica)
@@ -66,14 +66,16 @@ class ArchivoRaster(SingleOwnerMixin, models.Model):
     def __unicode__(self):
         return unicode(self.nombre_del_archivo)  # TODO: por ahora no es unique
 
-@receiver(post_save, sender=ArchivoRaster)
-def OnArchivoRasterPostSave(sender, **kwargs):
-    print 'OnArchivoRasterPostSave'
-    print kwargs['instance'].owner, kwargs['instance'].nombre_del_archivo
-    archivos = Archivo.objects.filter(owner=kwargs['instance'].owner, nombre=kwargs['instance'].nombre_del_archivo)
-    for a in archivos:
-        print ' Borrando ', a
-        a.delete()
+# @receiver(post_save, sender=ArchivoRaster)
+# def OnArchivoRasterPostSave(sender, instance, created, **kwargs):
+#     print 'OnArchivoRasterPostSave'
+#     # print kwargs['instance'].owner, kwargs['instance'].nombre_del_archivo
+#     print instance.owner, instance.nombre_del_archivo[len(unicode(instance.owner) + '_'):]
+#     #archivos = Archivo.objects.filter(owner=instance.owner, nombre=instance.nombre_del_archivo)
+#     archivos = Archivo.objects.filter(owner=instance.owner, nombre=instance.nombre_del_archivo[len(unicode(instance.owner) + '_'):])
+#     for a in archivos:
+#         print 'Borrando:', a
+#         a.delete()
 
 
 @receiver(post_delete, sender=ArchivoRaster)

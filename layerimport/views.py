@@ -9,7 +9,7 @@ from django.shortcuts import HttpResponseRedirect
 from fileupload.models import Archivo
 from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
-from .utils import get_shapefile_files, import_layer, nombre_tabla
+from .utils import get_shapefile_files, import_layer, determinar_id_capa
 from layers.models import Capa, TipoDeGeometria, CONST_VECTOR, CONST_RASTER
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, MEDIA_ROOT
 from MapGround import MapGroundException
@@ -60,34 +60,39 @@ def LayerImportView(request, filename):
         encoding = [item[0] for item in ENCODINGS if item[0] == request.GET['enc']][0]
     except:
         encoding = 'LATIN1'
-
+    print "LayerImportView:filename=", filename
+    # Chequeo basico de consistencia entre filename de la vista y algun Archivo existente
     try:
         archivo = Archivo.objects.get(owner=request.user, slug=filename)  # filename tiene la forma "nombre.extension"
     except (Archivo.DoesNotExist, MapGroundException) as e:  # no deberia pasar...
         ok = False
         error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
     else:
+        id_capa = determinar_id_capa(request, archivo.nombre)
+        print "LayerImportView:id_capa=", id_capa
+        # TODO: deberia normalizarse el nombre en la funcion anterior y garantizar un length minimo
+        # TODO2: aca hay que garantizar que no exista una capa con este nombre
         if archivo.extension == '.shp':     # Esto podria mejorarse guardando el tipo de archivo en el modelo Archivo
+            # nombre_tabla = determinar_id_capa(request, filename)
             try:
-                existe = TablaGeografica.objects.get(tabla=nombre_tabla(request, filename))     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
+                existe = TablaGeografica.objects.get(tabla=id_capa)     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
                 ok = False
                 error_msg = 'Ya existe una tabla suya con el nombre {0} en la base de datos.'.format(filename)
             except:
                 try:
-                    nombreTabla = nombre_tabla(request, filename)
-                    srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombreTabla, encoding)
+                    srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding)
                     tabla_geografica = TablaGeografica.objects.create(
                         nombre_normalizado=normalizar_texto(filename),
                         nombre_del_archivo=os.path.basename(unicode(archivo.file)),
                         esquema=IMPORT_SCHEMA,
                         srid=srid,
-                        tabla=nombreTabla,
+                        tabla=id_capa,  # antes esta variable era nombre_tabla, cambio variable pero es el mismo valor
                         owner=request.user)
 
                     c = Capa.objects.create(
                         owner=tabla_geografica.owner,
                         nombre=tabla_geografica.nombre_normalizado,
-                        id_capa=tabla_geografica.tabla,
+                        id_capa=id_capa,    # tabla_geografica.tabla,
                         tipo_de_capa=CONST_VECTOR,
                         nombre_del_archivo=None,
                         conexion_postgres=None,
@@ -96,16 +101,20 @@ def LayerImportView(request, filename):
                         tipo_de_geometria=TipoDeGeometria.objects.all()[0],  # uno cualquiera, pues el capa_pre_save lo calcula y lo overridea
                         srid=tabla_geografica.srid)
 
+                    # archivo.delete()
+                    for a in Archivo.objects.filter(owner=request.user, nombre=os.path.splitext(filename)[0]):
+                        a.delete()
+
                 except Exception as e:
                     ok = False
                     error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
         else:   # es un raster...
-
+            # nombre_raster = determinar_id_capa(request, filename)
             # El 'import' del raster consiste en moverlo al repo definitivo
             directorio_destino = MEDIA_ROOT + 'uploaded-rasters/' + unicode(request.user) + '/'     # TODO: idea temporal, pensar la ubicacion final de los rasters y pasarlo al settings
-            filename_destino = directorio_destino + nombre_tabla(request, filename) + archivo.extension    # TODO: MEJORAR ESTO
+            filename_destino = directorio_destino + id_capa + archivo.extension    # TODO: MEJORAR ESTO
             try:
-                existe = ArchivoRaster.objects.get(nombre_del_archivo=nombre_tabla(request, filename))     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
+                existe = ArchivoRaster.objects.get(nombre_del_archivo=id_capa)     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
                 ok = False
                 error_msg = 'Ya existe un raster suyo con el nombre {0} en el sistema.'.format(filename)
             except:
@@ -123,7 +132,7 @@ def LayerImportView(request, filename):
 
                     archivo_raster = ArchivoRaster.objects.create(
                         owner=request.user,
-                        nombre_del_archivo=nombre_tabla(request, filename),
+                        nombre_del_archivo=id_capa,
                         path_del_archivo=filename_destino,
                         formato=raster.driver.name,
                         cantidad_de_bandas=len(raster.bands),
@@ -134,8 +143,8 @@ def LayerImportView(request, filename):
 
                     c = Capa.objects.create(
                         owner=request.user,
-                        nombre=normalizar_texto(filename),     # ??? ??? por ahora,misma logica que tabla
-                        id_capa=nombre_tabla(request, filename),     # ??? por ahora,misma logica que tabla
+                        nombre=normalizar_texto(archivo.nombre),     # ??? ??? por ahora,misma logica que tabla
+                        id_capa=id_capa,                 # ??? por ahora,misma logica que tabla
                         tipo_de_capa=CONST_RASTER,
                         nombre_del_archivo=archivo_raster.path_del_archivo,  # path final, unico, normalizado
                         conexion_postgres=None,
@@ -147,6 +156,8 @@ def LayerImportView(request, filename):
                         extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),  # TODO:no hay que reproyectar? pensar
                         layer_srs_extent=archivo_raster.extent,
                         cantidad_de_registros=None)
+
+                    archivo.delete()
 
                 except Exception as e:
                     ok = False
