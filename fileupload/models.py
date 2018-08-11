@@ -19,10 +19,13 @@ class Archivo(SingleOwnerMixin, models.Model):
     problems installing pillow, use a more generic FileField instead.
 
     """
-    file = models.FileField(max_length=255, upload_to=getUploadPath)
-    slug = models.SlugField(max_length=255, blank=True)
-    nombre = models.CharField(max_length=255, blank=True)
-    extension = models.CharField(max_length=15, blank=True)
+    # Por lo que veo, el campo slug venía en el ejemplo original:
+    # en realidad no es un slug pero sirve porque guarda el nombre completo del archivo (sin path) y es util para los Archivo.get()
+    # No es clave pues distintos usuarios pueden subir el mismo archivo, pero sí debería ser clave la tupla <owner, slug>
+    file = models.FileField(max_length=255, upload_to=getUploadPath)    # ej: /datos/admin/world_border.shp
+    slug = models.SlugField(max_length=255, blank=True)                 # ej: world_border.shp
+    nombre = models.CharField(max_length=255, blank=True)               # ej: world_border
+    extension = models.CharField(max_length=15, blank=True)             # ej: .shp
 
     def __unicode__(self):
         return self.file.name
