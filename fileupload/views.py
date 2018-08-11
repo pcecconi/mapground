@@ -37,7 +37,7 @@ class ArchivoListView(ListView):
     model = Archivo
 
     def get_queryset(self):
-        return Archivo.objects.owned_by(self.request.user)
+        return Archivo.objects.owned_by(self.request.user).order_by('slug')
 
     def render_to_response(self, context, **response_kwargs):
         files = [serialize(p) for p in self.get_queryset()]

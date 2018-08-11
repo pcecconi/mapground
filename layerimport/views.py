@@ -25,7 +25,7 @@ def LayersListView(request):
     l = []
     errores = []
 
-    posibles_rasters = Archivo.objects.owned_by(request.user).exclude(extension__in=['.shp'])
+    posibles_rasters = Archivo.objects.owned_by(request.user).exclude(extension__in=['.shp']).order_by('slug')
 
     for posible_raster in posibles_rasters:
         try:
@@ -37,7 +37,7 @@ def LayersListView(request):
         except:
             pass
 
-    archivos_shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp")
+    archivos_shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp").order_by('slug')
     for archivo_shape in archivos_shapes:
         try:
             st = get_shapefile_files(unicode(archivo_shape.file))   # path absoluto para determinar si es un shape completo
