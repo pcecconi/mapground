@@ -384,15 +384,6 @@ def onCapaPreSave(sender, instance, **kwargs):
             extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
             instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
             instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
-        # elif instance.tipo_de_capa == CONST_RASTER:
-        #     # TODO: ABRO ARCHIVO Y VEO SI ES CORRECTO, ETC
-        #     instance.tipo_de_geometria = TipoDeGeometria.objects.get(nombre='Raster')
-        #     raster = GDALRaster(instance.nombre_del_archivo)   # TODO: try open , etc
-        #     extent_capa = raster.extent
-        #     instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
-        #     instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
-        #     instance.layer_srs_extent = ' '.join(map(str, raster.extent))
-        #     instance.cantidad_de_registros = None
 
 
 @receiver(post_save, sender=Metadatos)
