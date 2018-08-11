@@ -687,7 +687,7 @@ def generarThumbnailSLD(capa, sld):
         print "Error generando preview de capa con SLD!!!"
 
 @receiver(post_save, sender=ArchivoSLD)
-def onArchivoSLDPostSave(sender, instance, **kwargs):
+def onArchivoSLDPostSave(sender, instance, created, **kwargs):
     print 'onArchivoSLDPostSave %s'%(str(instance))
     if instance.default:
         q=ArchivoSLD.objects.filter(capa=instance.capa).exclude(pk=instance.pk)
