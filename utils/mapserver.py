@@ -44,6 +44,8 @@ def __agregar_simbologia_basica__(layer):
         style2.width = 2
         style2.minwidth = 2
         style2.maxwidth = 4
+    elif layer.type == mapscript.MS_LAYER_RASTER:
+        layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
 def create_mapfile(data, save=True):
@@ -150,6 +152,7 @@ def create_ms_layer(data):
         layer.type = mapscript.MS_LAYER_RASTER
         layer.data = data['layerData']
         layer.setProjection('epsg:%s' % (unicode(data['srid'])))
+        __agregar_simbologia_basica__(layer)
 
     elif data['connectionType'] == 'WMS':
         layer.type = mapscript.MS_LAYER_RASTER

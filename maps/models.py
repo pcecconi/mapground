@@ -599,6 +599,12 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         # ------------ creamos/actualizamos mapas
         # creamos el mapa canónico
         mapa = Mapa(owner=instance.owner,nombre=instance.nombre,id_mapa=instance.id_capa, tipo_de_mapa='layer')
+        if instance.tipo_de_capa == CONST_RASTER:
+            try:
+                print "Intentando setear baselayer..."
+                mapa.tms_base_layer=TMSBaseLayer.objects.get(pk=1)
+            except:
+                pass
         mapa.save(escribir_imagen_y_mapfile=False)
         MapServerLayer(mapa=mapa,capa=instance,orden_de_capa=0).save()
         mapa.save()
