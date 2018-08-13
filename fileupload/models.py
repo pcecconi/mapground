@@ -8,8 +8,7 @@ from django_extras.contrib.auth.models import SingleOwnerMixin
 
 
 def getUploadPath(inst, filename):
-    return settings.MEDIA_ROOT + 'uploaded/' + str(inst.owner) + '/' + filename
-    # return settings.MEDIA_ROOT+filename
+    return settings.UPLOADED_FILES_PATH + str(inst.owner) + '/' + filename
 
 
 class Archivo(SingleOwnerMixin, models.Model):

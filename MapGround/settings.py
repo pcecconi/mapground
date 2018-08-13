@@ -151,6 +151,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.abspath(os.path.dirname(__file__)) + '/media/'
 MAPAS_PATH = os.path.join(BASE_PATH, 'mapfiles')
 
+UPLOADED_FILES_PATH = os.path.join(MEDIA_ROOT, 'uploaded/')
+UPLOADED_RASTERS_PATH = os.path.join(MEDIA_ROOT, 'uploaded-rasters/')
+
 IMPORT_SCHEMA = 'data'
 
 LOGIN_REDIRECT_URL = '/'

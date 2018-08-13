@@ -11,7 +11,7 @@ from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
 from .utils import get_shapefile_files, import_layer, determinar_id_capa
 from layers.models import Capa, TipoDeGeometria, CONST_VECTOR, CONST_RASTER
-from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, MEDIA_ROOT
+from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from MapGround import MapGroundException
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
@@ -111,7 +111,7 @@ def LayerImportView(request, filename):
         else:   # es un raster...
             # nombre_raster = determinar_id_capa(request, filename)
             # El 'import' del raster consiste en moverlo al repo definitivo
-            directorio_destino = MEDIA_ROOT + 'uploaded-rasters/' + unicode(request.user) + '/'     # TODO: idea temporal, pensar la ubicacion final de los rasters y pasarlo al settings
+            directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
             filename_destino = directorio_destino + id_capa + archivo.extension    # TODO: MEJORAR ESTO
             try:
                 existe = ArchivoRaster.objects.get(nombre_del_archivo=id_capa)     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
