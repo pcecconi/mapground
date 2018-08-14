@@ -2,13 +2,11 @@
 from __future__ import unicode_literals
 
 from django.db import models
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from fileupload.models import Archivo
 from utils import drop_table
 from django_extras.contrib.auth.models import SingleOwnerMixin
 import os
-# import os, subprocess, re, glob
 
 
 class TablaGeografica(SingleOwnerMixin, models.Model):
@@ -22,24 +20,16 @@ class TablaGeografica(SingleOwnerMixin, models.Model):
 
     class Meta:
         unique_together = (('esquema', 'tabla', 'owner'),)
-        verbose_name = 'Tabla geográfica'
-        verbose_name_plural = 'Tablas geográficas'
+        verbose_name = 'Tabla Geográfica'
+        verbose_name_plural = 'Tablas Geográficas'
 
     def __unicode__(self):
         return unicode(self.nombre_normalizado)
 
 
-# @receiver(post_save, sender=TablaGeografica)
-# def onTablaGeograficaPostSave(sender, instance, created, **kwargs):
-#     # print 'onTablaGeograficaPostSave...a.k.a. onLayerImport'
-#     archivos = Archivo.objects.filter(owner=instance.owner, nombre=os.path.splitext(instance.nombre_del_archivo)[0])
-#     for a in archivos:
-#         a.delete()
-
-
 @receiver(post_delete, sender=TablaGeografica)
 def onTablaGeograficaPostDelete(sender, instance, **kwargs):
-    # print 'onTablaGeograficaPostDelete...a.k.a. onLayerDelete'
+    # print 'onTablaGeograficaPostDelete'
     try:
         drop_table(instance.esquema, instance.tabla)
     except:
@@ -64,18 +54,7 @@ class ArchivoRaster(SingleOwnerMixin, models.Model):
         verbose_name_plural = 'Archivos Rasters'
 
     def __unicode__(self):
-        return unicode(self.nombre_del_archivo)  # TODO: por ahora no es unique
-
-# @receiver(post_save, sender=ArchivoRaster)
-# def OnArchivoRasterPostSave(sender, instance, created, **kwargs):
-#     print 'OnArchivoRasterPostSave'
-#     # print kwargs['instance'].owner, kwargs['instance'].nombre_del_archivo
-#     print instance.owner, instance.nombre_del_archivo[len(unicode(instance.owner) + '_'):]
-#     #archivos = Archivo.objects.filter(owner=instance.owner, nombre=instance.nombre_del_archivo)
-#     archivos = Archivo.objects.filter(owner=instance.owner, nombre=instance.nombre_del_archivo[len(unicode(instance.owner) + '_'):])
-#     for a in archivos:
-#         print 'Borrando:', a
-#         a.delete()
+        return unicode(self.nombre_del_archivo)
 
 
 @receiver(post_delete, sender=ArchivoRaster)

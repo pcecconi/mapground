@@ -60,7 +60,7 @@ def LayerImportView(request, filename):
         encoding = [item[0] for item in ENCODINGS if item[0] == request.GET['enc']][0]
     except:
         encoding = 'LATIN1'
-    print "LayerImportView:filename=", filename
+
     # Chequeo basico de consistencia entre filename de la vista y algun Archivo existente
     try:
         archivo = Archivo.objects.get(owner=request.user, slug=filename)  # filename tiene la forma "nombre.extension"
@@ -68,17 +68,16 @@ def LayerImportView(request, filename):
         ok = False
         error_msg = 'No se pudo encontrar la capa {0} para importar.'.format(filename)
     else:
+        # determinamos el id unico que le corresponde a esta capa, sin importar si es vector o raster, y verificamos que no exista en la IDE
         id_capa = determinar_id_capa(request, archivo.nombre)
-        print "LayerImportView:id_capa=", id_capa
         # TODO: deberia normalizarse el nombre en la funcion anterior y garantizar un length minimo
-        # TODO2: aca hay que garantizar que no exista una capa con este nombre
-        if archivo.extension == '.shp':     # Esto podria mejorarse guardando el tipo de archivo en el modelo Archivo
-            # nombre_tabla = determinar_id_capa(request, filename)
-            try:
-                existe = TablaGeografica.objects.get(tabla=id_capa)     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
-                ok = False
-                error_msg = 'Ya existe una tabla suya con el nombre {0} en la base de datos.'.format(filename)
-            except:
+
+        try:
+            existe = Capa.objects.get(id_capa=id_capa)     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
+            ok = False
+            error_msg = 'Ya existe una capa suya con el nombre {0} en la base de datos.'.format(filename)
+        except:
+            if archivo.extension == '.shp':     # Esto podria mejorarse guardando el tipo de archivo en el modelo Archivo
                 try:
                     srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding)
                     tabla_geografica = TablaGeografica.objects.create(
@@ -101,33 +100,23 @@ def LayerImportView(request, filename):
                         tipo_de_geometria=TipoDeGeometria.objects.all()[0],  # uno cualquiera, pues el capa_pre_save lo calcula y lo overridea
                         srid=tabla_geografica.srid)
 
-                    # archivo.delete()
                     for a in Archivo.objects.filter(owner=request.user, nombre=os.path.splitext(filename)[0]):
                         a.delete()
 
                 except Exception as e:
                     ok = False
-                    error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
-        else:   # es un raster...
-            # nombre_raster = determinar_id_capa(request, filename)
-            # El 'import' del raster consiste en moverlo al repo definitivo
-            directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
-            filename_destino = directorio_destino + id_capa + archivo.extension    # TODO: MEJORAR ESTO
-            try:
-                existe = ArchivoRaster.objects.get(nombre_del_archivo=id_capa)     # este chequeo será reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
-                ok = False
-                error_msg = 'Ya existe un raster suyo con el nombre {0} en el sistema.'.format(filename)
-            except:
+                    error_msg = 'Se produjo un error al intentar importar la capa vectorial {0}: {1}'.format(filename, unicode(e))
+            else:
+                # El 'import' del raster consiste en moverlo al repo definitivo
+                directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
+                filename_destino = directorio_destino + id_capa + archivo.extension    # TODO: MEJORAR ESTO
                 try:
-                    print 'copiando {} a {}...'.format(archivo.file.name, filename_destino)
                     if not os.path.exists(directorio_destino):
                         os.makedirs(directorio_destino)
                     shutil.move(archivo.file.name, filename_destino)    # movemos el archivo al path destino
 
                     # Y luego creamos los objetos...
-
                     raster = GDALRaster(filename_destino)   # Esto no deberia pasar TODO: poner try
-
                     extent_capa = raster.extent
 
                     archivo_raster = ArchivoRaster.objects.create(
@@ -161,7 +150,7 @@ def LayerImportView(request, filename):
 
                 except Exception as e:
                     ok = False
-                    error_msg = 'Se produjo un error al intentar importar la capa {0}: {1}'.format(filename, unicode(e))
+                    error_msg = 'Se produjo un error al intentar importar la capa raster {0}: {1}'.format(filename, unicode(e))
 
     if ok:
         return HttpResponseRedirect(reverse('layers:metadatos', args=(c.id_capa,)))
