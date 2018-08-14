@@ -60,23 +60,27 @@
           {% include 'layers/detalle_capa_widget.html' %}
         </div>
         <div class="tab-pane fade" id="layerAttributes">
-          <table class="table table-striped">
-            <thead><tr><th>Nombre</th><th>Tipo</th><th>Alias</th><th>Descripción</th><th>Publicable</th></tr></thead>
-            <tbody>
-                {% for attr in capa.metadatos.atributo_set.all %}
-                    {% if attr.nombre_del_campo != 'geom' and attr.nombre_del_campo != 'gid' %}
-                        <tr><td>{{ attr.nombre_del_campo }}</td><td>{{ attr.tipo }}</td><td>{{ attr.alias }}</td><td>{{ attr.dame_descripcion }}</td><td><span class={% if attr.publicable %}"glyphicon glyphicon-ok"{% else %}"glyphicon glyphicon-remove"{% endif %}></span></td></tr>
-                    {% endif %}
-                {% endfor %}
-                <!--
-              <tr><td>id</td><td>Integer</td><td>id</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
-              <tr><td>nombre</td><td>Varchar</td><td>Nombre</td><td>Nombre del departamento</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
-              <tr><td>codigo</td><td>Integer</td><td>Código</td><td>Código del departamento</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
-              <tr><td>nomprov</td><td>Varchar</td><td>Provincia</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
-              <tr><td>area</td><td>Float</td><td>area</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-remove"></span></td></tr>
-              -->
-            </tbody>
-          </table>
+            {% if capa.metadatos.atributo_set.count == 0 %}
+                <p>La capa no tiene atributos.</p>
+            {% else %}
+              <table class="table table-striped">
+                <thead><tr><th>Nombre</th><th>Tipo</th><th>Alias</th><th>Descripción</th><th>Publicable</th></tr></thead>
+                <tbody>
+                    {% for attr in capa.metadatos.atributo_set.all %}
+                        {% if attr.nombre_del_campo != 'geom' and attr.nombre_del_campo != 'gid' %}
+                            <tr><td>{{ attr.nombre_del_campo }}</td><td>{{ attr.tipo }}</td><td>{{ attr.alias }}</td><td>{{ attr.dame_descripcion }}</td><td><span class={% if attr.publicable %}"glyphicon glyphicon-ok"{% else %}"glyphicon glyphicon-remove"{% endif %}></span></td></tr>
+                        {% endif %}
+                    {% endfor %}
+                    <!--
+                  <tr><td>id</td><td>Integer</td><td>id</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+                  <tr><td>nombre</td><td>Varchar</td><td>Nombre</td><td>Nombre del departamento</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+                  <tr><td>codigo</td><td>Integer</td><td>Código</td><td>Código del departamento</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+                  <tr><td>nomprov</td><td>Varchar</td><td>Provincia</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-ok"></span></td></tr>
+                  <tr><td>area</td><td>Float</td><td>area</td><td>Sin descripción</td><td><span class="glyphicon glyphicon-remove"></span></td></tr>
+                  -->
+                </tbody>
+              </table>
+            {% endif %}
         </div>
         
         {% if user.is_authenticated %}
@@ -111,7 +115,7 @@
         
         <div class="tab-pane fade" id="layerData">
             {% if capa.cantidad_de_registros == 0 or capa.cantidad_de_registros is None %}
-                <p>La capa no tiene registros</p>
+                <p>La capa no tiene registros.</p>
             {% else %}
                 {% if capa.cantidad_de_registros == 1 %}
                     <p>A continuación se muestra el único registro de esta capa:</p>
