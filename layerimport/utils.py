@@ -6,12 +6,13 @@ from osgeo import osr
 from MapGround.settings import DEFAULT_SRID, DATABASES
 
 from subprocess import Popen, PIPE
-from threading  import Thread
+from threading import Thread
 from StringIO import StringIO
 from string import maketrans
 import unicodedata
 
 epsg_hashes = dict()
+
 
 def tee(infile, *files):
     """Print `infile` to `files` in a separate thread."""
@@ -20,12 +21,13 @@ def tee(infile, *files):
             for f in files:
                 f.write(line)
         infile.close()
-    t = Thread(target=fanout, args=(infile,)+files)
+    t = Thread(target=fanout, args=(infile,) + files)
     t.daemon = True
     t.start()
     return t
 
-def teed_call(cmd_args, **kwargs):    
+
+def teed_call(cmd_args, **kwargs):
     stdout, stderr = [kwargs.pop(s, None) for s in 'stdout', 'stderr']
     p = Popen(cmd_args,
               stdout=PIPE if stdout is not None else None,
@@ -34,8 +36,9 @@ def teed_call(cmd_args, **kwargs):
     threads = []
     if stdout is not None: threads.append(tee(p.stdout, stdout))
     if stderr is not None: threads.append(tee(p.stderr, stderr))
-    for t in threads: t.join() # wait for IO completion
+    for t in threads: t.join()  # wait for IO completion
     return p.wait()
+
 
 def get_shapefile_files(filename):
     """Verifica las dependencias para un shapefile y devuelve un diccionario
@@ -45,7 +48,7 @@ def get_shapefile_files(filename):
     files = {'base': filename}
 
     base_name, extension = os.path.splitext(filename)
-    #Replace special characters in filenames - []{}()
+    # Replace special characters in filenames - []{}()
     glob_name = re.sub(r'([\[\]\(\)\{\}])', r'[\g<1>]', base_name)
 
     if extension.lower() == '.shp':
@@ -103,8 +106,10 @@ def get_shapefile_files(filename):
 
     return files
 
+
 def get_random_string(len=20):
     return "".join([random.SystemRandom().choice(string.digits + string.letters) for i in range(len)])
+
 
 def drop_table(schema, table):
     query = ('SELECT DropGeometryColumn(\'%s\',\'%s\',\'geom\'); '
@@ -112,12 +117,13 @@ def drop_table(schema, table):
     cur = connection.cursor()
     cur.execute(query)
 
+
 def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
-    print 'loading shape with encoding %s '%encoding
-    shp2pgsql_call = ('shp2pgsql -s %s -W %s -p -I -D -N skip "%s" %s.%s') % (srid, encoding, 
+    print 'loading shape with encoding %s ' % encoding
+    shp2pgsql_call = ('shp2pgsql -s %s -W %s -p -I -D -N skip "%s" %s.%s') % (srid, encoding,
             shapefile, schema, table)
 
-    try: 
+    try:
         fout, ferr = StringIO(), StringIO()
         exitcode = teed_call(shp2pgsql_call, stdout=fout, stderr=ferr, shell=True)
         create_query = fout.getvalue()
@@ -127,12 +133,12 @@ def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
     except Exception, e:
         raise MapGroundException(e)
 
-    tmp_filename = '/tmp/data'+get_random_string()
-    tmp_copy_filename = tmp_filename+'_copy'
-    shp2pgsql_call = ('shp2pgsql -s %s -W %s -a -D -N skip "%s" %s.%s 2>/dev/null | awk \'NR<5 {print >> "/dev/stdout"; next } {print > "%s"} END{print}\' - | sed "s:stdin:\'%s\':g"') % (srid, encoding, 
+    tmp_filename = '/tmp/data' + get_random_string()
+    tmp_copy_filename = tmp_filename + '_copy'
+    shp2pgsql_call = ('shp2pgsql -s %s -W %s -a -D -N skip "%s" %s.%s 2>/dev/null | awk \'NR<5 {print >> "/dev/stdout"; next } {print > "%s"} END{print}\' - | sed "s:stdin:\'%s\':g"') % (srid, encoding,
             shapefile, schema, table, tmp_filename, tmp_filename)
 
-    try: 
+    try:
         fout, ferr = StringIO(), StringIO()
         exitcode = teed_call(shp2pgsql_call, stdout=fout, stderr=ferr, shell=True)
         copy_query = fout.getvalue()
@@ -147,17 +153,17 @@ def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
     except:
         pass
 
-    try: 
+    try:
         cur = connection.cursor()
         cur.execute(create_query)
     except Exception, e:
         os.remove(tmp_filename)
         raise MapGroundException(e)
 
-    try: 
-        copy_query+='COMMIT;'
+    try:
+        copy_query += 'COMMIT;'
         with open(tmp_copy_filename, 'w') as text_file:
-            text_file.write(copy_query.replace('COPY', '\\copy'))     
+            text_file.write(copy_query.replace('COPY', '\\copy'))
         copy_call = 'PGPASSWORD="%s" psql -d %s -U %s -w -h %s -f %s' % (DATABASES['default']['PASSWORD'],
         DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['HOST'], tmp_copy_filename)
         fout, ferr = StringIO(), StringIO()
@@ -179,48 +185,52 @@ def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
     except:
         pass
 
+
 def get_epsg_from_prj(prjfile):
     srid = DEFAULT_SRID
-    print 'default srid %d'%srid
+    print 'default srid %d' % srid
     try:
         prj_file = open(prjfile, 'r')
         prj_txt = prj_file.read()
         srs = osr.SpatialReference()
         srs.ImportFromESRI([prj_txt])
         srs.MorphToESRI()
-        wkt=srs.ExportToWkt()
-        l=re.findall('\[.*?\]', wkt)
+        wkt = srs.ExportToWkt()
+        l = re.findall('\[.*?\]', wkt)
         h = hashlib.sha256(unicode(frozenset(l))).hexdigest()
         srid = get_srid_from_hash(h)
     except Exception, e:
         print 'Exception', e
         pass
-    print 'srid %d'%srid
+    print 'srid %d' % srid
     return srid
+
 
 def fill_epsg_hashes():
     cur = connection.cursor()
     cur.execute("select srid from spatial_ref_sys;")
 
-    rows = cur.fetchall();
+    rows = cur.fetchall()
     srs = osr.SpatialReference()
     print "Generating hashes for %d EPSG codes..." % len(rows)
     for r in rows:
         try:
             srs.ImportFromEPSG(r[0])
             srs.MorphToESRI()
-            wkt=srs.ExportToWkt()
-            l=re.findall('\[.*?\]', wkt)
+            wkt = srs.ExportToWkt()
+            l = re.findall('\[.*?\]', wkt)
             h = hashlib.sha256(unicode(frozenset(l))).hexdigest()
             epsg_hashes[h] = r[0]
         except Exception, e:
             print e
             pass
 
+
 def get_srid_from_hash(h):
-    if len(epsg_hashes)==0:
+    if len(epsg_hashes) == 0:
         fill_epsg_hashes()
     return epsg_hashes[h]
+
 
 def import_layer(filename, schema, table, encoding='LATIN1'):
     try:
@@ -238,11 +248,10 @@ def import_layer(filename, schema, table, encoding='LATIN1'):
         load_shape(st['shp'], schema, table, srid, encoding)
     except MapGroundException, e:
         raise
-    print 'import srid %d'%srid
+    print 'import srid %d' % srid
 
     return srid
 
 
-# TODO: podria reemplazarse por normalizar_texto?
 def determinar_id_capa(request, nombre):
     return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
