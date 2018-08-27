@@ -134,7 +134,7 @@ def LayerImportView(request, filename):
                     path_del_archivo=filename_destino,
                     formato=raster.driver.name,
                     cantidad_de_bandas=len(raster.bands),
-                    srid=raster.srs.srid if raster.srs is not None else 4326,
+                    srid=raster.srs.srid if raster.srs.srid is not None else 4326,
                     extent=' '.join(map(str, extent_capa)),
                     heigth=raster.height,
                     width=raster.width)
