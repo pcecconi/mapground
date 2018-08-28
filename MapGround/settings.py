@@ -34,7 +34,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # --- fin defauls 1.11
+    # --- fin defaults 1.11
     'django.contrib.humanize',
     'django.contrib.gis',
     'background_task',
@@ -66,7 +66,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
@@ -171,5 +170,8 @@ ENCODINGS = (
     ('windows-1252', 'Windows 1252'),
     ('IBM850', 'IBM 850'),
 )
+
+# https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-FILE_UPLOAD_PERMISSIONS
+FILE_UPLOAD_PERMISSIONS = 0664
 
 from settings_local import *
