@@ -28,7 +28,7 @@
             </ul>
           </div>
           {% elif capa.tipo_de_capa == 'raster' %}
-            <a href="{% url 'layers:download' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-download"></span>&nbsp;Bajar</a>
+            <a href="{{ capa.dame_download_url }}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-download"></span>&nbsp;Bajar</a>
           {% endif %}
           {% if capa.permiso == 'owner' or capa.permiso == 'superuser' or capa.permiso == 'write' %}
             <a href="{% url 'layers:metadatos' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span>&nbsp;Editar</a>
