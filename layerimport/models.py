@@ -10,8 +10,8 @@ import os
 
 
 class TablaGeografica(SingleOwnerMixin, models.Model):
-    nombre_normalizado = models.CharField('Nombre Normalizado', null=False, blank=False, unique=False, max_length=255)  # TODO: esto guarda el archivo original? para que?
-    nombre_del_archivo = models.CharField('Nombre del Archivo', null=False, blank=False, unique=False, max_length=255)  # TODO: esto guarda el archivo original? para que?
+    nombre_normalizado = models.CharField('Nombre Normalizado', null=False, blank=False, unique=False, max_length=255)
+    nombre_del_archivo = models.CharField('Nombre del Archivo', null=False, blank=False, unique=False, max_length=255)
     esquema = models.CharField('Esquema', null=False, blank=False, max_length=100)
     tabla = models.CharField('Tabla', null=False, blank=False, max_length=100)
     # tipo_de_geometria = models.CharField(u'Tipo de Geometría', null=False, blank=False, max_length=50)    # originalmente iba a ir, luego lo agregamos directamente en Capa y se completa en el signal via postgres

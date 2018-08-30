@@ -130,7 +130,7 @@ def LayerImportView(request, filename):
                 # ...y luego creamos los objetos
                 archivo_raster = ArchivoRaster.objects.create(
                     owner=request.user,
-                    nombre_del_archivo=id_capa,
+                    nombre_del_archivo=id_capa + archivo.extension,
                     path_del_archivo=filename_destino,
                     formato=raster.driver.name,
                     cantidad_de_bandas=len(raster.bands),
@@ -144,7 +144,7 @@ def LayerImportView(request, filename):
                     nombre=normalizar_texto(archivo.nombre),
                     id_capa=id_capa,
                     tipo_de_capa=CONST_RASTER,
-                    nombre_del_archivo=archivo_raster.path_del_archivo,  # path final, unico, normalizado
+                    nombre_del_archivo=archivo_raster.nombre_del_archivo,
                     conexion_postgres=None,
                     esquema=None,
                     tabla=None,

@@ -524,13 +524,7 @@ class MapServerLayer(models.Model):
             return self.capa.dame_connection_string
 
     def dame_data(self, srid=None):
-        if self.capa.tipo_de_capa == CONST_VECTOR:
-            if srid!=None:
-                return "geom_proj from (select *, st_transform(%s, %d) as geom_proj from %s.%s) aa using unique gid using srid=%d"%(self.capa.campo_geom,srid,self.capa.esquema,self.capa.tabla,srid)
-            else:
-                return "%s from %s.%s"%(self.capa.campo_geom,self.capa.esquema,self.capa.tabla)
-        elif self.capa.tipo_de_capa == CONST_RASTER:
-            return self.capa.nombre_del_archivo
+        return self.capa.dame_data(srid)
 
     def save(self, srid=None, *args, **kwargs):
         if self.archivo_sld is not None and self.archivo_sld.capa != self.capa:
@@ -653,7 +647,7 @@ def onCapaPostDelete(sender, instance, **kwargs):
             pass
     elif instance.tipo_de_capa == CONST_RASTER:
         try:
-            ArchivoRaster.objects.filter(path_del_archivo=instance.nombre_del_archivo)[0].delete()
+            ArchivoRaster.objects.filter(nombre_del_archivo=instance.nombre_del_archivo, owner=instance.owner)[0].delete()
         except:
             pass
 
