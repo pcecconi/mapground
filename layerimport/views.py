@@ -113,6 +113,7 @@ def LayerImportView(request, filename):
             try:
                 raster = GDALRaster(archivo.file.name)
                 extent_capa = raster.extent
+                srid = raster.srs.srid if raster.srs is not None and raster.srs.srid is not None else 4326
             except:
                 return render(request, template_name, {
                     "capa": filename, "ok": False,
@@ -134,7 +135,7 @@ def LayerImportView(request, filename):
                     path_del_archivo=filename_destino,
                     formato=raster.driver.name,
                     cantidad_de_bandas=len(raster.bands),
-                    srid=raster.srs.srid if raster.srs.srid is not None else 4326,
+                    srid=srid,
                     extent=' '.join(map(str, extent_capa)),
                     heigth=raster.height,
                     width=raster.width)
