@@ -15,8 +15,9 @@
 {% block content %}
       <div class="page-header">
         <h1>{{capa.dame_titulo}}</h1>
-
+        
         <div class="btn-group btn-toolbar" role="toolbar">
+          {% if capa.tipo_de_capa == 'vector' %}
           <div class="btn-group">
             <button type="button" class="btn btn-default dropdown" data-toggle="dropdown" id="downloadMenu"><span class="glyphicon glyphicon-download"></span>
                   &nbsp;Bajar <span class="caret"></span></button>
@@ -26,6 +27,9 @@
               <li role="presentation"><a role="menuitem" tabindex="-1" target="_blank" href="{% url 'layers:download' capa.id_capa %}csv">CSV</a></li>
             </ul>
           </div>
+          {% elif capa.tipo_de_capa == 'raster' %}
+            <a href="{% url 'layers:download' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-download"></span>&nbsp;Bajar</a>
+          {% endif %}
           {% if capa.permiso == 'owner' or capa.permiso == 'superuser' or capa.permiso == 'write' %}
             <a href="{% url 'layers:metadatos' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span>&nbsp;Editar</a>
           {% endif %}
