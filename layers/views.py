@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 
 # core
-from django.http import HttpResponse,HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.template import loader
 from django.shortcuts import render, get_object_or_404
 from django.views import generic
@@ -15,7 +15,7 @@ import json, os
 from proxy import views
 from django.forms.models import inlineformset_factory, modelformset_factory
 # models
-from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica
+from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR
 from maps.models import Mapa, ManejadorDeMapas
 from layerimport.models import TablaGeografica
 from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, EscalaForm, AreaTematicaForm
@@ -456,7 +456,7 @@ def wxs(request, id_capa):
     # remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
     remote_url = mapserver.get_wms_url(id_capa+'_layer_srs')
     sld = capa.dame_sld_default()
-    if sld != None:
+    if sld is not None:
         remote_url = remote_url + '&SLD='+sld
         # print remote_url
     return views.proxy_view(request, remote_url, extra_requests_args)
@@ -473,15 +473,17 @@ def download(request, id_capa, format='shapezip'):
     capa = get_object_or_404(Capa, id_capa=id_capa)
     if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) is None:
         return HttpResponseForbidden()
-    
-    extra_requests_args = {}
-    if format not in ['shapezip', 'geojson', 'csv']:
-        format = 'shapezip'
-    mapfile=ManejadorDeMapas.commit_mapfile(id_capa+'_layer_srs')
-    # remote_url = MAPSERVER_URL+'?map='+mapfile+'&SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME='+capa.nombre+'&outputformat='+format
-    remote_url = mapserver.get_feature_url(id_capa+'_layer_srs', capa.nombre, format)
-    print remote_url
-    return views.proxy_view(request, remote_url, extra_requests_args)
+    if capa.tipo_de_capa == CONST_RASTER:
+        return views.proxy_view(request, settings.UPLOADED_RASTERS_URL + unicode(capa.owner) + '/' + capa.nombre_del_archivo)
+    elif capa.tipo_de_capa == CONST_VECTOR:
+        extra_requests_args = {}
+        if format not in ['shapezip', 'geojson', 'csv']:
+            format = 'shapezip'
+        mapfile=ManejadorDeMapas.commit_mapfile(id_capa+'_layer_srs')
+        # remote_url = MAPSERVER_URL+'?map='+mapfile+'&SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME='+capa.nombre+'&outputformat='+format
+        remote_url = mapserver.get_feature_url(id_capa+'_layer_srs', capa.nombre, format)
+        print remote_url
+        return views.proxy_view(request, remote_url, extra_requests_args)
 
 # primera implementacion de wxs usando mapscript
 # def wxs():    
