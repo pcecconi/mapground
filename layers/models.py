@@ -119,6 +119,13 @@ class Capa(SingleOwnerMixin, models.Model):
         else:
             return self.conexion_postgres.dame_connection_string
 
+    @property
+    def dame_download_url(self):
+        if self.tipo_de_capa == CONST_RASTER:
+            return settings.UPLOADED_RASTERS_URL + unicode(self.owner) + '/' + self.nombre_del_archivo
+        else:
+            return ''
+
     def dame_data(self, srid=None):
         if self.tipo_de_capa == CONST_VECTOR:
             if srid is not None:
@@ -126,7 +133,6 @@ class Capa(SingleOwnerMixin, models.Model):
             else:
                 return "%s from %s.%s" % (self.campo_geom, self.esquema, self.tabla)
         elif self.tipo_de_capa == CONST_RASTER:
-            print 'DATA ES:', settings.UPLOADED_RASTERS_PATH + unicode(self.owner) + '/' + self.nombre_del_archivo
             return settings.UPLOADED_RASTERS_PATH + unicode(self.owner) + '/' + self.nombre_del_archivo
 
 
