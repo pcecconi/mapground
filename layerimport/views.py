@@ -80,11 +80,11 @@ def LayerImportView(request, filename):
             try:
                 srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding)
                 tabla_geografica = TablaGeografica.objects.create(
-                    nombre_normalizado=normalizar_texto(filename),
+                    nombre_normalizado=normalizar_texto(archivo.nombre),
                     nombre_del_archivo=os.path.basename(unicode(archivo.file)),
                     esquema=IMPORT_SCHEMA,
                     srid=srid,
-                    tabla=id_capa,  # antes esta variable era nombre_tabla, cambio variable pero es el mismo valor
+                    tabla=id_capa,
                     owner=request.user)
 
                 c = Capa.objects.create(
