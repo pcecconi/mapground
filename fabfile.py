@@ -15,8 +15,8 @@ def setup_dev():
 def setup_prod():
 	local("sudo ./setup.sh -h=localhost")
 
-def update(dir=''):
-	local('git pull')
+def upgrade():
+	# local('git pull') # el push es mejor hacerlo manualmente
  	local("deactivate; source venv/bin/activate; pip install -r requirements.txt", shell='/bin/bash')
 	local("deactivate; source venv/bin/activate; python manage.py makemigrations; python manage.py migrate; python manage.py collectstatic", shell='/bin/bash')
 	local('sudo service uwsgi restart')
