@@ -81,6 +81,15 @@
     }
 },
 {
+    "pk": 10, 
+    "model": "layers.tipodegeometria", 
+    "fields": {
+        "mapserver_type": "RASTER", 
+        "nombre": "Raster", 
+        "postgres_type": "RASTER"
+    }
+},
+{
     "pk": 1, 
     "model": "layers.conexionpostgres", 
     "fields": {

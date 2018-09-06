@@ -5,8 +5,8 @@ from django.db import models, connection, connections
 from django.contrib.auth.models import User
 from django.conf import settings
 # import mapscript
-from layerimport.models import TablaGeografica
-from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala
+from layerimport.models import TablaGeografica, ArchivoRaster
+from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, CONST_VECTOR, CONST_RASTER
 import os
 # slugs
 from django.utils.text import slugify
@@ -50,7 +50,7 @@ class TMSBaseLayer(models.Model):
     tms = models.BooleanField(u'TMS?', null=False, default=True)
     fuente = models.CharField('Fuente', null=False, blank=True, max_length=255) # attribution
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000)
-     
+
     class Meta:
         verbose_name = 'TMS Base Layer'
         verbose_name_plural = 'TMS Base Layers'
@@ -60,14 +60,14 @@ class TMSBaseLayer(models.Model):
 
 class ManejadorDeMapas:
     @classmethod
-    def delete_mapfile(cls,id_mapa):
+    def delete_mapfile(cls, id_mapa):
         print "...ManejadorDeMapas.delete_mapfile %s"%(id_mapa)
         try:
              mapa=Mapa.objects.get(id_mapa=id_mapa)
-        #if instance.tipo_de_mapa == 'layer':
-        #    manage.remove([instance.id_mapa])
+        # if instance.tipo_de_mapa == 'layer':
+        #     manage.remove([instance.id_mapa])
         except:
-            print "......error: mapa inexistente" 
+            print "......error: mapa inexistente"
             return
         try:
             os.remove(os.path.join(settings.MAPAS_PATH, id_mapa+'.map'))
@@ -358,7 +358,7 @@ class Mapa(models.Model):
             return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/')
 
         return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
-    
+
     def dame_mapserver_map_def(self):
         es_hexa, color = self.dame_imagecolor
         srid = self.dame_projection
@@ -368,7 +368,7 @@ class Mapa(models.Model):
         layers = []
         if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general'):
             mapserverlayers = self.mapserverlayer_set.all().order_by('orden_de_capa','capa__metadatos__titulo')
-        else: #'public_layers'
+        else:  # 'public_layers'
             mapserverlayers = self.mapserverlayer_set.filter(capa__wxs_publico=True).order_by('orden_de_capa')
         for msl in mapserverlayers:
             if self.tipo_de_mapa=='general':
@@ -377,7 +377,6 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layer_def()
                 l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid)
             layers.append(l)
-
         data = {
             "idMapa": self.id_mapa,
             "imageColor": {
@@ -467,7 +466,7 @@ class Mapa(models.Model):
                 wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs), sld_url)
             except:
                 pass 
-        #print wms_url
+        print wms_url
         thumb=os.path.join(settings.MEDIA_ROOT, self.id_mapa+'.png')
         return urlToFile(wms_url, thumb)
 
@@ -525,10 +524,7 @@ class MapServerLayer(models.Model):
             return self.capa.dame_connection_string
 
     def dame_data(self, srid=None):
-        if srid!=None:
-            return "geom_proj from (select *, st_transform(%s, %d) as geom_proj from %s.%s) aa using unique gid using srid=%d"%(self.capa.campo_geom,srid,self.capa.esquema,self.capa.tabla,srid)
-        else:
-            return "%s from %s.%s"%(self.capa.campo_geom,self.capa.esquema,self.capa.tabla)
+        return self.capa.dame_data(srid)
 
     def save(self, srid=None, *args, **kwargs):
         if self.archivo_sld is not None and self.archivo_sld.capa != self.capa:
@@ -546,22 +542,39 @@ class MapServerLayer(models.Model):
     def dame_mapserver_layer_def(self, connectiontype='POSTGIS'):
         include_items, items_aliases = self.capa.metadatos.dame_gml_atributos()
         srid = 4326 if self.mapa.tipo_de_mapa in ('public_layers','user') and self.capa.srid!=4326 else int(self.capa.dame_projection)
-        data = {
-            "connectionType": connectiontype,
-            "layerName": self.capa.nombre,
-            "layerTitle": self.capa.dame_titulo.encode('utf-8'),
-            "layerConnection": self.dame_layer_connection(connectiontype),
-            "layerData": self.dame_data(srid),
-            "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
-            "layerType": 'RASTER' if connectiontype == 'WMS' else self.capa.tipo_de_geometria.mapserver_type,
-            "srid": srid,
-            "metadataIncludeItems": include_items,
-            "metadataAliases": items_aliases,
-            "layerDefinitionOverride": self.texto_input,
-            "metadata": {}
-        }
+        if self.capa.tipo_de_capa == CONST_VECTOR:
+            data = {
+                "connectionType": connectiontype,
+                "layerName": self.capa.nombre,
+                "layerTitle": self.capa.dame_titulo.encode('utf-8'),
+                "layerConnection": self.dame_layer_connection(connectiontype),
+                "layerData": self.dame_data(srid),
+                "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
+                "layerType": 'RASTER' if connectiontype == 'WMS' else self.capa.tipo_de_geometria.mapserver_type,
+                "srid": srid,
+                "metadataIncludeItems": include_items,
+                "metadataAliases": items_aliases,
+                "layerDefinitionOverride": self.texto_input,
+                "metadata": {}
+            }
+        elif self.capa.tipo_de_capa == CONST_RASTER:
+            data = {
+                #"connectionType": connectiontype,
+                "layerName": self.capa.nombre,
+                "layerTitle": self.capa.dame_titulo.encode('utf-8'),
+                # "layerConnection": self.dame_layer_connection(connectiontype),
+                "layerData": self.dame_data(srid),
+                # "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
+                "layerType": 'RASTER',
+                "srid": srid,
+                # "metadataIncludeItems": include_items,
+                # "metadataAliases": items_aliases,
+                # "layerDefinitionOverride": self.texto_input,
+                "metadata": {}
+            }
+
         return data
-    
+
 
 @receiver(post_save, sender=Capa)
 def onCapaPostSave(sender, instance, created, **kwargs):
@@ -569,7 +582,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
     if created:
         print '...capa creada'
         # ------------ creamos y completamos metadatos y atributos
-        metadatos = Metadatos.objects.create(capa=instance,titulo=instance.nombre)        
+        metadatos = Metadatos.objects.create(capa=instance,titulo=instance.nombre)
         # devuelve <att_num, campo, tipo, default_value, uniq, pk>
         cursor = connection.cursor()
         cursor.execute("SELECT * from utils.campos_de_tabla(%s,%s)", [instance.esquema, instance.tabla])
@@ -580,6 +593,12 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         # ------------ creamos/actualizamos mapas
         # creamos el mapa canónico
         mapa = Mapa(owner=instance.owner,nombre=instance.nombre,id_mapa=instance.id_capa, tipo_de_mapa='layer')
+        if instance.tipo_de_capa == CONST_RASTER:
+            try:
+                print "Intentando setear baselayer..."
+                mapa.tms_base_layer=TMSBaseLayer.objects.get(pk=1)
+            except:
+                pass
         mapa.save(escribir_imagen_y_mapfile=False)
         MapServerLayer(mapa=mapa,capa=instance,orden_de_capa=0).save()
         mapa.save()
@@ -621,10 +640,16 @@ def onCapaPostDelete(sender, instance, **kwargs):
         Mapa.objects.get(id_mapa=instance.id_capa+'_layer_srs',tipo_de_mapa='layer_original_srs').delete()
     except:
         pass
-    try:
-        TablaGeografica.objects.filter(tabla=instance.id_capa)[0].delete()
-    except:
-        pass
+    if instance.tipo_de_capa == CONST_VECTOR:
+        try:
+            TablaGeografica.objects.filter(tabla=instance.id_capa)[0].delete()
+        except:
+            pass
+    elif instance.tipo_de_capa == CONST_RASTER:
+        try:
+            ArchivoRaster.objects.filter(nombre_del_archivo=instance.nombre_del_archivo, owner=instance.owner)[0].delete()
+        except:
+            pass
 
 @receiver(post_delete, sender=Mapa)
 def onMapaPostDelete(sender, instance, **kwargs):
@@ -636,10 +661,10 @@ def onMapaPostDelete(sender, instance, **kwargs):
         os.remove(os.path.join(settings.MAPAS_PATH, instance.id_mapa+'.map'))
     except:
         pass
-    try: # deberia borrar solo si tipo_de_mapa in ['layer_original_srs', 'general']
-        os.remove(os.path.join(settings.MEDIA_ROOT, instance.id_mapa+'.png'))
+    try:  # deberia borrar solo si tipo_de_mapa in ['layer_original_srs', 'general']
+        os.remove(os.path.join(settings.MEDIA_ROOT, instance.id_mapa + '.png'))
     except:
-        pass    
+        pass
 
 def getSldUrl(sld_file_url):
     return urlparse.urljoin(settings.SITE_URL, sld_file_url)
@@ -660,10 +685,9 @@ def generarThumbnailSLD(capa, sld):
         urllib.urlretrieve(wms_url, thumb)
     except:
         print "Error generando preview de capa con SLD!!!"
-    
 
 @receiver(post_save, sender=ArchivoSLD)
-def onArchivoSLDPostSave(sender, instance, **kwargs):
+def onArchivoSLDPostSave(sender, instance, created, **kwargs):
     print 'onArchivoSLDPostSave %s'%(str(instance))
     if instance.default:
         q=ArchivoSLD.objects.filter(capa=instance.capa).exclude(pk=instance.pk)
@@ -692,7 +716,7 @@ def onArchivoSLDPostSave(sender, instance, **kwargs):
             print "Error tratando de escribir SLD"
     else:
         print "No se modifico el SLD"
-    generarThumbnailSLD(instance.capa, instance) # siempre
+    generarThumbnailSLD(instance.capa, instance)  # siempre
     instance.capa.save()
     ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa+'_layer_srs')
 
@@ -701,10 +725,9 @@ def onArchivoSLDPostDelete(sender, instance, **kwargs):
     print 'onArchivoSLDPostDelete %s'%(str(instance))
     instance.capa.save()
     if instance.default:
-        ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa+'_layer_srs')        
+        ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa+'_layer_srs')
     try:
         os.remove(os.path.splitext(instance.filename.path)[0]+'.png')
         os.remove(os.path.join(settings.MEDIA_ROOT, instance.filename.name))
     except:
         pass
-        

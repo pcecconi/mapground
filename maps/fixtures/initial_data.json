@@ -1,0 +1,29 @@
+[
+    {
+      "model": "maps.tmsbaselayer",
+      "pk": 1,
+      "fields": {
+        "nombre": "World Satellital",
+        "url": "http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        "tms": false
+      }
+    },
+    {
+      "model": "maps.tmsbaselayer",
+      "pk": 2,
+      "fields": {
+        "nombre": "Carto Positron",
+        "url": "http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
+        "tms": false
+      }
+    },
+    {
+      "model": "maps.tmsbaselayer",
+      "pk": 3,
+      "fields": {
+        "nombre": "Carto Dark Matter",
+        "url": "http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+        "tms": false
+      }
+    }
+]

@@ -5,16 +5,16 @@ from django.core.urlresolvers import reverse
 
 
 def order_name(name):
-    """order_name -- Limit a text to 40 chars length, if necessary strips the
+    """order_name -- Limit a text to 100 chars length, if necessary strips the
     middle of the text and substitute it for an ellipsis.
 
     name -- text to be limited.
 
     """
     name = re.sub(r'^.*/', '', name)
-    if len(name) <= 40:
+    if len(name) <= 100:    # originalmente era 40
         return name
-    return name[:30] + "..." + name[-7:]
+    return name[:90] + "..." + name[-7:]    # orginalmente era 30 y 7
 
 
 def serialize(instance, file_attr='file'):

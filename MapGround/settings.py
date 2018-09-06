@@ -34,7 +34,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # --- fin defauls 1.11
+    # --- fin defaults 1.11
     'django.contrib.humanize',
     'django.contrib.gis',
     'background_task',
@@ -66,7 +66,6 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     'django.contrib.auth.middleware.RemoteUserMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
@@ -151,6 +150,9 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.abspath(os.path.dirname(__file__)) + '/media/'
 MAPAS_PATH = os.path.join(BASE_PATH, 'mapfiles')
 
+UPLOADED_FILES_PATH = os.path.join(MEDIA_ROOT, 'uploaded/')
+UPLOADED_RASTERS_PATH = os.path.join(MEDIA_ROOT, 'uploaded-rasters/')
+
 IMPORT_SCHEMA = 'data'
 
 LOGIN_REDIRECT_URL = '/'
@@ -168,5 +170,8 @@ ENCODINGS = (
     ('windows-1252', 'Windows 1252'),
     ('IBM850', 'IBM 850'),
 )
+
+# https://docs.djangoproject.com/en/1.11/ref/settings/#std:setting-FILE_UPLOAD_PERMISSIONS
+FILE_UPLOAD_PERMISSIONS = 0664
 
 from settings_local import *

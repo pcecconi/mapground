@@ -1,6 +1,6 @@
 <dl class="dl-horizontal">
   <dt>Tipo</dt><dd>{{ capa.tipo_de_geometria.nombre }}</dd>
-  <dt>Cantidad de registros</dt><dd>{{ capa.cantidad_de_registros }}</dd>
+  <dt>Cantidad de registros</dt><dd>{% if capa.cantidad_de_registros != None %}{{ capa.cantidad_de_registros }}{% else %}n/a{% endif %}</dd>
   <dt>Fecha y hora de carga</dt><dd>{{ capa.timestamp_alta }}</dd>
   <dt>Última modificación</dt><dd>{{ capa.timestamp_modificacion }}</dd>
   <dt>Subida por</dt><dd>

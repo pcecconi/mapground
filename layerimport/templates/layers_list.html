@@ -13,8 +13,11 @@
     <!-- The table listing the layers available for import -->
     <table role="presentation" class="table table-striped"><tbody>
         {% for capa in object_list %}
-            <tr><td class="capa-importable">{{ capa.nombre }}</td>
+            <tr>
+                <td class="capa-importable">{{ capa.nombre }}</td>
+                <td class="encoding"><label class="control-label">Tipo:</label> {{ capa.formato}} ({{ capa.tipo }})</td>
                 <td class="encoding">
+                    {% if capa.tipo == 'vector' %}
                     <form class="form-inline">
                     <div class="form-group">
                         <label class="control-label">Encoding:</label>
@@ -25,6 +28,7 @@
                         </select>                        
                     </div>
                     </form>
+                    {% endif %}
                 </td>
             	<td><a href="{% url 'layerimport:layer-import-view' capa.nombre %}" type="button" id="link_{{ capa.nombre }}" class="btn btn-primary pull-right">
 			          <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Importar Capa
