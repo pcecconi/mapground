@@ -568,12 +568,12 @@ class MapServerLayer(models.Model):
                 "layerTitle": self.capa.dame_titulo.encode('utf-8'),
                 "layerConnection": self.dame_layer_connection(connectiontype),
                 "layerData": self.dame_data(srid),
-                # "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
+                "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
                 "layerType": 'RASTER',
                 "srid": srid,
-                # "metadataIncludeItems": include_items,
-                # "metadataAliases": items_aliases,
-                # "layerDefinitionOverride": self.texto_input,
+                "metadataIncludeItems": include_items,
+                "metadataAliases": items_aliases,
+                "layerDefinitionOverride": self.texto_input,
                 "metadata": {}
             }
 
