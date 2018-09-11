@@ -148,7 +148,7 @@ def create_ms_layer(data):
     layer.group = 'default'  # siempre
     layer.template = 'blank.html'
 
-    if data['layerType'] == 'RASTER':
+    if data['connectionType'] == 'RASTER':
         layer.type = mapscript.MS_LAYER_RASTER
         layer.data = data['layerData']
         layer.setProjection('epsg:%s' % (unicode(data['srid'])))

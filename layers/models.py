@@ -120,6 +120,13 @@ class Capa(SingleOwnerMixin, models.Model):
             return self.conexion_postgres.dame_connection_string
 
     @property
+    def dame_connection_type(self):
+        if self.tipo_de_capa == CONST_RASTER:
+            return 'RASTER'
+        else:
+            return 'POSTGIS'
+
+    @property
     def dame_download_url(self):
         if self.tipo_de_capa == CONST_RASTER:
             return settings.UPLOADED_RASTERS_URL + unicode(self.owner) + '/' + self.nombre_del_archivo

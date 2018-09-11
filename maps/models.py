@@ -374,7 +374,7 @@ class Mapa(models.Model):
             if self.tipo_de_mapa=='general':
                 l=msl.dame_mapserver_layer_def('WMS')
             else:
-                l=msl.dame_mapserver_layer_def()
+                l=msl.dame_mapserver_layer_def(msl.dame_layer_connection_type())
                 l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid)
             layers.append(l)
         data = {
@@ -432,6 +432,7 @@ class Mapa(models.Model):
         # Si estamos en una arquitectura distribuida los tiles son locales
         mapcache.remove_tileset(self.id_mapa)
         sld_url = ''
+        srid = MAPA_DEFAULT_SRS
         if self.tipo_de_mapa == 'layer':
             capa = self.mapserverlayer_set.first().capa
             # params = ':%s:%d'%(capa.nombre, MAPA_DEFAULT_SRS)
@@ -523,6 +524,9 @@ class MapServerLayer(models.Model):
         else:
             return self.capa.dame_connection_string
 
+    def dame_layer_connection_type(self):
+        return self.capa.dame_connection_type
+
     def dame_data(self, srid=None):
         return self.capa.dame_data(srid)
 
@@ -559,10 +563,10 @@ class MapServerLayer(models.Model):
             }
         elif self.capa.tipo_de_capa == CONST_RASTER:
             data = {
-                #"connectionType": connectiontype,
+                "connectionType": connectiontype,
                 "layerName": self.capa.nombre,
                 "layerTitle": self.capa.dame_titulo.encode('utf-8'),
-                # "layerConnection": self.dame_layer_connection(connectiontype),
+                "layerConnection": self.dame_layer_connection(connectiontype),
                 "layerData": self.dame_data(srid),
                 # "sldUrl": (urlparse.urljoin(settings.SITE_URL, self.archivo_sld.filename.url)) if self.archivo_sld is not None else "",
                 "layerType": 'RASTER',
