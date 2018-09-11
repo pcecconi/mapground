@@ -128,11 +128,12 @@ def create_mapfile(data, save=True):
     except:
         pass  # No metadata
 
-    try:
-        for layer_def in data['layers']:
-            mapa.insertLayer(create_ms_layer(layer_def))
-    except:
-        print "Failed to insert layers on mapfile"
+    # try:
+    for layer_def in data['layers']:
+        print(layer_def)
+        mapa.insertLayer(create_ms_layer(layer_def))
+    # except Exception, e:
+    #     print "Failed to insert layers on mapfile: %s"%str(e)
 
     if save:
         mapa.save(os.path.join(settings.MAPAS_PATH, data['idMapa'] + '.map'))
@@ -148,6 +149,7 @@ def create_ms_layer(data):
     layer.group = 'default'  # siempre
     layer.template = 'blank.html'
 
+    print('create_ms_layer - connectionType: %s'%data['connectionType'])
     if data['connectionType'] == 'RASTER':
         layer.type = mapscript.MS_LAYER_RASTER
         layer.data = data['layerData']
@@ -155,6 +157,7 @@ def create_ms_layer(data):
         __agregar_simbologia_basica__(layer)
 
     elif data['connectionType'] == 'WMS':
+        print('create_ms_layer WMS')
         layer.type = mapscript.MS_LAYER_RASTER
         layer.connectiontype = mapscript.MS_WMS
         layer.connection = data['layerConnection']
@@ -163,7 +166,8 @@ def create_ms_layer(data):
         layer.setMetaData('wms_name', data['layerName'])
         layer.setMetaData('wms_server_version', '1.1.1')
         layer.setMetaData('wms_format', 'image/png')
-        if data['sldUrl'] is not None:
+        if data.get('sldUrl', None) is not None and data['sldUrl'] != '':
+            print("sldUrl: %s"%data['sldUrl'])
             layer.setMetaData('wms_sld_url', data['sldUrl'])
 
     elif data['connectionType'] == 'POSTGIS':
