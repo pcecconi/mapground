@@ -48,6 +48,12 @@ def __agregar_simbologia_basica__(layer):
         layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
+def __agregar_simbologia_grib_temperatura__(layer):
+    class1 = mapscript.classObj(layer)
+    style = mapscript.styleObj(class1)
+    style.updateFromString('STYLE\n RANGEITEM ""\n COLORRANGE 100 200 0 200 100 0 \n DATARANGE -10.0 30.0\nEND')
+
+
 def create_mapfile(data, save=True):
     mapa = mapscript.mapObj()
     mapa.name = 'mapa_' + unicode(data['idMapa'])
@@ -149,12 +155,20 @@ def create_ms_layer(data):
     layer.group = 'default'  # siempre
     layer.template = 'blank.html'
 
-    print('create_ms_layer - connectionType: %s'%data['connectionType'])
+    # print('create_ms_layer - connectionType: %s'%ata['connectionType'])
     if data['connectionType'] == 'RASTER':
         layer.type = mapscript.MS_LAYER_RASTER
         layer.data = data['layerData']
-        layer.setProjection('epsg:%s' % (unicode(data['srid'])))
-        __agregar_simbologia_basica__(layer)
+        if data['proj4'] != '':
+            layer.setProjection(data['proj4'])
+        else:
+            layer.setProjection('epsg:%s' % (unicode(data['srid'])))
+
+        for processing in data['processing']:
+            layer.addProcessing(processing)
+
+        if data['driver'] == 'GRIB':
+            __agregar_simbologia_grib_temperatura__(layer)
 
     elif data['connectionType'] == 'WMS':
         print('create_ms_layer WMS')
@@ -167,7 +181,7 @@ def create_ms_layer(data):
         layer.setMetaData('wms_server_version', '1.1.1')
         layer.setMetaData('wms_format', 'image/png')
         if data.get('sldUrl', None) is not None and data['sldUrl'] != '':
-            print("sldUrl: %s"%data['sldUrl'])
+            # print("sldUrl: %s"%data['sldUrl'])
             layer.setMetaData('wms_sld_url', data['sldUrl'])
 
     elif data['connectionType'] == 'POSTGIS':

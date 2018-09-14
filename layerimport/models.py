@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
-from utils import drop_table
 from django_extras.contrib.auth.models import SingleOwnerMixin
+from utils import drop_table
 import os
 
 
@@ -40,12 +40,11 @@ def onTablaGeograficaPostDelete(sender, instance, **kwargs):
 class ArchivoRaster(SingleOwnerMixin, models.Model):
     nombre_del_archivo = models.CharField('Nombre del Archivo', null=False, blank=False, unique=False, max_length=255)
     path_del_archivo = models.CharField('Path absoluto del Archivo', null=False, blank=False, unique=True, max_length=255)
-    formato = models.CharField(null=False, blank=False, unique=False, max_length=255)   # según GDALRaster
-    cantidad_de_bandas = models.IntegerField(null=True, blank=True)                     # según GDALRaster  # TODO: podrá ser null?
-    srid = models.IntegerField(null=False, blank=False, default=4326)                   # según GDALRaster, hay rasters que tienen srid=None
-    extent = models.CharField(null=False, blank=False, max_length=255, default='')      # según GDALRaster
-    heigth = models.IntegerField(null=False, blank=False)                               # según GDALRaster
-    width = models.IntegerField(null=False, blank=False)                                # según GDALRaster
+    formato_driver_shortname = models.CharField(null=False, blank=True, unique=False, max_length=255)   # según GDAL
+    formato_driver_longname = models.CharField(null=False, blank=True, unique=False, max_length=255)   # según GDAL
+    srid = models.IntegerField(null=True, blank=True)                                   # según GDAL, puede ser None
+    extent = models.CharField(null=False, blank=False, max_length=255, default='')      # según GDAL
+
     timestamp_alta = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de alta')
 
     class Meta:

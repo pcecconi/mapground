@@ -189,9 +189,9 @@ def detalle_capa(request, id_capa):
     ManejadorDePermisos.anotar_permiso_a_capa(request.user, capa)
     if capa.permiso is None:
         return HttpResponseRedirect(reverse('layers:index'))
-    ManejadorDeMapas.commit_mapfile(id_capa)        
+    ManejadorDeMapas.commit_mapfile(id_capa)
     permisos=ManejadorDePermisos.usuarios_con_permiso_a_capa(capa)
-    
+
     if request.user==capa.owner or request.user.is_superuser:
         mapas=capa.mapa_set.filter(tipo_de_mapa='general').distinct()
     else:
@@ -473,6 +473,7 @@ def download(request, id_capa, format='shapezip'):
     capa = get_object_or_404(Capa, id_capa=id_capa)
     if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) is None:
         return HttpResponseForbidden()
+    # Ahora el download de capas solo se invoca para shapes, en el caso rasters lo sirve directamente nginx
     if capa.tipo_de_capa == CONST_RASTER:
         return views.proxy_view(request, settings.UPLOADED_RASTERS_URL + unicode(capa.owner) + '/' + capa.nombre_del_archivo)
     elif capa.tipo_de_capa == CONST_VECTOR:
@@ -486,8 +487,8 @@ def download(request, id_capa, format='shapezip'):
         return views.proxy_view(request, remote_url, extra_requests_args)
 
 # primera implementacion de wxs usando mapscript
-# def wxs():    
-#     path_map = 'ogc_ori.map'    
+# def wxs():
+#     path_map = 'ogc_ori.map'
 #     if not request.vars:
 #         return ''
 #     req = mapscript.OWSRequest()
@@ -499,7 +500,7 @@ def download(request, id_capa, format='shapezip'):
 #     map.OWSDispatch(req)
 
 #     content_type = mapscript.msIO_stripStdoutBufferContentType()
-#     content = mapscript.msIO_getStdoutBufferBytes()  
+#     content = mapscript.msIO_getStdoutBufferBytes()
 #     response.header = "Content-Type","%s; charset=utf-8"%content_type
 #     return content
 
@@ -516,9 +517,9 @@ def sld(request, id_capa):
             return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa':id_capa}))
         formset = ArchivoSLDInlineFormSet(request.POST, request.FILES, instance=capa)
         if formset.is_valid():
-            #formset.save()
+            # formset.save()
             # reemplazamos el clasico formset.save() por las siguientes lineas que cargan el username y el timestamp en cada objeto
-            
+
             modificadas=[]
             for form in formset:    # detecto los objetos que tienen nuevos slds y me guardo los ids
                 if 'filename' in form.changed_data:

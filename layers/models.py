@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 # core
 from django.conf import settings
 from django.db import connection
+from django.contrib.postgres.fields import JSONField
 # slugs
 from django.utils.text import slugify
 # signals
@@ -23,7 +24,6 @@ import urlparse
 # geodjango
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
-from django.contrib.gis.gdal import GDALRaster
 from django_extras.contrib.auth.models import SingleOwnerMixin
 
 CONST_VECTOR = 'vector'
@@ -54,19 +54,27 @@ class Capa(SingleOwnerMixin, models.Model):
     id_capa = models.CharField('Id capa', null=False, blank=False, unique=True, max_length=255)
     slug = models.SlugField('Slug', null=False, blank=True, max_length=255)
 
-    # vector/raster?
-    tipo_de_capa = models.CharField('Tipo de capa', choices=TIPO_DE_CAPA_ENUM, default=CONST_VECTOR, max_length=10, null=False, blank=False)
-    tipo_de_geometria = models.ForeignKey('TipoDeGeometria', null=False, blank=False)  # read_only  #TODO: esto cambio
+    tipo_de_capa = models.CharField('Tipo de capa', choices=TIPO_DE_CAPA_ENUM, default=CONST_VECTOR, max_length=10, null=False, blank=False)    # vector o raster?
+    tipo_de_geometria = models.ForeignKey('TipoDeGeometria', null=False, blank=False)
+    gdal_driver_shortname = models.CharField('Driver - Short Name', null=False, blank=True, max_length=100, default='')
+    gdal_driver_longname = models.CharField('Driver - Long Name', null=False, blank=True, max_length=100, default='')
+    gdal_metadata = JSONField(default=dict())  # guarda informacion de gdalinfo para rasters y podria extenderse a ogrinfo para vectores
 
     # si es raster...
     nombre_del_archivo = models.CharField('Nombre del archivo', null=True, default=True, max_length=255)
+    cantidad_de_bandas = models.IntegerField(null=True, blank=True)
+    size_height = models.IntegerField(null=True, blank=True)
+    size_width = models.IntegerField(null=True, blank=True)
 
     # si es vector...
     conexion_postgres = models.ForeignKey('ConexionPostgres', null=True, blank=True)
-    esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)  # TODO: esto cambio
-    tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)  # TODO: esto cambio
-    campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')  # read_only  # TODO: esto cambio
+    esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)
+    tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)
+    campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')
     cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only, 0 a n para vector, None para raster
+
+    # comunes ...
+    proyeccion_proj4 = models.CharField(null=False, blank=True, max_length=255, default='')
     srid = models.IntegerField('SRID', null=False, blank=False)
     extent_minx_miny = models.PointField('(Minx, Miny)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
     extent_maxx_maxy = models.PointField('(Maxx, Maxy)', null=True, blank=True)  # extent en 4326 calculado por postgres en el signal de creacion
@@ -81,7 +89,7 @@ class Capa(SingleOwnerMixin, models.Model):
     objects = models.GeoManager()
 
     class Meta:
-        # unique_together = (('esquema', 'tabla'),)  # ya no puede serlo por permitir nulos
+        # unique_together = (('esquema', 'tabla'),)  # ya no puede serlo por permitir nulos al extender a rasters
         verbose_name = 'Capa'
         verbose_name_plural = 'Capas'
 
@@ -141,7 +149,6 @@ class Capa(SingleOwnerMixin, models.Model):
                 return "%s from %s.%s" % (self.campo_geom, self.esquema, self.tabla)
         elif self.tipo_de_capa == CONST_RASTER:
             return settings.UPLOADED_RASTERS_PATH + unicode(self.owner) + '/' + self.nombre_del_archivo
-
 
     def dame_extent(self, separador=',', srid=4326):
         # heuristica para arreglar thumbnails: corta por la mitad a la antartida (lo maximo es -90)

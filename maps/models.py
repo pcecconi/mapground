@@ -559,7 +559,10 @@ class MapServerLayer(models.Model):
                 "metadataIncludeItems": include_items,
                 "metadataAliases": items_aliases,
                 "layerDefinitionOverride": self.texto_input,
-                "metadata": {}
+                "metadata": {},
+                "driver": self.capa.gdal_driver_shortname,
+                "processing": [],
+                "proj4": '',
             }
         elif self.capa.tipo_de_capa == CONST_RASTER:
             data = {
@@ -574,8 +577,20 @@ class MapServerLayer(models.Model):
                 "metadataIncludeItems": include_items,
                 "metadataAliases": items_aliases,
                 "layerDefinitionOverride": self.texto_input,
-                "metadata": {}
+                "metadata": {},
+                "driver": self.capa.gdal_driver_shortname,
+                "processing": [],
+                "proj4": self.capa.proyeccion_proj4,    # TODO: revisar
             }
+
+            if self.capa.gdal_driver_shortname == 'GRIB':
+                data['processing'] = [
+                    "BANDS=4",  # TODO: generalizar, por ahora solo toma la banda de temperatura
+                    "RANGE_COLORSPACE=RGB",
+                    "KERNELDENSITY_RADIUS=10",
+                    "KERNELDENSITY_COMPUTE_BORDERS=ON",
+                    "KERNELDENSITY_NORMALIZATION=AUTO",
+                ]
 
         return data
 

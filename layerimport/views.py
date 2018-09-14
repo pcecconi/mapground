@@ -3,13 +3,13 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 from django.contrib.gis.geos import Point
-from django.contrib.gis.gdal import GDALRaster
+from osgeo import gdal, osr
 from django.shortcuts import render
 from django.shortcuts import HttpResponseRedirect
 from fileupload.models import Archivo
 from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
-from .utils import get_shapefile_files, import_layer, determinar_id_capa
+from .utils import get_shapefile_files, import_layer, determinar_id_capa, get_raster_metadata
 from layers.models import Capa, TipoDeGeometria, CONST_VECTOR, CONST_RASTER
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from MapGround import MapGroundException
@@ -17,6 +17,8 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 import os
 import shutil
+import json
+import subprocess
 
 
 @login_required
@@ -28,14 +30,12 @@ def LayersListView(request):
     posibles_rasters = Archivo.objects.owned_by(request.user).exclude(extension__in=['.shp']).order_by('slug')
 
     for posible_raster in posibles_rasters:
-        try:
-            raster = GDALRaster(posible_raster.file.name)
+        raster = gdal.Open(posible_raster.file.name, gdal.GA_ReadOnly)
+        if raster:
             l.append({
                 'nombre': posible_raster.slug,
-                'formato': raster.driver.name,
+                'formato': raster.GetDriver().ShortName,
                 'tipo': CONST_RASTER})
-        except:
-            pass
 
     archivos_shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp").order_by('slug')
     for archivo_shape in archivos_shapes:
@@ -53,13 +53,14 @@ def LayersListView(request):
 
 @login_required
 def LayerImportView(request, filename):
+    # filename tiene la forma "nombre.extension"
     template_name = 'layer_import.html'
     try:
         encoding = [item[0] for item in ENCODINGS if item[0] == request.GET['enc']][0]
     except:
         encoding = 'LATIN1'
 
-    # Chequeo basico de consistencia entre filename de la vista y algun Archivo existente
+    # Chequeo basico de consistencia entre el parametro 'filename' de la vista y algun Archivo existente
     try:
         archivo = Archivo.objects.get(owner=request.user, slug=filename)  # filename tiene la forma "nombre.extension"
     except (Archivo.DoesNotExist, MapGroundException) as e:  # no deberia pasar...
@@ -96,7 +97,11 @@ def LayerImportView(request, filename):
                     conexion_postgres=None,
                     esquema=tabla_geografica.esquema,
                     tabla=tabla_geografica.tabla,
+                    gdal_metadata=dict(),
+                    gdal_driver_shortname='Shapefile',
+                    gdal_driver_longname='ESRI Shapefile',
                     tipo_de_geometria=TipoDeGeometria.objects.all()[0],  # uno cualquiera, pues el capa_pre_save lo calcula y lo overridea
+                    proyeccion_proj4='',    # TODO:!
                     srid=tabla_geografica.srid)
 
                 for a in Archivo.objects.filter(owner=request.user, nombre=os.path.splitext(filename)[0]):
@@ -107,38 +112,56 @@ def LayerImportView(request, filename):
                     "capa": filename, "ok": False,
                     "error_msg": 'Se produjo un error al intentar importar la capa vectorial "{0}": {1}'.format(filename, unicode(e))})
 
-        else:   # caso rasters
+        else:   # por ahora, casos rasters
 
-            # Validamos primero la consistencia entre el filename y un raster valido, por ejemplo, para evitar vulnerabilidad por url
-            try:
-                raster = GDALRaster(archivo.file.name)
-                extent_capa = raster.extent
-                srid = raster.srs.srid if raster.srs is not None and raster.srs.srid is not None else 4326
-            except:
+            # Validamos primero la consistencia entre el 'filename' y un raster valido, por ejemplo, para evitar vulnerabilidad por url
+            raster = get_raster_metadata(archivo.file.name)
+            if raster is None:
                 return render(request, template_name, {
                     "capa": filename, "ok": False,
                     "error_msg": 'Se produjo un error al intentar importar la capa "{0}" '.format(filename)})
 
-            # El 'import' del raster consiste en moverlo al repo definitivo
+            extent_capa = raster['extent_capa']
+            srid = raster['srid'] if raster['srid'] is not None else 4326   # temporal...TODO: pensar que hacemos en este caso
+            # # por ahora asi, TODO: en una funcion utils.get_raster_info
+            # # https://gis.stackexchange.com/questions/267321/extracting-epsg-from-a-raster-using-gdal-bindings-in-python
+            # proj = osr.SpatialReference(wkt=raster.GetProjectionRef())
+            # proj.AutoIdentifyEPSG()
+            # srid = proj.GetAttrValue(str('AUTHORITY'), 1)   # el str() debe ir porque el literal no puede ser un unicode, explota
+            # if srid is None:
+            #     srid = 4326   # hack para la Capa! TODO: que hacemos con esto?
+
+            # geotransform = raster.GetGeoTransform()
+            # minx = geotransform[0]
+            # maxy = geotransform[3]
+            # maxx = minx + geotransform[1] * raster.RasterXSize
+            # miny = maxy + geotransform[5] * raster.RasterYSize
+            # extent_capa = (minx, miny, maxx, maxy)
+
+            # actual_json = json.loads(subprocess.check_output('gdalinfo -json {}'.format(archivo.file.name), shell=True))
+
+            # El 'import' del raster consiste en moverlo al path destino...
             directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
             filename_destino = directorio_destino + id_capa + archivo.extension
             try:
-                # movemos el archivo al path destino...
                 if not os.path.exists(directorio_destino):
                     os.makedirs(directorio_destino)
                 shutil.move(archivo.file.name, filename_destino)
+            except Exception as e:
+                return render(request, template_name, {
+                    "capa": filename, "ok": False,
+                    "error_msg": 'Se produjo un error al intentar copiar el archivo raster {0}: {1}'.format(filename, unicode(e))})
 
-                # ...y luego creamos los objetos
+            # ...y luego creamos los objetos
+            try:
                 archivo_raster = ArchivoRaster.objects.create(
                     owner=request.user,
                     nombre_del_archivo=id_capa + archivo.extension,
                     path_del_archivo=filename_destino,
-                    formato=raster.driver.name,
-                    cantidad_de_bandas=len(raster.bands),
+                    formato_driver_shortname=raster['driver_short_name'],
+                    formato_driver_longname=raster['driver_long_name'],
                     srid=srid,
-                    extent=' '.join(map(str, extent_capa)),
-                    heigth=raster.height,
-                    width=raster.width)
+                    extent=' '.join(map(str, extent_capa)))
 
                 c = Capa.objects.create(
                     owner=request.user,
@@ -146,13 +169,18 @@ def LayerImportView(request, filename):
                     id_capa=id_capa,
                     tipo_de_capa=CONST_RASTER,
                     nombre_del_archivo=archivo_raster.nombre_del_archivo,
+                    cantidad_de_bandas=raster['raster_count'],
+                    size_height=raster['size_height'],
+                    size_width=raster['size_width'],
                     conexion_postgres=None,
-                    esquema=None,
-                    tabla=None,
+                    gdal_metadata=raster['metadata_json'],
+                    gdal_driver_shortname=raster['driver_short_name'],
+                    gdal_driver_longname=raster['driver_long_name'],
                     tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
-                    srid=archivo_raster.srid,
-                    extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),  # TODO:no hay que reproyectar? pensar
-                    extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),  # TODO:no hay que reproyectar? pensar
+                    proyeccion_proj4=raster['proyeccion_proj4'],
+                    srid=srid,
+                    extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),
+                    extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),
                     layer_srs_extent=archivo_raster.extent,
                     cantidad_de_registros=None)
 

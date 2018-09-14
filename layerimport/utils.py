@@ -1,15 +1,13 @@
 # -*- coding: utf-8 -*-
 from MapGround import MapGroundException
-import os, subprocess, re, glob, sys, hashlib, time, random, string
+import os, subprocess, re, glob, json, hashlib, random, string
 from django.db import connection
-from osgeo import osr
+from osgeo import gdal, osr
 from MapGround.settings import DEFAULT_SRID, DATABASES
 
 from subprocess import Popen, PIPE
 from threading import Thread
 from StringIO import StringIO
-from string import maketrans
-import unicodedata
 
 epsg_hashes = dict()
 
@@ -255,3 +253,35 @@ def import_layer(filename, schema, table, encoding='LATIN1'):
 
 def determinar_id_capa(request, nombre):
     return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
+
+
+def get_raster_metadata(file):
+    raster = gdal.Open(file, gdal.GA_ReadOnly)
+    if raster is None:
+        return None
+
+    # https://gis.stackexchange.com/questions/267321/extracting-epsg-from-a-raster-using-gdal-bindings-in-python
+    proj = osr.SpatialReference(wkt=raster.GetProjectionRef())
+    proj.AutoIdentifyEPSG()
+    srid = proj.GetAttrValue(str('AUTHORITY'), 1)   # el str() debe ir porque el literal no puede ser un unicode, explota
+
+    geotransform = raster.GetGeoTransform()
+    minx = geotransform[0]
+    maxy = geotransform[3]
+    maxx = minx + geotransform[1] * raster.RasterXSize
+    miny = maxy + geotransform[5] * raster.RasterYSize
+    extent_capa = (minx, miny, maxx, maxy)
+
+    metadata_json = json.loads(subprocess.check_output('gdalinfo -json {}'.format(file), shell=True))
+
+    return {
+        'driver_short_name': raster.GetDriver().ShortName,
+        'driver_long_name': raster.GetDriver().LongName,
+        'raster_count': raster.RasterCount,
+        'srid': srid,   # puede ser None
+        'extent_capa': extent_capa,
+        'metadata_json': metadata_json,
+        'proyeccion_proj4': proj.ExportToProj4(),
+        'size_height': raster.RasterYSize,
+        'size_width': raster.RasterXSize,
+    }
