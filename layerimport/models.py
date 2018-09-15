@@ -43,8 +43,6 @@ class ArchivoRaster(SingleOwnerMixin, models.Model):
     formato_driver_shortname = models.CharField(null=False, blank=True, unique=False, max_length=255)   # según GDAL
     formato_driver_longname = models.CharField(null=False, blank=True, unique=False, max_length=255)   # según GDAL
     srid = models.IntegerField(null=True, blank=True)                                   # según GDAL, puede ser None
-    extent = models.CharField(null=False, blank=False, max_length=255, default='')      # según GDAL
-
     timestamp_alta = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de alta')
 
     class Meta:

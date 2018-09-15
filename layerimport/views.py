@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 from django.contrib.gis.geos import Point
-from osgeo import gdal, osr
+from osgeo import gdal
 from django.shortcuts import render
 from django.shortcuts import HttpResponseRedirect
 from fileupload.models import Archivo
@@ -17,8 +17,6 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 import os
 import shutil
-import json
-import subprocess
 
 
 @login_required
@@ -112,7 +110,7 @@ def LayerImportView(request, filename):
                     "capa": filename, "ok": False,
                     "error_msg": 'Se produjo un error al intentar importar la capa vectorial "{0}": {1}'.format(filename, unicode(e))})
 
-        else:   # por ahora, casos rasters
+        else:   # casos rasters
 
             # Validamos primero la consistencia entre el 'filename' y un raster valido, por ejemplo, para evitar vulnerabilidad por url
             raster = get_raster_metadata(archivo.file.name)
@@ -123,22 +121,6 @@ def LayerImportView(request, filename):
 
             extent_capa = raster['extent_capa']
             srid = raster['srid'] if raster['srid'] is not None else 4326   # temporal...TODO: pensar que hacemos en este caso
-            # # por ahora asi, TODO: en una funcion utils.get_raster_info
-            # # https://gis.stackexchange.com/questions/267321/extracting-epsg-from-a-raster-using-gdal-bindings-in-python
-            # proj = osr.SpatialReference(wkt=raster.GetProjectionRef())
-            # proj.AutoIdentifyEPSG()
-            # srid = proj.GetAttrValue(str('AUTHORITY'), 1)   # el str() debe ir porque el literal no puede ser un unicode, explota
-            # if srid is None:
-            #     srid = 4326   # hack para la Capa! TODO: que hacemos con esto?
-
-            # geotransform = raster.GetGeoTransform()
-            # minx = geotransform[0]
-            # maxy = geotransform[3]
-            # maxx = minx + geotransform[1] * raster.RasterXSize
-            # miny = maxy + geotransform[5] * raster.RasterYSize
-            # extent_capa = (minx, miny, maxx, maxy)
-
-            # actual_json = json.loads(subprocess.check_output('gdalinfo -json {}'.format(archivo.file.name), shell=True))
 
             # El 'import' del raster consiste en moverlo al path destino...
             directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
@@ -160,8 +142,7 @@ def LayerImportView(request, filename):
                     path_del_archivo=filename_destino,
                     formato_driver_shortname=raster['driver_short_name'],
                     formato_driver_longname=raster['driver_long_name'],
-                    srid=srid,
-                    extent=' '.join(map(str, extent_capa)))
+                    srid=srid)
 
                 c = Capa.objects.create(
                     owner=request.user,
@@ -181,7 +162,7 @@ def LayerImportView(request, filename):
                     srid=srid,
                     extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),
                     extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),
-                    layer_srs_extent=archivo_raster.extent,
+                    layer_srs_extent=' '.join(map(str, extent_capa)),
                     cantidad_de_registros=None)
 
                 archivo.delete()
