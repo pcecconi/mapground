@@ -48,12 +48,6 @@ def __agregar_simbologia_basica__(layer):
         layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
-def __agregar_simbologia_grib_temperatura__(layer):
-    class1 = mapscript.classObj(layer)
-    style = mapscript.styleObj(class1)
-    style.updateFromString('STYLE\n RANGEITEM ""\n COLORRANGE 100 200 0 200 100 0 \n DATARANGE -10.0 30.0\nEND')
-
-
 def create_mapfile(data, save=True):
     mapa = mapscript.mapObj()
     mapa.name = 'mapa_' + unicode(data['idMapa'])
@@ -159,6 +153,7 @@ def create_ms_layer(data):
     if data['connectionType'] == 'RASTER':
         layer.type = mapscript.MS_LAYER_RASTER
         layer.data = data['layerData']
+
         if data['proj4'] != '':
             layer.setProjection(data['proj4'])
         else:
@@ -167,8 +162,8 @@ def create_ms_layer(data):
         for processing in data['processing']:
             layer.addProcessing(processing)
 
-        if data['driver'] == 'GRIB':
-            __agregar_simbologia_grib_temperatura__(layer)
+        if data['layerDefinitionOverride'] != '':
+            layer.updateFromString(data['layerDefinitionOverride'])
 
     elif data['connectionType'] == 'WMS':
         print('create_ms_layer WMS')
