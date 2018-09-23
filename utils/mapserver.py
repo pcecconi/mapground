@@ -48,6 +48,100 @@ def __agregar_simbologia_basica__(layer):
         layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
+def __agregar_simbologia_grib__(layer, grib_type):
+    # class1 = mapscript.classObj(layer)
+    # class1.name = 'Default'
+    #  style = mapscript.styleObj(class1)
+    if grib_type == 'TMP':
+        res = layer.updateFromString("""
+        LAYER
+        TYPE RASTER
+        OPACITY 80
+        CLASS  
+            EXPRESSION ([pixel] >= 35 AND [pixel] < 40)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#dc000000" "#ad000000"
+                DATARANGE 35 40 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 30 AND [pixel] < 35)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#fe0f0000" "#dc000000"
+                DATARANGE 30 35 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 25 AND [pixel] < 30)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#fe470000" "#fe0f0000"
+                DATARANGE 25 30 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 20 AND [pixel] < 25)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#fe830000" "#fe470000"
+                DATARANGE 20 25 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 15 AND [pixel] < 20)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#febb0000" "#fe830000"
+                DATARANGE 15.0 20.0 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 10 AND [pixel] < 15)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#fef30000" "#febb0000"
+                DATARANGE 10.0 15.0 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 5 AND [pixel] < 10)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#d3fe2b00" "#fef30000"
+                DATARANGE 5.0 10.0 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= 0 AND [pixel] < 5)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#9bfe6300" "#d3fe2b00"
+                DATARANGE 0.0 5.0 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= -5 AND [pixel] < 0)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#5ffd9f00" "#9bfe6300"
+                DATARANGE -5.0 0.0 
+            END
+        END
+        CLASS
+            EXPRESSION ([pixel] >= -40 AND [pixel] < -5)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#0000ad00" "#5ffd9f00"
+                DATARANGE -40.0 -5.0 
+            END
+        END
+        END
+        """)
+        if res == mapscript.MS_FAILURE:
+            print "Error: couldn't set layer grib symbology"
+
 def create_mapfile(data, save=True):
     mapa = mapscript.mapObj()
     mapa.name = 'mapa_' + unicode(data['idMapa'])
@@ -161,6 +255,9 @@ def create_ms_layer(data):
 
         for processing in data['processing']:
             layer.addProcessing(processing)
+
+        if data['gribBandType'] != '':
+            __agregar_simbologia_grib__(layer, data['gribBandType'])
 
         if data['layerDefinitionOverride'] != '':
             layer.updateFromString(data['layerDefinitionOverride'])

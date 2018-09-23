@@ -579,6 +579,7 @@ class MapServerLayer(models.Model):
                 "layerDefinitionOverride": self.texto_input,
                 "metadata": {},
                 "driver": self.capa.gdal_driver_shortname,
+                "gribBandType": "",
                 "processing": [],
                 "proj4": self.capa.proyeccion_proj4,    # TODO: revisar
             }
@@ -590,10 +591,11 @@ class MapServerLayer(models.Model):
                     for banda in self.capa.gdal_metadata['bands']:
                         if banda['metadata']['']['GRIB_ELEMENT'] == 'TMP':
                             numero_de_banda = banda['band']
+                            data['gribBandType'] = 'TMP'
                 except:
                     pass
 
-                data['layerDefinitionOverride'] = 'LAYER\n TYPE RASTER\n CLASS\n STYLE\n RANGEITEM ""\n COLORRANGE 100 200 0 200 100 0 \n DATARANGE -10.0 30.0\n END\n END \nEND'
+                # data['layerDefinitionOverride'] = 'LAYER\n TYPE RASTER\n CLASS\n STYLE\n RANGEITEM ""\n COLORRANGE 100 200 0 200 100 0 \n DATARANGE -10.0 30.0\n END\n END \nEND'
                 data['processing'] = [
                     "BANDS={}".format(numero_de_banda),
                     "RANGE_COLORSPACE=RGB",
