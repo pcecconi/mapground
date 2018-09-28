@@ -3,13 +3,12 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 from django.contrib.gis.geos import Point
-from osgeo import gdal
 from django.shortcuts import render
 from django.shortcuts import HttpResponseRedirect
 from fileupload.models import Archivo
 from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
-from .utils import get_shapefile_files, import_layer, determinar_id_capa, get_raster_metadata
+from .utils import get_shapefile_files, import_layer, determinar_id_capa, get_raster_metadata, get_raster_basic_metadata
 from layers.models import Capa, TipoDeGeometria, CONST_VECTOR, CONST_RASTER
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from MapGround import MapGroundException
@@ -28,12 +27,14 @@ def LayersListView(request):
     posibles_rasters = Archivo.objects.owned_by(request.user).exclude(extension__in=['.shp']).order_by('slug')
 
     for posible_raster in posibles_rasters:
-        raster = gdal.Open(posible_raster.file.name, gdal.GA_ReadOnly)
+        # analizamos el archivo para ver si es un raster, sin importar los metadatos en json
+        raster = get_raster_basic_metadata(posible_raster.file.name)
         if raster:
             l.append({
                 'nombre': posible_raster.slug,
-                'formato': raster.GetDriver().ShortName,
-                'tipo': CONST_RASTER})
+                'formato': raster['driver_short_name'],
+                'tipo': CONST_RASTER,
+                'detalle': '{}x{} px, {} bandas'.format(raster['size_width'], raster['size_height'], raster['raster_count'])})
 
     archivos_shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp").order_by('slug')
     for archivo_shape in archivos_shapes:
@@ -42,7 +43,8 @@ def LayersListView(request):
             l.append({
                 'nombre': archivo_shape.slug,
                 'formato': 'Shapefile',
-                'tipo': CONST_VECTOR})
+                'tipo': CONST_VECTOR,
+                'detalle': ''})
         except MapGroundException as e:
             errores.append(unicode(e))
 

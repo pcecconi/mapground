@@ -15,7 +15,9 @@
         {% for capa in object_list %}
             <tr>
                 <td class="capa-importable">{{ capa.nombre }}</td>
-                <td class="encoding"><label class="control-label">Tipo:</label> {{ capa.formato}} ({{ capa.tipo }})</td>
+                <td class="encoding">
+                    <label class="control-label">Tipo:</label> {{ capa.formato }}{% if capa.detalle %} - {{ capa.detalle }}{% endif %} ({{ capa.tipo }})
+                </td>
                 <td class="encoding">
                     {% if capa.tipo == 'vector' %}
                     <form class="form-inline">

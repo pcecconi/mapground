@@ -285,3 +285,17 @@ def get_raster_metadata(file):
         'size_height': raster.RasterYSize,
         'size_width': raster.RasterXSize,
     }
+
+
+def get_raster_basic_metadata(file):
+    raster = gdal.Open(file, gdal.GA_ReadOnly)
+    if raster is None:
+        return None
+
+    return {
+        'driver_short_name': raster.GetDriver().ShortName,
+        'driver_long_name': raster.GetDriver().LongName,
+        'raster_count': raster.RasterCount,
+        'size_height': raster.RasterYSize,
+        'size_width': raster.RasterXSize,
+    }
