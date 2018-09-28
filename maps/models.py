@@ -585,24 +585,35 @@ class MapServerLayer(models.Model):
             }
 
             if self.capa.gdal_driver_shortname == 'GRIB':
-                # Inferimos si hay una banda de temperatura
-                numero_de_banda = 1
+                # Inferimos si hay bandas conocidas
+                tmp_band = u_band = v_band = ''
                 try:
                     for banda in self.capa.gdal_metadata['bands']:
                         if banda['metadata']['']['GRIB_ELEMENT'] == 'TMP':
-                            numero_de_banda = banda['band']
-                            data['gribBandType'] = 'TMP'
+                            tmp_band = str(banda['band'])
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'UGRD':
+                            u_band = str(banda['band'])
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'VGRD':
+                            v_band = str(banda['band'])
                 except:
                     pass
 
-                # data['layerDefinitionOverride'] = 'LAYER\n TYPE RASTER\n CLASS\n STYLE\n RANGEITEM ""\n COLORRANGE 100 200 0 200 100 0 \n DATARANGE -10.0 30.0\n END\n END \nEND'
-                data['processing'] = [
-                    "BANDS={}".format(numero_de_banda),
-                    "RANGE_COLORSPACE=RGB",
-                    "KERNELDENSITY_RADIUS=10",
-                    "KERNELDENSITY_COMPUTE_BORDERS=ON",
-                    "KERNELDENSITY_NORMALIZATION=AUTO",
-                ]
+                if tmp_band != '':
+                    data['gribBandType'] = 'TMP'
+                    data['processing'] = [
+                        "BANDS={}".format(tmp_band),
+                        "RANGE_COLORSPACE=RGB",
+                        "KERNELDENSITY_RADIUS=10",
+                        "KERNELDENSITY_COMPUTE_BORDERS=ON",
+                        "KERNELDENSITY_NORMALIZATION=AUTO",
+                    ]
+                elif u_band != '' and v_band != '':
+                    data['gribBandType'] = 'WIND'
+                    data['processing'] = [
+                        "BANDS={},{}".format(u_band, v_band),
+                        "UV_SPACING=40",
+                        "UV_SIZE_SCALE=0.2"
+                    ]
 
         return data
 

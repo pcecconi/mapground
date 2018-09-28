@@ -49,20 +49,17 @@ def __agregar_simbologia_basica__(layer):
 
 
 def __agregar_simbologia_grib__(layer, grib_type):
-    # class1 = mapscript.classObj(layer)
-    # class1.name = 'Default'
-    #  style = mapscript.styleObj(class1)
     if grib_type == 'TMP':
         res = layer.updateFromString("""
         LAYER
         TYPE RASTER
         OPACITY 80
-        CLASS  
+        CLASS
             EXPRESSION ([pixel] >= 35 AND [pixel] < 40)
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#dc000000" "#ad000000"
-                DATARANGE 35 40 
+                DATARANGE 35 40
             END
         END
         CLASS
@@ -70,7 +67,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#fe0f0000" "#dc000000"
-                DATARANGE 30 35 
+                DATARANGE 30 35
             END
         END
         CLASS
@@ -78,7 +75,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#fe470000" "#fe0f0000"
-                DATARANGE 25 30 
+                DATARANGE 25 30
             END
         END
         CLASS
@@ -86,7 +83,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#fe830000" "#fe470000"
-                DATARANGE 20 25 
+                DATARANGE 20 25
             END
         END
         CLASS
@@ -94,7 +91,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#febb0000" "#fe830000"
-                DATARANGE 15.0 20.0 
+                DATARANGE 15.0 20.0
             END
         END
         CLASS
@@ -102,7 +99,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#fef30000" "#febb0000"
-                DATARANGE 10.0 15.0 
+                DATARANGE 10.0 15.0
             END
         END
         CLASS
@@ -110,7 +107,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#d3fe2b00" "#fef30000"
-                DATARANGE 5.0 10.0 
+                DATARANGE 5.0 10.0
             END
         END
         CLASS
@@ -118,7 +115,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#9bfe6300" "#d3fe2b00"
-                DATARANGE 0.0 5.0 
+                DATARANGE 0.0 5.0
             END
         END
         CLASS
@@ -126,7 +123,7 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#5ffd9f00" "#9bfe6300"
-                DATARANGE -5.0 0.0 
+                DATARANGE -5.0 0.0
             END
         END
         CLASS
@@ -134,13 +131,36 @@ def __agregar_simbologia_grib__(layer, grib_type):
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#0000ad00" "#5ffd9f00"
-                DATARANGE -40.0 -5.0 
+                DATARANGE -40.0 -5.0
             END
         END
         END
         """)
         if res == mapscript.MS_FAILURE:
-            print "Error: couldn't set layer grib symbology"
+            print "Error: couldn't set layer grib symbology for TMP band"
+    elif grib_type == 'WIND':
+        res = layer.updateFromString("""
+        LAYER
+        TYPE POINT
+        CONNECTIONTYPE uvraster
+          CLASS
+            STYLE
+              ANGLE [uv_angle]
+              SIZE 6
+              COLOR 0 255 0
+              OUTLINECOLOR 50 50 50
+              POLAROFFSET [uv_length] [uv_angle]
+            END
+          END
+        END
+        """)
+        if res == mapscript.MS_FAILURE:
+            print "Error: couldn't set layer grib symbology for WIND bands"
+        else:
+            class0 = layer.getClass(0)
+            symbol0 = class0.getStyle(0)
+            symbol0.symbolname = 'arrow'
+
 
 def create_mapfile(data, save=True):
     mapa = mapscript.mapObj()
@@ -215,7 +235,6 @@ def create_mapfile(data, save=True):
     mapa.web.imagepath = settings.MAP_WEB_IMAGEPATH
     mapa.web.imageurl = settings.MAP_WEB_IMAGEURL
 
-    # mapa.web.template = 'blank.html' # siempre?
     try:
         for k, v in data['metadata'].iteritems():
             mapa.setMetaData(k, v)
