@@ -9,4 +9,21 @@ SYMBOL
 	FILLED true    
 END 
 
+SYMBOL
+  NAME "arrow"
+  TYPE vector
+  FILLED true
+  POINTS
+    0 0.4
+    3 0.4
+    3 0
+    5 0.8
+    3 1.6
+    3 1.2
+    0 1.2
+    0 0.4
+  END
+  ANCHORPOINT 0 0.5
+END
+
 END
