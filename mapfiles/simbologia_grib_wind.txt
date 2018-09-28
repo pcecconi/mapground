@@ -1,0 +1,13 @@
+        LAYER
+        TYPE POINT
+        CONNECTIONTYPE uvraster
+          CLASS
+            STYLE
+              ANGLE [uv_angle]
+              SIZE 6
+              COLOR 0 255 0
+              OUTLINECOLOR 50 50 50
+              POLAROFFSET [uv_length] [uv_angle]
+            END
+          END
+        END

@@ -11,6 +11,10 @@ MAPA_DEFAULT_IMAGECOLOR = '#C6E2F2'  # debe ser formato Hexa
 
 MAPA_FONTSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'fonts.txt')
 MAPA_SYMBOLSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'symbols.txt')
+
+MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_tmp.txt')
+MAPA_SIMBOLOGIA_GRIB_WIND_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_wind.txt')
+
 MAPA_DATA_PATH = '../data'
 MAPA_ERRORFILE = os.path.join(settings.MAPAS_PATH, 'map-error.log')
 
@@ -50,110 +54,15 @@ def __agregar_simbologia_basica__(layer):
 
 def __agregar_simbologia_grib__(layer, grib_type):
     if grib_type == 'TMP':
-        res = layer.updateFromString("""
-        LAYER
-        TYPE RASTER
-        OPACITY 80
-        CLASS
-            EXPRESSION ([pixel] >= 35 AND [pixel] < 40)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#dc000000" "#ad000000"
-                DATARANGE 35 40
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 30 AND [pixel] < 35)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#fe0f0000" "#dc000000"
-                DATARANGE 30 35
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 25 AND [pixel] < 30)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#fe470000" "#fe0f0000"
-                DATARANGE 25 30
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 20 AND [pixel] < 25)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#fe830000" "#fe470000"
-                DATARANGE 20 25
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 15 AND [pixel] < 20)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#febb0000" "#fe830000"
-                DATARANGE 15.0 20.0
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 10 AND [pixel] < 15)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#fef30000" "#febb0000"
-                DATARANGE 10.0 15.0
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 5 AND [pixel] < 10)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#d3fe2b00" "#fef30000"
-                DATARANGE 5.0 10.0
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= 0 AND [pixel] < 5)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#9bfe6300" "#d3fe2b00"
-                DATARANGE 0.0 5.0
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= -5 AND [pixel] < 0)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#5ffd9f00" "#9bfe6300"
-                DATARANGE -5.0 0.0
-            END
-        END
-        CLASS
-            EXPRESSION ([pixel] >= -40 AND [pixel] < -5)
-            STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#0000ad00" "#5ffd9f00"
-                DATARANGE -40.0 -5.0
-            END
-        END
-        END
-        """)
+        with open(MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME, 'r') as archivo:
+            definicion = archivo.read()
+        res = layer.updateFromString(definicion)
         if res == mapscript.MS_FAILURE:
             print "Error: couldn't set layer grib symbology for TMP band"
     elif grib_type == 'WIND':
-        res = layer.updateFromString("""
-        LAYER
-        TYPE POINT
-        CONNECTIONTYPE uvraster
-          CLASS
-            STYLE
-              ANGLE [uv_angle]
-              SIZE 6
-              COLOR 0 255 0
-              OUTLINECOLOR 50 50 50
-              POLAROFFSET [uv_length] [uv_angle]
-            END
-          END
-        END
-        """)
+        with open(MAPA_SIMBOLOGIA_GRIB_WIND_FILENAME, 'r') as archivo:
+            definicion = archivo.read()
+        res = layer.updateFromString(definicion)
         if res == mapscript.MS_FAILURE:
             print "Error: couldn't set layer grib symbology for WIND bands"
         else:
