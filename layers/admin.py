@@ -60,12 +60,14 @@ admin.site.register(Metadatos, MetadatosAdmin)
 class CapaAdmin(GeoModelAdmin):
     modifiable = False
     map_srid = 4326
-    readonly_fields = ('id', 'owner', 'nombre', 'tipo_de_capa', 'id_capa', 'slug', 'conexion_postgres', 'campo_geom', 'esquema', 'tabla', 'srid', 'tipo_de_geometria', 'cantidad_de_registros')  # si agrego 'extent_minx_miny','extent_maxx_maxy')  se muestran como texto
+    readonly_fields = ('id', 'owner', 'nombre', 'tipo_de_capa', 'id_capa', 'slug', 'conexion_postgres', 'campo_geom', 'esquema', 'tabla', 'srid', 'proyeccion_proj4',
+                       'tipo_de_geometria', 'cantidad_de_registros', 'nombre_del_archivo', 'cantidad_de_bandas', 'size_height', 'size_width',
+                       'gdal_driver_shortname', 'gdal_driver_longname', 'gdal_metadata', 'layer_srs_extent')  # si agrego 'extent_minx_miny','extent_maxx_maxy')  se muestran como texto
     search_fields = ('nombre', )
-    list_display = ['id', 'id_capa', 'nombre', 'tipo_de_capa', 'owner', 'wxs_publico', 'tipo_de_geometria', 'cantidad_de_registros', 'timestamp_alta', 'timestamp_modificacion']
+    list_display = ['id', 'id_capa', 'nombre', 'tipo_de_capa', 'owner', 'wxs_publico', 'tipo_de_geometria', 'gdal_driver_shortname', 'cantidad_de_registros', 'timestamp_alta', 'timestamp_modificacion']
     list_display_links = ['id', 'id_capa']
     ordering = ["-id"]
-    list_filter = ['owner', 'tipo_de_capa', 'wxs_publico', 'conexion_postgres', 'tipo_de_geometria', 'srid']
+    list_filter = ['owner', 'tipo_de_capa', 'gdal_driver_shortname', 'tipo_de_geometria', 'wxs_publico', 'conexion_postgres', 'srid']
     date_hierarchy = 'timestamp_alta'
 
     def has_add_permission(self, request):
