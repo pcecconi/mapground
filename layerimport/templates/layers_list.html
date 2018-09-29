@@ -8,21 +8,22 @@
 {% block content %}
  <div class="row">
  	<div class="col-sm-12 main-content">
-    <h2>Capas importables</h2>
+    <h1>Capas importables</h1>
  	{% if object_list %}
     <!-- The table listing the layers available for import -->
-    <table role="presentation" class="table table-striped"><tbody>
+    <table role="presentation" class="table table-striped">
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Formato</th><th>Detalle</th><th>Encoding</th><th>Acción</th></tr></thead>
+        <tbody>
         {% for capa in object_list %}
             <tr>
                 <td class="capa-importable">{{ capa.nombre }}</td>
-                <td class="encoding">
-                    <label class="control-label">Tipo:</label> {{ capa.formato }}{% if capa.detalle %} - {{ capa.detalle }}{% endif %} ({{ capa.tipo }})
-                </td>
+                <td class="encoding">{{ capa.tipo }}</td>
+                <td class="encoding">{{ capa.formato }}</td>
+                <td class="encoding">{{ capa.detalle }}</td>
                 <td class="encoding">
                     {% if capa.tipo == 'vector' %}
                     <form class="form-inline">
                     <div class="form-group">
-                        <label class="control-label">Encoding:</label>
                         <select class="form-control" data-id="{{ capa.nombre }}">
                             {% for key, val in encodings %}
                               <option value="{{ key }}">{{ val }}</option>
