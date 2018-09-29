@@ -33,9 +33,17 @@
                     </form>
                     {% endif %}
                 </td>
-            	<td><a href="{% url 'layerimport:layer-import-view' capa.nombre %}" type="button" id="link_{{ capa.nombre }}" class="btn btn-primary pull-right">
-			          <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;Importar Capa
-			        </a>
+            	<td>
+                    {% if capa.importable %}
+                        <a href="{% url 'layerimport:layer-import-view' capa.nombre %}" type="button" id="link_{{ capa.nombre }}" class="btn btn-primary pull-right">
+	       		          <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;&nbsp;Importar Capa
+                        </a>
+                    {% else %}
+                        <a type="button" id="link_{{ capa.nombre }}" class="btn btn-primary pull-right disabled"
+                           title="La capa {{ capa.nombre }} no puede importarse porque ya existe una capa suya con ese nombre en la IDE">
+                          ¡Capa ya existente!
+                        </a>
+                    {% endif %}            
 			    </td>
 			</tr>
         {% endfor %}

@@ -30,21 +30,25 @@ def LayersListView(request):
         # analizamos el archivo para ver si es un raster, sin importar los metadatos en json
         raster = get_raster_basic_metadata(posible_raster.file.name)
         if raster:
+            importable = Capa.objects.filter(id_capa=determinar_id_capa(request, posible_raster.nombre)).count() == 0
             l.append({
                 'nombre': posible_raster.slug,
                 'formato': raster['driver_short_name'],
                 'tipo': CONST_RASTER,
-                'detalle': '{}x{} px, {} bandas'.format(raster['size_width'], raster['size_height'], raster['raster_count'])})
+                'detalle': '{}x{} px, {} {}'.format(raster['size_width'], raster['size_height'], raster['raster_count'], 'banda' if raster['raster_count'] == 1 else 'bandas'),
+                'importable': importable})
 
     archivos_shapes = Archivo.objects.owned_by(request.user).filter(extension=".shp").order_by('slug')
     for archivo_shape in archivos_shapes:
         try:
             st = get_shapefile_files(unicode(archivo_shape.file))   # path absoluto para determinar si es un shape completo
+            importable = Capa.objects.filter(id_capa=determinar_id_capa(request, archivo_shape.nombre)).count() == 0
             l.append({
                 'nombre': archivo_shape.slug,
                 'formato': 'Shapefile',
                 'tipo': CONST_VECTOR,
-                'detalle': ''})
+                'detalle': '',
+                'importable': importable})
         except MapGroundException as e:
             errores.append(unicode(e))
 
@@ -75,7 +79,7 @@ def LayerImportView(request, filename):
         existe = Capa.objects.get(id_capa=id_capa)     # este chequeo podría ser reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
         return render(request, template_name, {
             "capa": filename, "ok": False,
-            "error_msg": 'Ya existe una capa suya con el nombre "{0}" en la base de datos.'.format(filename)})
+            "error_msg": 'Ya existe una capa suya con el nombre "{0}" en la IDE.'.format(filename)})
     except:
         if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
             try:
