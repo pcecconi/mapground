@@ -2,13 +2,6 @@
 import re
 import unicodedata
 import urllib2
-# from django.conf import settings
-# from django.contrib.gis.geos import Point, Polygon
-# from UsigGml import *
-# from itertools import izip
-# from util.unicode_csv import UnicodeWriter
-# from api.settings import *
-# import time, datetime
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.geos import Point
