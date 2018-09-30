@@ -255,10 +255,17 @@ def determinar_id_capa(request, nombre):
     return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
 
 
-def get_raster_metadata(file):
+def get_raster_metadata(file, con_stats=True):
+    """Devuelve un json con metadatos detallados de un raster interfaseando con gdal y gdalinfo.
+
+    Pensado para capturar toda la info posible del archivo y almacenarla en la IDE, en el campo Capa.gdal_metadata.
+    El parametro optativo con_stats obliga a gdal_info a calcular los valores minimos, maximos y promedios de cada banda.
+    """
     raster = gdal.Open(file, gdal.GA_ReadOnly)
     if raster is None:
         return None
+
+    stats_param = '-stats' if con_stats else ''
 
     # https://gis.stackexchange.com/questions/267321/extracting-epsg-from-a-raster-using-gdal-bindings-in-python
     proj = osr.SpatialReference(wkt=raster.GetProjectionRef())
@@ -272,7 +279,13 @@ def get_raster_metadata(file):
     miny = maxy + geotransform[5] * raster.RasterYSize
     extent_capa = (minx, miny, maxx, maxy)
 
-    metadata_json = json.loads(subprocess.check_output('gdalinfo -json {}'.format(file), shell=True))
+    metadata_json = json.loads(subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True))
+    if con_stats:
+        # Eliminamos el archivo .aux.xml (PAM, Permanent Auxiliar Metadata) que se crea al aplicar gdalinfo -stats
+        try:
+            os.remove('{}.aux.xml'.format(file))
+        except:
+            pass
 
     return {
         'driver_short_name': raster.GetDriver().ShortName,
@@ -288,6 +301,11 @@ def get_raster_metadata(file):
 
 
 def get_raster_basic_metadata(file):
+    """
+    Devuelve un json con metadatos basicos de un raster interfaseando con gdal.
+
+    Pensado para mostrar en la vista de importacion de capas, antes de ser incorporado a la IDE.
+    """
     raster = gdal.Open(file, gdal.GA_ReadOnly)
     if raster is None:
         return None
