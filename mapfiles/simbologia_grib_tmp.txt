@@ -84,11 +84,68 @@
         END
         CLASS
             NAME "-5"
-            EXPRESSION ([pixel] >= -40 AND [pixel] < -5)
+            EXPRESSION ([pixel] >= -10 AND [pixel] < -5)
             STYLE
                 RANGEITEM "pixel"
-                COLORRANGE "#0000ad00" "#5ffd9f00"
-                DATARANGE -40.0 -5.0
+                COLORRANGE "#27fdd700" "#5ffd9f00"
+                DATARANGE -10.0 -5.0
             END
         END
+        CLASS
+            NAME "-10"
+            EXPRESSION ([pixel] >= -15 AND [pixel] < -10)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#00e9fe00" "#27fdd700"
+                DATARANGE -15.0 -10.0
+            END
+        END
+        CLASS
+            NAME "-15"
+            EXPRESSION ([pixel] >= -20 AND [pixel] < -15)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#00a3fe00" "#00e9fe00"
+                DATARANGE -20.0 -15.0
+            END
+        END
+        CLASS
+            NAME "-20"
+            EXPRESSION ([pixel] >= -25 AND [pixel] < -20)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#0059fe00" "#00a3fe00"
+                DATARANGE -25.0 -20.0
+            END
+        END
+        CLASS
+            NAME "-25"
+            EXPRESSION ([pixel] >= -30 AND [pixel] < -25)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#0013fe00" "#0059fe00"
+                DATARANGE -30.0 -25.0
+            END
+        END
+        CLASS
+            NAME "-30"
+            EXPRESSION ([pixel] >= -35 AND [pixel] < -30)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#0000dc00" "#0013fe00"
+                DATARANGE -35.0 -30.0
+            END
+        END
+        CLASS
+            NAME "-35"
+            EXPRESSION ([pixel] >= -40 AND [pixel] < -35)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#0000ad00" "#0000dc00"
+                DATARANGE -40.0 -35.0
+            END
+        END
+
+
+
         END
