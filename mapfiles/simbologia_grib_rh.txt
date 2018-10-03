@@ -1,0 +1,12 @@
+        LAYER
+        TYPE RASTER
+        OPACITY 80
+        CLASS
+            NAME "Solo una clase RH!"
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#00000000" "#ff000000"
+                DATARANGE 0 100
+            END
+        END
+        END

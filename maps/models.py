@@ -586,15 +586,22 @@ class MapServerLayer(models.Model):
 
             if self.capa.gdal_driver_shortname == 'GRIB':
                 # Inferimos si hay bandas conocidas
-                tmp_band = u_band = v_band = ''
+                tmp_band = u_band = v_band = apcp_band = prmsl_band = rh_band = ''
                 try:
                     for banda in self.capa.gdal_metadata['bands']:
-                        if banda['metadata']['']['GRIB_ELEMENT'] == 'TMP':
+                        if banda['metadata']['']['GRIB_ELEMENT'] == 'TMP':      # temperatura
                             tmp_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'UGRD':
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'UGRD':   # viento - componente u
                             u_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'VGRD':
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'VGRD':   # viento - componente v
                             v_band = str(banda['band'])
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'APCP':   # precipitacion
+                            apcp_band = str(banda['band'])
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'PRMSL':   # presion atmosferica
+                            prmsl_band = str(banda['band'])
+                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'RH':   # humedad relativa
+                            rh_band = str(banda['band'])
+
                 except:
                     pass
 
@@ -614,6 +621,27 @@ class MapServerLayer(models.Model):
                         "UV_SPACING=40",
                         "UV_SIZE_SCALE=0.2"
                     ]
+                elif apcp_band != '':
+                    data['gribBandType'] = 'APCP'
+                    data['processing'] = [
+                        "BANDS={}".format(apcp_band),
+                        "RANGE_COLORSPACE=RGB",
+                    ]
+                elif prmsl_band != '':
+                    data['gribBandType'] = 'PRMSL'
+                    data['processing'] = [
+                        "BANDS={}".format(prmsl_band),
+                        "RANGE_COLORSPACE=RGB",
+                    ]
+                elif rh_band != '':
+                    data['gribBandType'] = 'RH'
+                    data['processing'] = [
+                        "BANDS={}".format(rh_band),
+                        "RANGE_COLORSPACE=RGB",
+                    ]
+                else:
+                    # El GRIB no tiene ninguna banda conocida!
+                    pass
 
         return data
 
@@ -661,15 +689,17 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         print '...capa actualizada (ya existia)'
         # actualizamos los mapas relacionados con la capa
         ManejadorDeMapas.delete_mapfile('mapground_public_layers')
-        for m in instance.mapa_set.filter(tipo_de_mapa__in=['layer','layer_original_srs','general']):
+        for m in instance.mapa_set.filter(tipo_de_mapa__in=['layer', 'layer_original_srs', 'general']):
             ManejadorDeMapas.delete_mapfile(m.id_mapa)
         for m in Mapa.objects.all().filter(tipo_de_mapa='user'):
-            ManejadorDeMapas.delete_mapfile(m.id_mapa)            
+            ManejadorDeMapas.delete_mapfile(m.id_mapa)
+
 
 @receiver(post_delete, sender=MapServerLayer)
 def onMapServerLayerPostDelete(sender, instance, **kwargs):
     print 'onMapServerLayerPostDelete %s'%(str(instance))
     ManejadorDeMapas.delete_mapfile(instance.mapa.id_mapa)
+
 
 @receiver(post_delete, sender=Capa)
 def onCapaPostDelete(sender, instance, **kwargs):

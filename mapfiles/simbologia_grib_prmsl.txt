@@ -1,0 +1,12 @@
+        LAYER
+        TYPE RASTER
+        OPACITY 80
+        CLASS
+            NAME "Solo una clase PRMSL!"
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#00000000" "#ff000000"
+                DATARANGE 98000 104500  # 98350 104233
+            END
+        END
+        END

@@ -145,7 +145,4 @@
                 DATARANGE -40.0 -35.0
             END
         END
-
-
-
         END

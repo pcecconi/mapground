@@ -2,6 +2,7 @@
         TYPE POINT
         CONNECTIONTYPE uvraster
           CLASS
+            NAME "   Dirección del viento"
             STYLE
               ANGLE [uv_angle]
               SIZE 6

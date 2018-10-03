@@ -14,6 +14,9 @@ MAPA_SYMBOLSET_FILENAME = os.path.join(settings.MAPAS_PATH, 'symbols.txt')
 
 MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_tmp.txt')
 MAPA_SIMBOLOGIA_GRIB_WIND_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_wind.txt')
+MAPA_SIMBOLOGIA_GRIB_APCP_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_apcp.txt')
+MAPA_SIMBOLOGIA_GRIB_PRMSL_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_prmsl.txt')
+MAPA_SIMBOLOGIA_GRIB_RH_FILENAME = os.path.join(settings.MAPAS_PATH, 'simbologia_grib_rh.txt')
 
 MAPA_DATA_PATH = '../data'
 MAPA_ERRORFILE = os.path.join(settings.MAPAS_PATH, 'map-error.log')
@@ -54,21 +57,32 @@ def __agregar_simbologia_basica__(layer):
 
 def __agregar_simbologia_grib__(layer, grib_type):
     if grib_type == 'TMP':
-        with open(MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME, 'r') as archivo:
-            definicion = archivo.read()
-        res = layer.updateFromString(definicion)
-        if res == mapscript.MS_FAILURE:
-            print "Error: couldn't set layer grib symbology for TMP band"
+        archivo = MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME
     elif grib_type == 'WIND':
-        with open(MAPA_SIMBOLOGIA_GRIB_WIND_FILENAME, 'r') as archivo:
-            definicion = archivo.read()
-        res = layer.updateFromString(definicion)
+        archivo = MAPA_SIMBOLOGIA_GRIB_WIND_FILENAME
+    elif grib_type == 'APCP':
+        archivo = MAPA_SIMBOLOGIA_GRIB_APCP_FILENAME
+    elif grib_type == 'PRMSL':
+        archivo = MAPA_SIMBOLOGIA_GRIB_PRMSL_FILENAME
+    elif grib_type == 'RH':
+        archivo = MAPA_SIMBOLOGIA_GRIB_RH_FILENAME
+    else:
+        print 'Error: grib_type={} not recognized'.format(grib_type)
+        return False
+
+    with open(archivo, 'r') as definicion_grib:
+        res = layer.updateFromString(definicion_grib.read())
         if res == mapscript.MS_FAILURE:
-            print "Error: couldn't set layer grib symbology for WIND bands"
-        else:
+            print "Error: couldn't set layer grib symbology for {} band".format(grib_type)
+            return False
+
+        # manejamos el caso de viento como un caso particular pues incluir un symbol en el archivo externo genera un Segmentation Fault de Mapscript
+        if grib_type == 'WIND':
             class0 = layer.getClass(0)
             symbol0 = class0.getStyle(0)
             symbol0.symbolname = 'arrow'
+
+    return True
 
 
 def create_mapfile(data, save=True):
