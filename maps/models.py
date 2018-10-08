@@ -40,6 +40,7 @@ TIPO_DE_MAPA_ENUM = (
     ('user', 'user'), # mapa de usuario
     ('public_layers', 'public_layers'), # mapa de todas las capas publicas en el sistema
     ('general', 'general'), # mapa de cualquier otro mapa creado ad-hoc
+    ('layer_raster_band', 'layer_raster_band') # mapa subproducto de alguna banda raster
 )
 
 class TMSBaseLayer(models.Model):
@@ -214,7 +215,7 @@ class Mapa(models.Model):
             self.id_mapa = '%s_%s'%(self.owner.username,self.nombre)
 
         try:
-            msm=self.createMapfile(False)
+            msm=self.create_mapfile(False)
             self.texto_output=msm.convertToString()[0:9999]
         except:
             self.texto_output=''
@@ -224,7 +225,7 @@ class Mapa(models.Model):
         if escribir_imagen_y_mapfile:
             self.create_mapfile(True)
             self.generar_thumbnail_y_legend()
-            if self.tipo_de_mapa in ('layer', 'general'):
+            if self.tipo_de_mapa in ('layer', 'general', 'layer_raster_band'):
                 self.agregar_a_mapcache()
         return True
     
@@ -366,9 +367,9 @@ class Mapa(models.Model):
         mapExtent = self.dame_mapserver_extent(int(srid))
         wxs_url = self.dame_wxs_url
         layers = []
-        if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general'):
+        if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general', 'layer_raster_band'):
             mapserverlayers = self.mapserverlayer_set.all().order_by('orden_de_capa','capa__metadatos__titulo')
-        else:  # 'public_layers'
+        elif self.tipo_de_mapa == 'public_layers':
             mapserverlayers = self.mapserverlayer_set.filter(capa__wxs_publico=True).order_by('orden_de_capa')
         for msl in mapserverlayers:
             if self.tipo_de_mapa=='general':
@@ -433,7 +434,7 @@ class Mapa(models.Model):
         mapcache.remove_tileset(self.id_mapa)
         sld_url = ''
         srid = MAPA_DEFAULT_SRS
-        if self.tipo_de_mapa == 'layer':
+        if self.tipo_de_mapa in ('layer', 'layer_raster_band'):
             capa = self.mapserverlayer_set.first().capa
             # params = ':%s:%d'%(capa.nombre, MAPA_DEFAULT_SRS)
             layers = capa.nombre
@@ -448,7 +449,7 @@ class Mapa(models.Model):
                 add_or_replace_tileset(self.id_mapa, layers, srid, sld.id, sld_url)
         elif self.tipo_de_mapa == 'general':
             layers = 'default'
-                
+
         # mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
         add_or_replace_tileset(self.id_mapa, layers, srid, '', sld_url)
 
@@ -680,6 +681,13 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         MapServerLayer(mapa=mapa_layer_srs,capa=instance,orden_de_capa=0).save()
         mapa_layer_srs.save()
 
+        if instance.gdal_driver_shortname == 'GRIB':
+            mapa = Mapa(owner=instance.owner,nombre=instance.nombre+'_band_1',id_mapa=instance.id_capa+'_band_1', tipo_de_mapa='layer_raster_band')
+            mapa.save(escribir_imagen_y_mapfile=False)
+            MapServerLayer(mapa=mapa,capa=instance,orden_de_capa=0).save()
+            mapa.save()
+
+
         # actualizamos el mapa de usuario
         ManejadorDeMapas.delete_mapfile(instance.owner.username)
 
@@ -712,6 +720,10 @@ def onCapaPostDelete(sender, instance, **kwargs):
         Mapa.objects.get(id_mapa=instance.id_capa+'_layer_srs',tipo_de_mapa='layer_original_srs').delete()
     except:
         pass
+    try:
+        Mapa.objects.filter(id_mapa__startswith=instance.id_capa+'_band_',tipo_de_mapa='layer_raster_band').delete()
+    except:
+        pass
     if instance.tipo_de_capa == CONST_VECTOR:
         try:
             TablaGeografica.objects.filter(tabla=instance.id_capa)[0].delete()
@@ -726,7 +738,7 @@ def onCapaPostDelete(sender, instance, **kwargs):
 @receiver(post_delete, sender=Mapa)
 def onMapaPostDelete(sender, instance, **kwargs):
     print 'onMapaPostDelete %s'%(str(instance))
-    if instance.tipo_de_mapa == 'layer':
+    if instance.tipo_de_mapa in ('layer', 'layer_raster_band'):
         # manage.remove([instance.id_mapa])
         mapcache.remove_map(instance.id_mapa)
     try:
