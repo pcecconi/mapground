@@ -2,7 +2,7 @@
         TYPE RASTER
         OPACITY 80
         CLASS
-            NAME "Solo una clase RH!"
+            NAME "0 < RH < 100"
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#00000000" "#ff000000"

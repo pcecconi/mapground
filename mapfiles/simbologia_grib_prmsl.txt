@@ -2,7 +2,7 @@
         TYPE RASTER
         OPACITY 80
         CLASS
-            NAME "Solo una clase PRMSL!"
+            NAME "98000 < PRMSL < 104500"
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#00000000" "#ff000000"

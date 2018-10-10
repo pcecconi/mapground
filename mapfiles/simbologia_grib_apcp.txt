@@ -3,7 +3,7 @@
         OPACITY 80
         CLASS
             EXPRESSION ([pixel] > 0.0)
-            NAME "Solo una clase APCP!"
+            NAME "0 < APCP < 30"
             STYLE
                 RANGEITEM "pixel"
                 COLORRANGE "#00000000" "#0000ff00"
