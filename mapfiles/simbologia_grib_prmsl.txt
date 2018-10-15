@@ -1,6 +1,9 @@
-        LAYER
+    LAYER
+
         TYPE RASTER
         OPACITY 80
+        PROCESSING "RANGE_COLORSPACE=RGB",
+
         CLASS
             NAME "98000 < PRMSL < 104500"
             STYLE
@@ -9,4 +12,5 @@
                 DATARANGE 98000 104500  # 98350 104233
             END
         END
-        END
+
+    END

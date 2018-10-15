@@ -1,6 +1,9 @@
-        LAYER
+    LAYER
+
         TYPE RASTER
         OPACITY 80
+        PROCESSING "RANGE_COLORSPACE=RGB",
+
         CLASS
             EXPRESSION ([pixel] > 0.0)
             NAME "0 < APCP < 30"
@@ -10,4 +13,5 @@
                 DATARANGE 0 30  # 0.0 21.15
             END
         END
-        END
+
+    END

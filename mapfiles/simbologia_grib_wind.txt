@@ -1,7 +1,11 @@
-        LAYER
+    LAYER
+
         TYPE POINT
         CONNECTIONTYPE uvraster
-          CLASS
+        PROCESSING "UV_SPACING=40",
+        PROCESSING "UV_SIZE_SCALE=0.2"
+
+        CLASS
             NAME "   Dirección del viento"
             STYLE
               ANGLE [uv_angle]
@@ -10,5 +14,6 @@
               OUTLINECOLOR 50 50 50
               POLAROFFSET [uv_length] [uv_angle]
             END
-          END
         END
+
+    END

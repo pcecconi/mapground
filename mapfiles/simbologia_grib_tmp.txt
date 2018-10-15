@@ -1,6 +1,12 @@
-        LAYER
+    LAYER
+        
         TYPE RASTER
         OPACITY 80
+        PROCESSING "RANGE_COLORSPACE=RGB",
+        PROCESSING "KERNELDENSITY_RADIUS=10",
+        PROCESSING "KERNELDENSITY_COMPUTE_BORDERS=ON",
+        PROCESSING "KERNELDENSITY_NORMALIZATION=AUTO",
+
         CLASS
             NAME "40"
             EXPRESSION ([pixel] >= 35 AND [pixel] < 40)
@@ -145,4 +151,5 @@
                 DATARANGE -40.0 -35.0
             END
         END
-        END
+
+    END

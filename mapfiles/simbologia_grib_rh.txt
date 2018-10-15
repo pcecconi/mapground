@@ -1,6 +1,9 @@
-        LAYER
+    LAYER
+
         TYPE RASTER
         OPACITY 80
+        PROCESSING "RANGE_COLORSPACE=RGB",
+
         CLASS
             NAME "0 < RH < 100"
             STYLE
@@ -9,4 +12,5 @@
                 DATARANGE 0 100
             END
         END
-        END
+
+    END
