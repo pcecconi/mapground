@@ -163,8 +163,8 @@ class ManejadorDePermisos():
                 mapa = Mapa.objects.get(id_mapa=mapa)
             except:
                 return None
-        
-        if mapa.tipo_de_mapa=='layer':
+
+        if mapa.tipo_de_mapa in ('layer', 'layer_raster_band'):
             return ManejadorDePermisos.permiso_de_capa(user, mapa.capas.first())
         elif mapa.tipo_de_mapa=='general':
             if mapa.owner==user:
