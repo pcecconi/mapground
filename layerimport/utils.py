@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from MapGround import MapGroundException
-import os, subprocess, re, glob, json, hashlib, random, string
 from django.db import connection
 from osgeo import gdal, osr
 from MapGround.settings import DEFAULT_SRID, DATABASES
@@ -8,8 +7,26 @@ from MapGround.settings import DEFAULT_SRID, DATABASES
 from subprocess import Popen, PIPE
 from threading import Thread
 from StringIO import StringIO
+import os
+import subprocess
+import re
+import glob
+import json
+import hashlib
+import random
+import string
 
 epsg_hashes = dict()
+
+
+GRIB_VARIABLES_DE_INTERES = [
+    'TMP',      # temperatura
+    'UGRD',     # viento - componente u
+    'VGRD',     # viento - componente v
+    'APCP',     # precipitacion
+    'PRMSL',    # presion atmosferica
+    'RH'        # humedad relativa
+]
 
 
 def tee(infile, *files):
@@ -32,9 +49,12 @@ def teed_call(cmd_args, **kwargs):
               stderr=PIPE if stderr is not None else None,
               **kwargs)
     threads = []
-    if stdout is not None: threads.append(tee(p.stdout, stdout))
-    if stderr is not None: threads.append(tee(p.stderr, stderr))
-    for t in threads: t.join()  # wait for IO completion
+    if stdout is not None:
+        threads.append(tee(p.stdout, stdout))
+    if stderr is not None:
+        threads.append(tee(p.stderr, stderr))
+    for t in threads:
+        t.join()  # wait for IO completion
     return p.wait()
 
 
@@ -197,8 +217,8 @@ def get_epsg_from_prj(prjfile):
         l = re.findall('\[.*?\]', wkt)
         h = hashlib.sha256(unicode(frozenset(l))).hexdigest()
         srid = get_srid_from_hash(h)
-    except Exception, e:
-        print 'Exception', e
+    except Exception:
+        # print 'Exception', e
         pass
     print 'srid %d' % srid
     return srid
@@ -233,7 +253,7 @@ def get_srid_from_hash(h):
 def import_layer(filename, schema, table, encoding='LATIN1'):
     try:
         st = get_shapefile_files(filename)
-    except MapGroundException, e:
+    except MapGroundException:
         raise
 
     srid = DEFAULT_SRID
@@ -244,7 +264,7 @@ def import_layer(filename, schema, table, encoding='LATIN1'):
 
     try:
         load_shape(st['shp'], schema, table, srid, encoding)
-    except MapGroundException, e:
+    except MapGroundException:
         raise
     print 'import srid %d' % srid
 
@@ -279,7 +299,7 @@ def get_raster_metadata(file, con_stats=True):
     miny = maxy + geotransform[5] * raster.RasterYSize
     extent_capa = (minx, miny, maxx, maxy)
 
-    metadata_json = json.loads(subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True))
+    metadata_gdalinfo_json = json.loads(subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True))
     if con_stats:
         # Eliminamos el archivo .aux.xml (PAM, Permanent Auxiliar Metadata) que se crea al aplicar gdalinfo -stats
         try:
@@ -287,16 +307,41 @@ def get_raster_metadata(file, con_stats=True):
         except:
             pass
 
+    variables_detectadas = {}
+
+    # Segun el formato del raster, determinamos las bandas para armar los mapas 'layer_raster_band' (mapas de variables)
+    if raster.GetDriver().ShortName == 'GRIB':
+        try:
+            for banda in metadata_gdalinfo_json['bands']:
+                grib_element = banda['metadata']['']['GRIB_ELEMENT']
+                if grib_element in GRIB_VARIABLES_DE_INTERES and grib_element not in variables_detectadas:
+                    variables_detectadas[grib_element] = str(banda['band'])
+
+            # Invento la componente de viento en base a UGRD y VGRD, y borro las originales
+            if 'UGRD' in variables_detectadas and 'VGRD' in variables_detectadas:
+                variables_detectadas['WIND'] = '{},{}'.format(variables_detectadas['UGRD'], variables_detectadas['VGRD'])
+            if 'UGRD' in variables_detectadas:
+                del(variables_detectadas['UGRD'])
+            if 'VGRD' in variables_detectadas:
+                del(variables_detectadas['VGRD'])
+        except:
+            print "Error al detectar bandas de interes en raster GRIB!"
+
+    # construimos
     return {
         'driver_short_name': raster.GetDriver().ShortName,
         'driver_long_name': raster.GetDriver().LongName,
         'raster_count': raster.RasterCount,
         'srid': srid,   # puede ser None
         'extent_capa': extent_capa,
-        'metadata_json': metadata_json,
+        'metadata_json': {
+            'gdalinfo': metadata_gdalinfo_json,
+            'variables_detectadas': variables_detectadas,
+        },
         'proyeccion_proj4': proj.ExportToProj4(),
         'size_height': raster.RasterYSize,
         'size_width': raster.RasterXSize,
+
     }
 
 

@@ -55,32 +55,35 @@ def __agregar_simbologia_basica__(layer):
         layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
-def __agregar_simbologia_grib__(layer, grib_type):
-    if grib_type == 'TMP':
+def __agregar_simbologia_grib__(layer, band_type, bandas):
+    if band_type == 'TMP':
         archivo = MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME
-    elif grib_type == 'WIND':
+    elif band_type == 'WIND':
         archivo = MAPA_SIMBOLOGIA_GRIB_WIND_FILENAME
-    elif grib_type == 'APCP':
+    elif band_type == 'APCP':
         archivo = MAPA_SIMBOLOGIA_GRIB_APCP_FILENAME
-    elif grib_type == 'PRMSL':
+    elif band_type == 'PRMSL':
         archivo = MAPA_SIMBOLOGIA_GRIB_PRMSL_FILENAME
-    elif grib_type == 'RH':
+    elif band_type == 'RH':
         archivo = MAPA_SIMBOLOGIA_GRIB_RH_FILENAME
     else:
-        print 'Error: grib_type={} not recognized'.format(grib_type)
+        print 'Error: band_type={} not recognized'.format(band_type)
         return False
 
     with open(archivo, 'r') as definicion_grib:
         res = layer.updateFromString(definicion_grib.read())
         if res == mapscript.MS_FAILURE:
-            print "Error: couldn't set layer grib symbology for {} band".format(grib_type)
+            print "Error: couldn't set layer grib symbology for {} band".format(band_type)
             return False
 
         # manejamos el caso de viento como un caso particular pues incluir un symbol en el archivo externo genera un Segmentation Fault de Mapscript
-        if grib_type == 'WIND':
+        if band_type == 'WIND':
             class0 = layer.getClass(0)
             symbol0 = class0.getStyle(0)
             symbol0.symbolname = 'arrow'
+
+    if bandas != '':    # deberia venir siempre lleno
+        layer.addProcessing('BANDS={}'.format(bandas))
 
     return True
 
@@ -166,7 +169,7 @@ def create_mapfile(data, save=True):
 
     # try:
     for layer_def in data['layers']:
-        print(layer_def)
+        # print(layer_def)
         mapa.insertLayer(create_ms_layer(layer_def))
     # except Exception, e:
     #     print "Failed to insert layers on mapfile: %s"%str(e)
@@ -195,11 +198,9 @@ def create_ms_layer(data):
         else:
             layer.setProjection('epsg:%s' % (unicode(data['srid'])))
 
-        for processing in data['processing']:
-            layer.addProcessing(processing)
-
-        if data['gribBandType'] != '':
-            __agregar_simbologia_grib__(layer, data['gribBandType'])
+        if data['rasterBandType'] != '':
+            band_type, bandas = data['rasterBandType']
+            __agregar_simbologia_grib__(layer, band_type, bandas)
 
         if data['layerDefinitionOverride'] != '':
             layer.updateFromString(data['layerDefinitionOverride'])

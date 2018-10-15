@@ -278,7 +278,7 @@ class Mapa(models.Model):
                 return settings.MAPCACHE_URL+'tms/1.0.0/%s@GoogleMapsCompatible/{z}/{x}/{y}.png?t=%s'%(c.id_capa, time.mktime(c.timestamp_modificacion.timetuple()))
             except:
                 pass
-        elif self.tipo_de_mapa == 'general':
+        elif self.tipo_de_mapa in ('general', 'layer_raster_band'):
             return settings.MAPCACHE_URL+'tms/1.0.0/%s@GoogleMapsCompatible/{z}/{x}/{y}.png?t=%s'%(self.id_mapa, time.mktime(self.timestamp_modificacion.timetuple()))
         return ''
     # devuelve un string parametrizable tipo '-71.55 -41.966667 -63.0 -37.9'
@@ -421,10 +421,10 @@ class Mapa(models.Model):
         # mapa=self.dame_mapserver_mapObj()
         # mapa.save(os.path.join(settings.MAPAS_PATH, self.id_mapa+'.map'))
         # print "......mapa guardado %s"%(self.id_mapa+'.map')
-        if self.tipo_de_mapa in ('layer_original_srs', 'general'):
+        if self.tipo_de_mapa in ('layer_original_srs', 'general', 'layer_raster_band'):
             thumb = self.generar_thumbnail()
             print "......imagen creada: %s"%(thumb)
-        if self.tipo_de_mapa in ('general', 'layer'):
+        if self.tipo_de_mapa in ('general', 'layer', 'layer_raster_band'):
             self.generar_legend()
         return True
 
@@ -455,7 +455,7 @@ class Mapa(models.Model):
 
     def generar_thumbnail(self):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
-        if self.tipo_de_mapa == 'general':
+        if self.tipo_de_mapa in ('general', 'layer_raster_band'):
             for c in self.capas.all():  # es necesario regenerar todo mapfile inexistente
                 ManejadorDeMapas.commit_mapfile(c.id_capa)
             wms_url = mapserver.get_wms_request_url(self.id_mapa, 'default', self.srs, 110, 150, self.dame_extent(',','3857'))
@@ -502,15 +502,16 @@ class Mapa(models.Model):
         config = 'pg_catalog.spanish', # this is default
         search_field = 'search_index', # this is default
         auto_update_search_field = True
-    )    
-            
+    )
+
 class MapServerLayer(models.Model):
     capa = models.ForeignKey(Capa,null=False,blank=False)
     mapa = models.ForeignKey(Mapa)
     orden_de_capa = models.IntegerField(null=False)
+    bandas = models.CharField(null=False, blank=True, max_length=100)   # string que representa una tupla de tipo (<variable>, <bandas>), por ejemplo "('WIND', '3,4')"
     feature_info = models.BooleanField(u'Feature Info', null=False, default=True)
     archivo_sld = models.ForeignKey(ArchivoSLD, null=True, blank=True, on_delete=models.SET_NULL) 
-    
+
     texto_input = models.TextField(u'Texto Input', null=False, blank=True, max_length=10000)
     texto_output = models.TextField(u'Texto Output', null=False, blank=True, max_length=10000)
     class Meta:
@@ -546,7 +547,7 @@ class MapServerLayer(models.Model):
 
     def dame_mapserver_layer_def(self, connectiontype='POSTGIS'):
         include_items, items_aliases = self.capa.metadatos.dame_gml_atributos()
-        srid = 4326 if self.mapa.tipo_de_mapa in ('public_layers','user') and self.capa.srid!=4326 else int(self.capa.dame_projection)
+        srid = 4326 if self.mapa.tipo_de_mapa in ('public_layers', 'user') and self.capa.srid != 4326 else int(self.capa.dame_projection)
         if self.capa.tipo_de_capa == CONST_VECTOR:
             data = {
                 "connectionType": connectiontype,
@@ -562,7 +563,7 @@ class MapServerLayer(models.Model):
                 "layerDefinitionOverride": self.texto_input,
                 "metadata": {},
                 "driver": self.capa.gdal_driver_shortname,
-                "processing": [],
+                "rasterBandType": "",
                 "proj4": '',
             }
         elif self.capa.tipo_de_capa == CONST_RASTER:
@@ -580,69 +581,28 @@ class MapServerLayer(models.Model):
                 "layerDefinitionOverride": self.texto_input,
                 "metadata": {},
                 "driver": self.capa.gdal_driver_shortname,
-                "gribBandType": "",
-                "processing": [],
+                "rasterBandType": "",
                 "proj4": self.capa.proyeccion_proj4,    # TODO: revisar
             }
 
             if self.capa.gdal_driver_shortname == 'GRIB':
-                # Inferimos si hay bandas conocidas
-                tmp_band = u_band = v_band = apcp_band = prmsl_band = rh_band = ''
-                try:
-                    for banda in self.capa.gdal_metadata['bands']:
-                        if banda['metadata']['']['GRIB_ELEMENT'] == 'TMP':      # temperatura
-                            tmp_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'UGRD':   # viento - componente u
-                            u_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'VGRD':   # viento - componente v
-                            v_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'APCP':   # precipitacion
-                            apcp_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'PRMSL':   # presion atmosferica
-                            prmsl_band = str(banda['band'])
-                        elif banda['metadata']['']['GRIB_ELEMENT'] == 'RH':   # humedad relativa
-                            rh_band = str(banda['band'])
-
-                except:
-                    pass
-
-                if tmp_band != '':
-                    data['gribBandType'] = 'TMP'
-                    data['processing'] = [
-                        "BANDS={}".format(tmp_band),
-                        "RANGE_COLORSPACE=RGB",
-                        "KERNELDENSITY_RADIUS=10",
-                        "KERNELDENSITY_COMPUTE_BORDERS=ON",
-                        "KERNELDENSITY_NORMALIZATION=AUTO",
-                    ]
-                elif u_band != '' and v_band != '':
-                    data['gribBandType'] = 'WIND'
-                    data['processing'] = [
-                        "BANDS={},{}".format(u_band, v_band),
-                        "UV_SPACING=40",
-                        "UV_SIZE_SCALE=0.2"
-                    ]
-                elif apcp_band != '':
-                    data['gribBandType'] = 'APCP'
-                    data['processing'] = [
-                        "BANDS={}".format(apcp_band),
-                        "RANGE_COLORSPACE=RGB",
-                    ]
-                elif prmsl_band != '':
-                    data['gribBandType'] = 'PRMSL'
-                    data['processing'] = [
-                        "BANDS={}".format(prmsl_band),
-                        "RANGE_COLORSPACE=RGB",
-                    ]
-                elif rh_band != '':
-                    data['gribBandType'] = 'RH'
-                    data['processing'] = [
-                        "BANDS={}".format(rh_band),
-                        "RANGE_COLORSPACE=RGB",
-                    ]
-                else:
-                    # El GRIB no tiene ninguna banda conocida!
-                    pass
+                if self.mapa.tipo_de_mapa == 'layer':   # es el caso del mapa por defecto de GRIB, sin variables específicas
+                    try:
+                        # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
+                        banda = self.capa.gdal_metadata['variables_detectadas']['TMP']
+                        data['rasterBandType'] = ('TMP', banda)
+                    except:                                         # si no existe, nos quedamos con la primera...
+                        try:
+                            # tomamos la tupla desde los metadatos de la capa
+                            data['rasterBandType'] = self.capa.gdal_metadata['variables_detectadas'].items()[0]
+                        except:                                     # ...y si no existe ninguna, se renderizará vacía
+                            pass
+                elif self.mapa.tipo_de_mapa == 'layer_raster_band': # es el caso de una banda específica
+                    try:
+                        # evaluamos el string del objeto como tupla
+                        data['rasterBandType'] = eval(self.bandas)
+                    except:                                         # no debería pasar...se renderizará vacía, queda todo violeta
+                        pass
 
         return data
 
@@ -653,7 +613,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
     if created:
         print '...capa creada'
         # ------------ creamos y completamos metadatos y atributos
-        metadatos = Metadatos.objects.create(capa=instance,titulo=instance.nombre)
+        metadatos = Metadatos.objects.create(capa=instance, titulo=instance.nombre)
         # devuelve <att_num, campo, tipo, default_value, uniq, pk>
         cursor = connection.cursor()
         cursor.execute("SELECT * from utils.campos_de_tabla(%s,%s)", [instance.esquema, instance.tabla])
@@ -663,30 +623,38 @@ def onCapaPostSave(sender, instance, created, **kwargs):
 
         # ------------ creamos/actualizamos mapas
         # creamos el mapa canónico
-        mapa = Mapa(owner=instance.owner,nombre=instance.nombre,id_mapa=instance.id_capa, tipo_de_mapa='layer')
+        mapa = Mapa(owner=instance.owner, nombre=instance.nombre, id_mapa=instance.id_capa, tipo_de_mapa='layer')
         if instance.tipo_de_capa == CONST_RASTER:
             try:
                 print "Intentando setear baselayer..."
-                mapa.tms_base_layer=TMSBaseLayer.objects.get(pk=1)
+                mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
             except:
                 pass
         mapa.save(escribir_imagen_y_mapfile=False)
-        MapServerLayer(mapa=mapa,capa=instance,orden_de_capa=0).save()
+        MapServerLayer(mapa=mapa, capa=instance, orden_de_capa=0).save()
         mapa.save()
 
         # creamos el mapa en la proyeccion original
         extent_capa = instance.dame_extent(',', instance.srid)
-        mapa_layer_srs = Mapa(owner=instance.owner,nombre=instance.nombre+'_layer_srs',id_mapa=instance.id_capa+'_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
+        mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
         mapa_layer_srs.save(escribir_imagen_y_mapfile=False)
-        MapServerLayer(mapa=mapa_layer_srs,capa=instance,orden_de_capa=0).save()
+        MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
         mapa_layer_srs.save()
 
         if instance.gdal_driver_shortname == 'GRIB':
-            mapa = Mapa(owner=instance.owner,nombre=instance.nombre+'_band_1',id_mapa=instance.id_capa+'_band_1', tipo_de_mapa='layer_raster_band')
-            mapa.save(escribir_imagen_y_mapfile=False)
-            MapServerLayer(mapa=mapa,capa=instance,orden_de_capa=0).save()
-            mapa.save()
-
+            for variable, bandas in instance.gdal_metadata['variables_detectadas'].iteritems():
+                mapa = Mapa(
+                    owner=instance.owner,
+                    nombre=instance.nombre + '_band_{}'.format(variable.lower()),
+                    id_mapa=instance.id_capa + '_band_{}'.format(variable.lower()),
+                    tipo_de_mapa='layer_raster_band')
+                mapa.save(escribir_imagen_y_mapfile=False)
+                MapServerLayer.objects.create(
+                    mapa=mapa,
+                    capa=instance,
+                    bandas="('{}', '{}')".format(variable, bandas),
+                    orden_de_capa=0)
+                mapa.save()
 
         # actualizamos el mapa de usuario
         ManejadorDeMapas.delete_mapfile(instance.owner.username)
@@ -802,16 +770,17 @@ def onArchivoSLDPostSave(sender, instance, created, **kwargs):
         print "No se modifico el SLD"
     generarThumbnailSLD(instance.capa, instance)  # siempre
     instance.capa.save()
-    ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa+'_layer_srs')
+    ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa + '_layer_srs')
+
 
 @receiver(post_delete, sender=ArchivoSLD)
 def onArchivoSLDPostDelete(sender, instance, **kwargs):
-    print 'onArchivoSLDPostDelete %s'%(str(instance))
+    print 'onArchivoSLDPostDelete {}'.format(str(instance))
     instance.capa.save()
     if instance.default:
-        ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa+'_layer_srs')
+        ManejadorDeMapas.generar_thumbnail(instance.capa.id_capa + '_layer_srs')
     try:
-        os.remove(os.path.splitext(instance.filename.path)[0]+'.png')
+        os.remove(os.path.splitext(instance.filename.path)[0] + '.png')
         os.remove(os.path.join(settings.MEDIA_ROOT, instance.filename.name))
     except:
         pass
