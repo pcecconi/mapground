@@ -2,7 +2,7 @@
 
         TYPE RASTER
         OPACITY 80
-        PROCESSING "RANGE_COLORSPACE=RGB",
+        PROCESSING "RANGE_COLORSPACE=RGB"
 
         CLASS
             NAME "0 < RH < 100"
