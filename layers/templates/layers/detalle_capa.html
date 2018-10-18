@@ -102,13 +102,11 @@
               <table class="table table-striped">
                 <thead><tr><th>Banda</th><th>Link</th>
                 <tbody>
-                    {% for mapa in capa.mapa_set.all %}
-                        {% if mapa.tipo_de_mapa == 'layer_raster_band' %}
-                            <tr>
-                                <td>{{ mapa.titulo }}</td>
-                                <td><a href="{% url 'maps:detalle_mapa' mapa.id_mapa %}">{{ mapa.id_mapa }}</a></td>
-                            </tr>
-                        {% endif %}
+                    {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band' %}
+                        <tr>
+                            <td>{{ mapa.titulo }}</td>
+                            <td><a href="{% url 'maps:detalle_mapa' mapa.id_mapa %}">{{ mapa.id_mapa }}</a></td>
+                        </tr>
                     {% endfor %}
                 </tbody>
               </table>
