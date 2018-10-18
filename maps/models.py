@@ -228,21 +228,31 @@ class Mapa(models.Model):
             if self.tipo_de_mapa in ('layer', 'general', 'layer_raster_band'):
                 self.agregar_a_mapcache()
         return True
-    
-        
+
     @property
     def dame_titulo(self):
-        if self.titulo!='':
+        if self.titulo != '':
             return self.titulo
         if self.tipo_de_mapa in ('layer_original_srs', 'layer'):
             try:
                 return self.capas.first().dame_titulo
             except:
                 pass
+        elif self.tipo_de_mapa in ('layer_raster_band'):
+            try:
+                try:
+                    banda = ' - ' + eval(self.mapserverlayer_set.first().bandas)[0]
+                except:
+                    banda = ''
+                return self.capas.first().dame_titulo + banda
+            except:
+                pass
+
         return ''
+
     @property
     def dame_descripcion(self):
-        if self.descripcion!='':
+        if self.descripcion != '':
             return self.descripcion
         if self.tipo_de_mapa in ('layer_original_srs', 'layer'):
             try:
