@@ -416,7 +416,7 @@ class Mapa(models.Model):
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
                 "ows_encoding": 'UTF-8', # siempre
                 "ows_enable_request": '*',
-                "labelcache_map_edge_buffer": '-10'
+                "labelcache_map_edge_buffer": '10'
             },
             "layers": layers
         }
@@ -658,6 +658,11 @@ def onCapaPostSave(sender, instance, created, **kwargs):
                     nombre=instance.nombre + '_band_{}'.format(variable.lower()),
                     id_mapa=instance.id_capa + '_band_{}'.format(variable.lower()),
                     tipo_de_mapa='layer_raster_band')
+                try:
+                    print "Intentando setear baselayer..."
+                    mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
+                except:
+                    pass
                 mapa.save(escribir_imagen_y_mapfile=False)
                 MapServerLayer.objects.create(
                     mapa=mapa,

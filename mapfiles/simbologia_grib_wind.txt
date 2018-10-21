@@ -4,7 +4,8 @@
         CONNECTIONTYPE uvraster
         PROCESSING "UV_SPACING=40"
         PROCESSING "UV_SIZE_SCALE=0.2"
-
+        PROCESSING "POLYLINE_NO_CLIP=True"
+        
         CLASS
             NAME "   Dirección del viento"
             STYLE
