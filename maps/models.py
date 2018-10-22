@@ -28,6 +28,7 @@ from subprocess import call
 from utils import mapserver
 from mapcache import mapcache
 from .tasks import add_tileset, rm_tileset, add_or_replace_tileset
+import json
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -652,6 +653,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         mapa_layer_srs.save()
 
         if instance.gdal_driver_shortname == 'GRIB':
+            gdalinfo = instance.gdal_metadata['gdalinfo']
             for variable, bandas in instance.gdal_metadata['variables_detectadas'].iteritems():
                 mapa = Mapa(
                     owner=instance.owner,
@@ -663,6 +665,14 @@ def onCapaPostSave(sender, instance, created, **kwargs):
                     mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
                 except:
                     pass
+                print "Intentando setear titulo de mapa..."
+                if variable == 'WIND':
+                    mapa.titulo = 'Wind'
+                else:
+                    try: 
+                        mapa.titulo = gdalinfo['bands'][int(bandas)-1]['metadata']['']['GRIB_COMMENT']
+                    except Exception as e:
+                        print e
                 mapa.save(escribir_imagen_y_mapfile=False)
                 MapServerLayer.objects.create(
                     mapa=mapa,
