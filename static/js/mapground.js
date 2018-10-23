@@ -36,4 +36,9 @@
     }
   });
 
+  $('.band-selector').change(function() {
+    $('.map-frame').attr("src",  $(this).val())
+    $('.full-screen-map-link').attr("href", $(this).val()+"?abstract=0&title=1")
+  })
+
  }(jQuery);

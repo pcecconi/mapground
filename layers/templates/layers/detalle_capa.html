@@ -218,18 +218,18 @@
       <div style="text-align: right; margin-bottom: 2px;">
         {% if capa.tipo_de_capa == 'raster' %}
           {% if capa.gdal_metadata.variables_detectadas|length > 0 %}
-            <select id="banda">
+            <select class="band-selector">
               {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band' %}
-                <option value="{% url 'maps:embeddable' mapa.id_mapa %}">{{ mapa.titulo }}</option>
+                <option value="{% url 'maps:embeddable' mapa.id_mapa %}" {% if mapa|get_id_banda_mapa == 'TMP' %}selected{% endif %}>{{ mapa.titulo }}</option>
               {% endfor %}
             </select>
           {% endif %}
         {% endif %}
-        <a href="{% url 'maps:embeddable' capa.id_capa %}?abstract=0&title=1" class="btn btn-default" target="_blank"><span class="glyphicon glyphicon-new-window"></span>
+        <a href="{% url 'maps:embeddable' capa.id_capa %}?abstract=0&title=1" class="btn btn-default full-screen-map-link" target="_blank"><span class="glyphicon glyphicon-new-window"></span>
         &nbsp;Pantalla Completa</a>
       </div>
       <div id="mapa">
-        <iframe src="{% url 'maps:embeddable' capa.id_capa %}" frameborder="0" scrolling="no" width="100%" height="100%"></iframe>
+        <iframe class="map-frame" src="{% url 'maps:embeddable' capa.id_capa %}" frameborder="0" scrolling="no" width="100%" height="100%"></iframe>
       </div>
       
 {% endblock %}
