@@ -5,11 +5,48 @@
         PROCESSING "RANGE_COLORSPACE=RGB"
 
         CLASS
-            NAME "0 < RH < 100"
+            NAME "85 - 100"
+            EXPRESSION ([pixel] >= 85 AND [pixel] <= 100)
             STYLE
                 RANGEITEM "pixel"
-                COLORRANGE "#00000000" "#ff000000"
-                DATARANGE 0 100
+                COLORRANGE "#50f05000" "#1eb41e00"
+                DATARANGE 85 100
+            END
+        END
+        CLASS
+            NAME "70 - 85"
+            EXPRESSION ([pixel] >= 70 AND [pixel] < 85)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#96f58c00" "#50f05000"
+                DATARANGE 70 85
+            END
+        END
+        CLASS
+            NAME "50 - 70"
+            EXPRESSION ([pixel] >= 50 AND [pixel] < 70)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#c8ffbe00" "#96f58c00"
+                DATARANGE 50 70
+            END
+        END
+        CLASS
+            NAME "30 - 50"
+            EXPRESSION ([pixel] >= 30 AND [pixel] < 50)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#e6ffe100" "#c8ffbe00"
+                DATARANGE 30 50
+            END
+        END
+        CLASS
+            NAME "0 - 30"
+            EXPRESSION ([pixel] >= 0 AND [pixel] < 30)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffffff00" "#e6ffe100"
+                DATARANGE 0 30
             END
         END
 

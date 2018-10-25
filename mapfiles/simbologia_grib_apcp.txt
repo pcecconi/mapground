@@ -5,13 +5,154 @@
         PROCESSING "RANGE_COLORSPACE=RGB"
 
         CLASS
-            EXPRESSION ([pixel] > 0.0)
-            NAME "0 < APCP < 30"
+            NAME ""
+            EXPRESSION ([pixel] >= 120)
             STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#00000000" "#0000ff00"
-                DATARANGE 0 30  # 0.0 21.15
+                COLOR "#2d1ea500"
             END
         END
+        CLASS
+            NAME "120"
+            EXPRESSION ([pixel] >= 100 AND [pixel] < 120)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#3c28b400" "#2d1ea500"
+                DATARANGE 100 120
+            END
+        END
+        CLASS
+            NAME "100"
+            EXPRESSION ([pixel] >= 90 AND [pixel] < 100)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#483cc800" "#3c28b400"
+                DATARANGE 90 100
+            END
+        END
+        CLASS
+            NAME "90"
+            EXPRESSION ([pixel] >= 80 AND [pixel] < 90)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#7060dc00" "#483cc800"
+                DATARANGE 80 90
+            END
+        END
+        CLASS
+            NAME "80"
+            EXPRESSION ([pixel] >= 70 AND [pixel] < 80)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#a5000000" "#7060dc00"
+                DATARANGE 70 80
+            END
+        END
+        CLASS
+            NAME "70"
+            EXPRESSION ([pixel] >= 60 AND [pixel] < 70)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#c0000000" "#a5000000"
+                DATARANGE 60 70
+            END
+        END
+        CLASS
+            NAME "60"
+            EXPRESSION ([pixel] >= 50 AND [pixel] < 60)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#e1140000" "#c0000000"
+                DATARANGE 50 60
+            END
+        END
+        CLASS
+            NAME "50"
+            EXPRESSION ([pixel] >= 40 AND [pixel] < 50)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ff320000" "#e1140000"
+                DATARANGE 40 50
+            END
+        END
+        CLASS
+            NAME "40"
+            EXPRESSION ([pixel] >= 30 AND [pixel] < 40)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffa00000" "#ff320000"
+                DATARANGE 30 40
+            END
+        END
+        CLASS
+            NAME "30"
+            EXPRESSION ([pixel] >= 30 AND [pixel] < 30)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffc03c00" "#ffa00000"
+                DATARANGE 20 30
+            END
+        END
+        CLASS
+            NAME "20"
+            EXPRESSION ([pixel] >= 15 AND [pixel] < 20)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffe87800" "#ffc03c00"
+                DATARANGE 15 20
+            END
+        END
+        CLASS
+            NAME "15"
+            EXPRESSION ([pixel] >= 10 AND [pixel] < 15)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#fffaaa00" "#ffe87800"
+                DATARANGE 10 15
+            END
+        END
+        CLASS
+            NAME "10"
+            EXPRESSION ([pixel] >= 7.5 AND [pixel] < 10)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#b4faaa00" "#fffaaa00"
+                DATARANGE 7.5 10
+            END
+        END
+        CLASS
+            NAME "7.5"
+            EXPRESSION ([pixel] >= 5 AND [pixel] < 7.5)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#c8ffbe00" "#b4faaa00"
+                DATARANGE 5 7.5
+            END
+        END
+        CLASS
+            NAME "5"
+            EXPRESSION ([pixel] >= 2.5 AND [pixel] < 5)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#e6ffe100" "#c8ffbe00"
+                DATARANGE 2.5 5
+            END
+        END
+        CLASS
+            NAME "2.5"
+            EXPRESSION ([pixel] >= 1 AND [pixel] < 2.5)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffffff00" "#e6ffe100"
+                DATARANGE 1 2.5
+            END
+        END
+        CLASS
+            NAME "0"
+            EXPRESSION ([pixel] < 1)
+            STYLE
+                COLOR "#ffffff00"
+            END
+        END
+
 
     END
