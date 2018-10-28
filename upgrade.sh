@@ -7,9 +7,13 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 DEV_USER="$(ls -ld $0 | awk '{print $3}')"
+FILES_DIR=`grep MAPCACHE_CONFIG_ROOT mapground/MapGround/settings_local.py | tail -1 | sed -e "s: ::g" | sed -e "s:':\":g" | sed -e "s:MAPCACHE_CONFIG_ROOT=::g"`
+
 sudo -u ${DEV_USER} bash -c 'virtualenv --system-site-packages venv; source venv/bin/activate; pip install -r requirements.txt'
 
 source venv/bin/activate
+
+cp -r mapfiles ${FILES_DIR}
 
 python manage.py makemigrations
 python manage.py migrate
