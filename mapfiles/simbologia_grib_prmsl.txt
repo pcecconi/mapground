@@ -5,12 +5,127 @@
         PROCESSING "RANGE_COLORSPACE=RGB"
 
         CLASS
-            NAME "98000 < PRMSL < 104500"
+            NAME ""
+            EXPRESSION ([pixel] >= 107000)
             STYLE
-                RANGEITEM "pixel"
-                COLORRANGE "#00000000" "#ff000000"
-                DATARANGE 98000 104500  # 98350 104233
+                COLOR "#e1140000"
             END
         END
+        CLASS
+            NAME "107000"
+            EXPRESSION ([pixel] >= 106000 AND [pixel] < 107000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ff320000" "#e1140000"
+                DATARANGE 106000 107000
+            END
+        END
+        CLASS
+            NAME "106000"
+            EXPRESSION ([pixel] >= 105000 AND [pixel] < 106000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ff600000" "#ff320000"
+                DATARANGE 105000 106000
+            END
+        END
+        CLASS
+            NAME "105000"
+            EXPRESSION ([pixel] >= 104000 AND [pixel] < 105000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffa00000" "#ff600000"
+                DATARANGE 104000 105000
+            END
+        END
+        CLASS
+            NAME "104000"
+            EXPRESSION ([pixel] >= 103000 AND [pixel] < 104000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffc03c00" "#ffa00000"
+                DATARANGE 103000 104000
+            END
+        END
+        CLASS
+            NAME "103000"
+            EXPRESSION ([pixel] >= 102000 AND [pixel] < 103000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#ffe87800" "#ffc03c00"
+                DATARANGE 102000 103000
+            END
+        END
+        CLASS
+            NAME "102000"
+            EXPRESSION ([pixel] >= 101000 AND [pixel] < 102000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#c8ffff00" "#ffe87800"
+                DATARANGE 101000 102000
+            END
+        END
+        CLASS
+            NAME "101000"
+            EXPRESSION ([pixel] >= 100000 AND [pixel] < 101000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#aff0ff00" "#c8ffff00"
+                DATARANGE 100000 101000
+            END
+        END
+        CLASS
+            NAME "100000"
+            EXPRESSION ([pixel] >= 99000 AND [pixel] < 100000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#82d2ff00" "#aff0ff00"
+                DATARANGE 99000 100000
+            END
+        END
+        CLASS
+            NAME "99000"
+            EXPRESSION ([pixel] >= 98000 AND [pixel] < 99000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#5fbefa00" "#82d2ff00"
+                DATARANGE 98000 99000
+            END
+        END
+        CLASS
+            NAME "98000"
+            EXPRESSION ([pixel] >= 97000 AND [pixel] < 98000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#4bb4f000" "#5fbefa00"
+                DATARANGE 97000 98000
+            END
+        END
+        CLASS
+            NAME "97000"
+            EXPRESSION ([pixel] >= 96000 AND [pixel] < 97000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#3caae600" "#4bb4f000"
+                DATARANGE 96000 97000
+            END
+        END
+        CLASS
+            NAME "96000"
+            EXPRESSION ([pixel] >= 95000 AND [pixel] < 96000)
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#2896d200" "#3caae600"
+                DATARANGE 95000 96000
+            END
+        END
+        CLASS
+            NAME ""
+            EXPRESSION ([pixel] < 95000)
+            STYLE
+                COLOR "#2896d200"
+            END
+        END
+
 
     END
