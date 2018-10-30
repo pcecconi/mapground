@@ -99,6 +99,8 @@ class ManejadorDeMapas:
                     cls.regenerar_mapas_de_usuarios([mapa.owner])
                 elif mapa.tipo_de_mapa=='public_layers':
                     cls.regenerar_mapa_publico()
+                elif mapa.tipo_de_mapa=='layer_raster_band':
+                    mapa.save() 
                 elif mapa.tipo_de_mapa in ['layer', 'layer_original_srs']:
                     mapa.save() 
                 elif mapa.tipo_de_mapa in ['general']: # a evaluar...
