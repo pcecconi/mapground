@@ -600,21 +600,20 @@ class MapServerLayer(models.Model):
 
             if self.capa.gdal_driver_shortname == 'GRIB':
                 if self.mapa.tipo_de_mapa == 'layer':   # es el caso del mapa por defecto de GRIB, sin variables específicas
-                    try:
-                        # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
-                        banda = self.capa.gdal_metadata['variables_detectadas']['TMP']
-                        data['rasterBandType'] = ('TMP', banda)
-                    except:                                         # si no existe, nos quedamos con la primera...
-                        try:
-                            # tomamos la tupla desde los metadatos de la capa
-                            data['rasterBandType'] = self.capa.gdal_metadata['variables_detectadas'].items()[0]
-                        except:                                     # ...y si no existe ninguna, se renderizará vacía
-                            pass
+
+                    # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
+                    # primero una default cualquiera
+                    cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
+                    data['rasterBandType'] = (self.capa.gdal_metadata['variables_detectadas'][cualquier_banda]['elemento'], cualquier_banda)
+                    # luego overrideamos si existe alguna de TMP
+                    for banda, variable in self.capa.gdal_metadata['variables_detectadas'].iteritems():
+                        if variable['elemento'] == 'TMP':
+                            data['rasterBandType'] = ('TMP', banda)
                 elif self.mapa.tipo_de_mapa == 'layer_raster_band': # es el caso de una banda específica
                     try:
                         # evaluamos el string del objeto como tupla
                         data['rasterBandType'] = eval(self.bandas)
-                    except:                                         # no debería pasar...se renderizará vacía, queda todo violeta
+                    except:                                         # no debería pasar por construcción...se renderizará vacía, queda todo violeta
                         pass
 
         return data
@@ -655,31 +654,25 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         mapa_layer_srs.save()
 
         if instance.gdal_driver_shortname == 'GRIB':
-            gdalinfo = instance.gdal_metadata['gdalinfo']
-            for variable, bandas in instance.gdal_metadata['variables_detectadas'].iteritems():
+            for bandas, variable in instance.gdal_metadata['variables_detectadas'].iteritems():
+                sufijo_mapa = '_band_{}_{}'.format(str(bandas).replace(',', '_'), variable['elemento'].lower())
                 mapa = Mapa(
                     owner=instance.owner,
-                    nombre=instance.nombre + '_band_{}'.format(variable.lower()),
-                    id_mapa=instance.id_capa + '_band_{}'.format(variable.lower()),
+                    nombre=instance.nombre + sufijo_mapa,
+                    id_mapa=instance.id_capa + sufijo_mapa,
+                    titulo='{} - {}: {}'.format(bandas, variable['elemento'], variable['descripcion']),
                     tipo_de_mapa='layer_raster_band')
                 try:
                     print "Intentando setear baselayer..."
                     mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
                 except:
                     pass
-                print "Intentando setear titulo de mapa..."
-                if variable == 'WIND':
-                    mapa.titulo = 'Wind'
-                else:
-                    try: 
-                        mapa.titulo = gdalinfo['bands'][int(bandas)-1]['metadata']['']['GRIB_COMMENT']
-                    except Exception as e:
-                        print e
+
                 mapa.save(escribir_imagen_y_mapfile=False)
                 MapServerLayer.objects.create(
                     mapa=mapa,
                     capa=instance,
-                    bandas="('{}', '{}')".format(variable, bandas),
+                    bandas="('{}', '{}')".format(variable['elemento'], bandas),
                     orden_de_capa=0)
                 mapa.save()
 

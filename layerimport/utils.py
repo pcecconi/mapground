@@ -18,15 +18,15 @@ import string
 
 epsg_hashes = dict()
 
-
-GRIB_VARIABLES_DE_INTERES = [
-    'TMP',      # temperatura
-    'UGRD',     # viento - componente u
-    'VGRD',     # viento - componente v
-    'APCP',     # precipitacion
-    'PRMSL',    # presion atmosferica
-    'RH'        # humedad relativa
-]
+# Por el momento no las estamos usando: finalmente decidimos tener en cuenta todas las variables
+# GRIB_VARIABLES_DE_INTERES = [
+#     'TMP',      # temperatura
+#     'UGRD',     # viento - componente u
+#     'VGRD',     # viento - componente v
+#     'APCP',     # precipitacion
+#     'PRMSL',    # presion atmosferica
+#     'RH'        # humedad relativa
+# ]
 
 
 def tee(infile, *files):
@@ -311,23 +311,39 @@ def get_raster_metadata(file, con_stats=True):
 
     # Segun el formato del raster, determinamos las bandas para armar los mapas 'layer_raster_band' (mapas de variables)
     if raster.GetDriver().ShortName == 'GRIB':
-        try:
+        if 'bands' in metadata_gdalinfo_json:
+            wind_u_band = wind_v_band = None
             for banda in metadata_gdalinfo_json['bands']:
-                grib_element = banda['metadata']['']['GRIB_ELEMENT']
-                if grib_element in GRIB_VARIABLES_DE_INTERES and grib_element not in variables_detectadas:
-                    variables_detectadas[grib_element] = str(banda['band'])
+                try:    # si por algun motivo la banda no tiene la info necesaria la ignoramos
+                    nro_banda = banda['band']
+                    grib_element = banda['metadata']['']['GRIB_ELEMENT']
+                    grib_comment = banda['metadata']['']['GRIB_COMMENT']
+                    minimo = banda.get('minimum')
+                    maximo = banda.get('maximum')
 
-            # Invento la componente de viento en base a UGRD y VGRD, y borro las originales
-            if 'UGRD' in variables_detectadas and 'VGRD' in variables_detectadas:
-                variables_detectadas['WIND'] = '{},{}'.format(variables_detectadas['UGRD'], variables_detectadas['VGRD'])
-            if 'UGRD' in variables_detectadas:
-                del(variables_detectadas['UGRD'])
-            if 'VGRD' in variables_detectadas:
-                del(variables_detectadas['VGRD'])
-        except:
-            print "Error al detectar bandas de interes en raster GRIB!"
+                    if grib_element == 'UGRD':
+                        wind_u_band = nro_banda
+                    elif grib_element == 'VGRD':
+                        wind_v_band = nro_banda
+                    else:
+                        variables_detectadas[nro_banda] = {
+                            'elemento': grib_element,
+                            'descripcion': grib_comment,
+                            'rango': (minimo, maximo),  # almacenamos el rango de la banda por si lo necesitamos en el DATARANGE
+                        }
+                except:
+                    pass
 
-    # construimos
+                if wind_u_band and wind_v_band:
+                    nro_banda = '{},{}'.format(wind_u_band, wind_v_band)
+                    variables_detectadas[nro_banda] = {
+                        'elemento': 'WIND',
+                        'descripcion': 'Wind',
+                        'rango': (None, None),  # Por el momento no necesitamos rangos para WIND, ya que la simbologia usa uv_length y uv_angle
+                    }
+                    wind_u_band = wind_v_band = None
+
+    # construimos la respuesta
     return {
         'driver_short_name': raster.GetDriver().ShortName,
         'driver_long_name': raster.GetDriver().LongName,
@@ -341,7 +357,6 @@ def get_raster_metadata(file, con_stats=True):
         'proyeccion_proj4': proj.ExportToProj4(),
         'size_height': raster.RasterYSize,
         'size_width': raster.RasterXSize,
-
     }
 
 
