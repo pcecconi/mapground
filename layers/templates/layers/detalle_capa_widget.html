@@ -4,8 +4,9 @@
     <dt>Cantidad de registros</dt><dd>{{ capa.cantidad_de_registros }}</dd>
   {% elif capa.tipo_de_capa == 'raster' %}
     <dt>Formato</dt><dd>{{ capa.gdal_driver_shortname }} ({{ capa.gdal_driver_longname }})</dd>
-    <dt>Cantidad de bandas</dt><dd>{{ capa.cantidad_de_bandas }}
     <dt>Tama&ntilde;o</dt><dd>{{ capa.size_width }}x{{ capa.size_height }} pixels
+    <dt>Cantidad de bandas</dt><dd>{{ capa.cantidad_de_bandas }}
+    <dt>Variables detectadas</dt><dd>{{ capa.gdal_metadata.variables_detectadas|length }}
   {% endif %}
   <dt>Fecha y hora de carga</dt><dd>{{ capa.timestamp_alta }}</dd>
   <dt>Última modificación</dt><dd>{{ capa.timestamp_modificacion }}</dd>
