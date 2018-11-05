@@ -56,7 +56,7 @@ def __agregar_simbologia_basica__(layer):
         layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
-def __agregar_simbologia_grib__(layer, band_type, bandas):
+def __agregar_simbologia_grib__(layer, band_type, bandas, minimo, maximo):
     if band_type == 'TMP':
         archivo = MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME
     elif band_type == 'WIND':
@@ -79,8 +79,14 @@ def __agregar_simbologia_grib__(layer, band_type, bandas):
         # manejamos el caso de viento como un caso particular pues incluir un symbol en el archivo externo genera un Segmentation Fault de Mapscript
         if band_type == 'WIND':
             class0 = layer.getClass(0)
-            symbol0 = class0.getStyle(0)
-            symbol0.symbolname = 'arrow'
+            style0 = class0.getStyle(0)
+            style0.symbolname = 'arrow'
+
+    if archivo == MAPA_SIMBOLOGIA_GRIB_DEFAULT_FILENAME and minimo and maximo:
+        class0 = layer.getClass(0)
+        style0 = class0.getStyle(0)
+        style0.updateFromString('STYLE\n  DATARANGE {} {}\n  END'.format(minimo, maximo))
+        class0.name = '{} < {} < {}'.format(minimo, 'valor', maximo)
 
     if bandas != '':    # deberia venir siempre lleno
         layer.addProcessing('BANDS={}'.format(bandas))
@@ -198,15 +204,15 @@ def create_ms_layer(data):
         else:
             layer.setProjection('epsg:%s' % (unicode(data['srid'])))
 
-        if data['rasterBandType'] != '':
-            band_type, bandas = data['rasterBandType']
-            __agregar_simbologia_grib__(layer, band_type, bandas)
+        if data['driver'] == 'GRIB':
+            # data['rasterBandInfo'] es de la forma ("4", {'rango:'[1,2], 'elemento': 'TMP', 'descripcion': 'Temp'})
+            bandas, info = data['rasterBandInfo']
+            __agregar_simbologia_grib__(layer, info['elemento'], bandas, info['rango'][0], info['rango'][1])
 
         if data['layerDefinitionOverride'] != '':
             layer.updateFromString(data['layerDefinitionOverride'])
 
     elif data['connectionType'] == 'WMS':
-        print('create_ms_layer WMS')
         layer.type = mapscript.MS_LAYER_RASTER
         layer.connectiontype = mapscript.MS_WMS
         layer.connection = data['layerConnection']
