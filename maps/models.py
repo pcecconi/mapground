@@ -18,7 +18,7 @@ from django.contrib.gis.geos import MultiPoint
 from djorm_pgfulltext.models import SearchManager
 from djorm_pgfulltext.fields import VectorField
 # misc
-from utils.commons import normalizar_texto, urlToFile, coordConvert
+from utils.commons import normalizar_texto, urlToFile, coordConvert, take
 import urlparse
 import urllib
 import urllib2
@@ -653,7 +653,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         mapa_layer_srs.save()
 
         if instance.gdal_driver_shortname == 'GRIB':
-            for bandas, variable in instance.gdal_metadata['variables_detectadas'].iteritems():
+            for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
                 sufijo_mapa = '_band_{}_{}'.format(str(bandas).replace(',', '_'), variable['elemento'].lower())
                 mapa = Mapa(
                     owner=instance.owner,
