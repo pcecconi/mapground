@@ -58,15 +58,13 @@
             <a href="{% url 'layers:detalle_capa' msl.capa.id_capa %}">{{ msl.capa.dame_titulo }}</a>{% if not forloop.last %},{% endif %}
           {% endfor %}
         </dd>
-        <!--
-        <dt>WMS</dt><dd><a class="user" href="#">/ogc/mapas/disponibilidad_de_bienes</a></dd>
-      -->
       </dl>
 
     {% elif mapa.tipo_de_mapa == 'layer_raster_band' %}
 
       <div class="page-header">
-        <h1>{{ mapa.dame_titulo }}</h1>
+        <h1>{{mapa.mapserverlayer_set.first.capa.dame_titulo}}<br>
+        {{mapa.dame_titulo}}</h1>
 
         <div class="btn-group btn-toolbar" role="toolbar">
           <a href="{% url 'layers:detalle_capa' mapa.capas.first.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-arrow-left"></span>&nbsp;Volver a la capa</a>
@@ -106,9 +104,6 @@
       <div id="mapa">
         <iframe src="{% url 'maps:embeddable' mapa.id_mapa %}" frameborder="0" scrolling="no" width="100%" height="100%"></iframe>
       </div>
-        
-        
-        
 
         
     {% endif %}
