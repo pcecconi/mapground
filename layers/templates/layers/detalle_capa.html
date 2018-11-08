@@ -100,7 +100,7 @@
                 <p>La capa no tiene bandas.</p>
             {% else %}
               <table class="table table-striped">
-                <thead><tr><th>Banda</th><th>Link</th>
+                <thead><tr><th>Banda/Variable</th><th>Acceso a mapa e información detallada</th>
                 <tbody>
                     {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band' %}
                         <tr>
@@ -118,14 +118,12 @@
         <div class="tab-pane fade" id="layerPermissions">
           <dl class="dl-horizontal">
             <dt>Subida por</dt><dd>
-                <!-- <a class="user" <a href="/users/{{ capa.owner.username }}">{{ capa.owner.username }}</a> -->
                 {{ capa.owner.username }}
                 </dd>
             <dt>Lectura</dt>
                 <dd>
                 {% if permisos.read|length == 0 %}-{% else %}
                     {% for user in permisos.read %}
-                        <!--     <a class="user" href="/users/{{ user.username }}">{{user.username}}</a>{% if not forloop.last %},{% endif %} -->
                         {{user.username}}{% if not forloop.last %},{% endif %} 
                     {% endfor %}
                 {% endif %}            
@@ -134,7 +132,6 @@
                 <dd>
                 {% if permisos.write|length == 0 %}-{% else %}
                     {% for user in permisos.write %}
-                        <!--     <a class="user" href="/users/{{ user.username }}">{{user.username}}</a>{% if not forloop.last %},{% endif %} -->
                         {{user.username}}{% if not forloop.last %},{% endif %} 
                     {% endfor %}
                 {% endif %}            

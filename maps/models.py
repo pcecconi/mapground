@@ -617,6 +617,20 @@ class MapServerLayer(models.Model):
 
         return data
 
+    def dame_metadatos_asociado_a_banda(self):
+        try:
+            res = []
+            if self.bandas != '':
+                bandas = str(self.bandas).split(',')     # array de bandas, Ej: ['4'], ['5', '6']
+                for b in self.capa.gdal_metadata['gdalinfo']['bands']:
+                    if str(b['band']) in bandas:
+                        metadatos = b['metadata']['']
+                        metadatos['BAND'] = b['band']
+                        res.append(sorted(metadatos.iteritems()))
+            return res
+        except:
+            return []
+
 
 @receiver(post_save, sender=Capa)
 def onCapaPostSave(sender, instance, created, **kwargs):
