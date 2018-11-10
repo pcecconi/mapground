@@ -1,0 +1,15 @@
+    LAYER
+
+        TYPE RASTER
+        OPACITY 80
+        PROCESSING "RANGE_COLORSPACE=RGB"
+
+        CLASS
+            NAME ""
+            STYLE
+                RANGEITEM "pixel"
+                COLORRANGE "#c8ffff00" "#104d6e00"
+                DATARANGE 98000 104500  # 98350 104233
+            END
+        END
+    END

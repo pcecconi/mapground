@@ -5,6 +5,7 @@ import urllib2
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
 from django.contrib.gis.geos import Point
+from itertools import islice
 
 nombre_de_funcion_de_javascript_valido = re.compile(r"^[$A-Z_][0-9A-Z_$]*$", re.IGNORECASE)
 
@@ -171,3 +172,8 @@ def decode_from_base(string, alphabet=BASE62):
         idx += 1
 
     return num
+
+
+def take(n, iterable):
+    "Return first n items of the iterable as a list"
+    return list(islice(iterable, n))

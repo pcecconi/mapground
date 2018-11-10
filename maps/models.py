@@ -18,7 +18,7 @@ from django.contrib.gis.geos import MultiPoint
 from djorm_pgfulltext.models import SearchManager
 from djorm_pgfulltext.fields import VectorField
 # misc
-from utils.commons import normalizar_texto, urlToFile, coordConvert
+from utils.commons import normalizar_texto, urlToFile, coordConvert, take
 import urlparse
 import urllib
 import urllib2
@@ -99,6 +99,8 @@ class ManejadorDeMapas:
                     cls.regenerar_mapas_de_usuarios([mapa.owner])
                 elif mapa.tipo_de_mapa=='public_layers':
                     cls.regenerar_mapa_publico()
+                elif mapa.tipo_de_mapa=='layer_raster_band':
+                    mapa.save() 
                 elif mapa.tipo_de_mapa in ['layer', 'layer_original_srs']:
                     mapa.save() 
                 elif mapa.tipo_de_mapa in ['general']: # a evaluar...
@@ -242,7 +244,8 @@ class Mapa(models.Model):
         elif self.tipo_de_mapa in ('layer_raster_band'):
             try:
                 try:
-                    banda = ' - ' + eval(self.mapserverlayer_set.first().bandas)[0]
+                    msl = self.mapserverlayer_set.first()
+                    banda = ' - ' + msl.capa.gdal_metadata['variables_detectadas'][msl.banda]['elemento']
                 except:
                     banda = ''
                 return self.capas.first().dame_titulo + banda
@@ -574,7 +577,7 @@ class MapServerLayer(models.Model):
                 "layerDefinitionOverride": self.texto_input,
                 "metadata": {},
                 "driver": self.capa.gdal_driver_shortname,
-                "rasterBandType": "",
+                "rasterBandInfo": "",
                 "proj4": '',
             }
         elif self.capa.tipo_de_capa == CONST_RASTER:
@@ -592,30 +595,41 @@ class MapServerLayer(models.Model):
                 "layerDefinitionOverride": self.texto_input,
                 "metadata": {},
                 "driver": self.capa.gdal_driver_shortname,
-                "rasterBandType": "",
+                "rasterBandInfo": "",
                 "proj4": self.capa.proyeccion_proj4,    # TODO: revisar
             }
 
             if self.capa.gdal_driver_shortname == 'GRIB':
-                if self.mapa.tipo_de_mapa == 'layer':   # es el caso del mapa por defecto de GRIB, sin variables específicas
+                if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):   # es el caso del mapa por defecto de GRIB, sin variables específicas
+                    # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
+                    # primero una default cualquiera
+                    cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
+                    data['rasterBandInfo'] = (cualquier_banda, self.capa.gdal_metadata['variables_detectadas'][cualquier_banda])
+                    # luego overrideamos si existe alguna de TMP
+                    for banda, variable in self.capa.gdal_metadata['variables_detectadas'].iteritems():
+                        if variable['elemento'] == 'TMP':
+                            data['rasterBandInfo'] = (banda, variable)
+                elif self.mapa.tipo_de_mapa == 'layer_raster_band': # es el caso de una banda específica, tenemos que ver metadatos
                     try:
-                        # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
-                        banda = self.capa.gdal_metadata['variables_detectadas']['TMP']
-                        data['rasterBandType'] = ('TMP', banda)
-                    except:                                         # si no existe, nos quedamos con la primera...
-                        try:
-                            # tomamos la tupla desde los metadatos de la capa
-                            data['rasterBandType'] = self.capa.gdal_metadata['variables_detectadas'].items()[0]
-                        except:                                     # ...y si no existe ninguna, se renderizará vacía
-                            pass
-                elif self.mapa.tipo_de_mapa == 'layer_raster_band': # es el caso de una banda específica
-                    try:
-                        # evaluamos el string del objeto como tupla
-                        data['rasterBandType'] = eval(self.bandas)
-                    except:                                         # no debería pasar...se renderizará vacía, queda todo violeta
+                        data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
+                    except:     # no debería pasar por construcción...sino se renderizará vacía, queda todo violeta
                         pass
 
         return data
+
+    def dame_metadatos_asociado_a_banda(self):
+        try:
+            res = []
+            if self.bandas != '':
+                bandas = str(self.bandas).split(',')     # array de bandas, Ej: ['4'], ['5', '6']
+                for b in self.capa.gdal_metadata['gdalinfo']['bands']:
+                    if str(b['band']) in bandas:
+                        metadatos = b['metadata']['']
+                        metadatos['BAND'] = b['band']
+                        res.append(sorted(metadatos.iteritems()))
+            return res
+        except:
+            return []
 
 
 @receiver(post_save, sender=Capa)
@@ -653,31 +667,25 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         mapa_layer_srs.save()
 
         if instance.gdal_driver_shortname == 'GRIB':
-            gdalinfo = instance.gdal_metadata['gdalinfo']
-            for variable, bandas in instance.gdal_metadata['variables_detectadas'].iteritems():
+            for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
+                sufijo_mapa = '_band_{}_{}'.format(str(bandas).replace(',', '_'), variable['elemento'].lower())
                 mapa = Mapa(
                     owner=instance.owner,
-                    nombre=instance.nombre + '_band_{}'.format(variable.lower()),
-                    id_mapa=instance.id_capa + '_band_{}'.format(variable.lower()),
+                    nombre=instance.nombre + sufijo_mapa,
+                    id_mapa=instance.id_capa + sufijo_mapa,
+                    titulo='{} - {}: {}'.format(bandas, variable['elemento'], variable['descripcion']),
                     tipo_de_mapa='layer_raster_band')
                 try:
                     print "Intentando setear baselayer..."
                     mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
                 except:
                     pass
-                print "Intentando setear titulo de mapa..."
-                if variable == 'WIND':
-                    mapa.titulo = 'Wind'
-                else:
-                    try: 
-                        mapa.titulo = gdalinfo['bands'][int(bandas)-1]['metadata']['']['GRIB_COMMENT']
-                    except Exception as e:
-                        print e
+
                 mapa.save(escribir_imagen_y_mapfile=False)
                 MapServerLayer.objects.create(
                     mapa=mapa,
                     capa=instance,
-                    bandas="('{}', '{}')".format(variable, bandas),
+                    bandas=bandas,
                     orden_de_capa=0)
                 mapa.save()
 
