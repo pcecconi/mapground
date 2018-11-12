@@ -39,13 +39,13 @@ mg.MapApp = (function() {
         if (contextMarker) {
             removeContextMarker();
         }
-        var marker = L.marker(ev.latlng).addTo(mapa),
-            self = this;
-        var ne = L.CRS.EPSG3857.project(mapa.getBounds()._northEast), 
-            sw = L.CRS.EPSG3857.project(mapa.getBounds()._southWest),
-            sz = mapa.getSize();
-        marker.id = '_'+(new Date().getTime());
         if (enableContextInfo) {
+            var marker = L.marker(ev.latlng).addTo(mapa),
+                self = this;
+            var ne = L.CRS.EPSG3857.project(mapa.getBounds()._northEast), 
+                sw = L.CRS.EPSG3857.project(mapa.getBounds()._southWest),
+                sz = mapa.getSize();
+            marker.id = '_'+(new Date().getTime());
             $.ajax({
                 url: '/maps/getfeatureinfo/'+mg.map.config.mapid+'/',
                 dataType: 'json',
@@ -78,10 +78,10 @@ mg.MapApp = (function() {
             });     
             
             marker.bindPopup('Buscando información...').openPopup();
+            marker.on('popupclose', removeContextMarker, this);
+            marker.on('click', removeContextMarker, this);
+            contextMarker = marker;
         }
-        marker.on('popupclose', removeContextMarker, this);
-        marker.on('click', removeContextMarker, this);
-        contextMarker = marker;
     }
 
 	return {
@@ -103,6 +103,7 @@ mg.MapApp = (function() {
             if (mg.map && mg.map.config) {
                 var c = mg.map.config,
                     ext = c.extent.split(' ').map(parseFloat);
+                enableContextInfo = c.enableContextInfo == 'False'?false:true;
                 try {
                     mapa = L.map(mapDivId, {
                         continuousWorld: true,

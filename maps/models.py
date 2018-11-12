@@ -388,6 +388,10 @@ class Mapa(models.Model):
         mapExtent = self.dame_mapserver_extent(int(srid))
         wxs_url = self.dame_wxs_url
         layers = []
+        c=self.capas.first()
+        enableContextInfo = True
+        if self.tipo_de_mapa in ('layer', 'layer_raster_band'):
+            enableContextInfo = c.tipo_de_capa != CONST_RASTER
         if self.tipo_de_mapa in ('layer', 'layer_original_srs', 'user', 'general', 'layer_raster_band'):
             mapserverlayers = self.mapserverlayer_set.all().order_by('orden_de_capa','capa__metadatos__titulo')
         elif self.tipo_de_mapa == 'public_layers':
@@ -424,6 +428,7 @@ class Mapa(models.Model):
                 "mg_baselayerurl": self.tms_base_layer.url if self.tms_base_layer else settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png',
                 "mg_tmsbaselayer": str(self.tms_base_layer.tms) if self.tms_base_layer else str(True),
                 "mg_mapid": unicode(self.id_mapa),
+                "mg_enablecontextinfo": str(enableContextInfo),
                 "ows_srs": 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
                 "ows_encoding": 'UTF-8', # siempre
