@@ -100,12 +100,20 @@
                 <p>La capa no tiene bandas.</p>
             {% else %}
               <table class="table table-striped">
-                <thead><tr><th>Banda/Variable</th><th>Acceso a mapa e información detallada</th>
                 <tbody>
                     {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band' %}
                         <tr>
                             <td>{{ mapa.titulo }}</td>
-                            <td><a href="{% url 'maps:detalle_mapa' mapa.id_mapa %}">{{ mapa.id_mapa }}</a></td>
+                            <td>
+                                {% for banda in mapa.mapserverlayer_set.first.dame_metadatos_asociado_a_banda %}
+                                <dl class="dl-horizontal">
+                                    {% for clave, valor in banda %}
+                                    <dt>{{ clave }}</dt><dd>{{ valor }}</dd>
+                                    {% endfor %}
+                                  </dl>                    
+                                {% endfor %}
+                                          
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

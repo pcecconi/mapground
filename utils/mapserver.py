@@ -112,7 +112,13 @@ def create_mapfile(data, save=True):
 
     mapa.outputformat.transparent = True
 
-    mapa.setProjection('epsg:%s' % (data['srid']))
+    # if data['srs']!='':
+    print "mapserver: Seteando proyeccion para el mapa: %s"%data['srs']
+    mapa.setProjection(data['srs'])
+    # else:
+    #    print "mapserver: Seteando proyeccion para el mapa: epsg:%s"%data['srid']
+    #    mapa.setProjection('epsg:%s' % (data['srid']))
+
     if data['srid'] == '4326':
         mapa.units = mapscript.MS_DD
     else:
@@ -208,6 +214,8 @@ def create_ms_layer(data):
             # data['rasterBandInfo'] es de la forma ("4", {'rango:'[1,2], 'elemento': 'TMP', 'descripcion': 'Temp'})
             bandas, info = data['rasterBandInfo']
             __agregar_simbologia_grib__(layer, info['elemento'], bandas, info['rango'][0], info['rango'][1])
+        else:
+            __agregar_simbologia_basica__(layer)
 
         if data['layerDefinitionOverride'] != '':
             layer.updateFromString(data['layerDefinitionOverride'])
@@ -329,3 +337,12 @@ def get_feature_url(map_id, typename, outputformat):
         typename,
         outputformat
     )
+
+def draw_map_to_file(map_id, output_file):
+    print 'mapserver.draw_map_to_file(%s, %s)'%(map_id, output_file)
+    try:
+        mapa = mapscript.mapObj('%s.map'%os.path.join(settings.MAPAS_PATH, map_id))
+        mapa.draw().save(output_file)
+        return True
+    except Exception:
+        return False

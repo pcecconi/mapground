@@ -44,6 +44,13 @@ TIPO_DE_MAPA_ENUM = (
     ('layer_raster_band', 'layer_raster_band') # mapa subproducto de alguna banda raster
 )
 
+def RepresentsPositiveInt(s):
+    try: 
+        i = int(s)
+        return i > 0
+    except ValueError:
+        return False
+
 class TMSBaseLayer(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=255)
     url = models.CharField('URL', null=False, blank=False, max_length=2000)
@@ -165,7 +172,7 @@ class Mapa(models.Model):
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000) # abstract
     #fechas?
     
-    srs = models.CharField('SRS', null=False, blank=True, max_length=100)
+    srs = models.CharField('SRS', null=False, blank=True, max_length=255)
     tipo_de_mapa = models.CharField('Tipo de Mapa', choices=TIPO_DE_MAPA_ENUM, max_length=30, null=False, blank=True, default='')   
 
     tms_base_layer = models.ForeignKey(TMSBaseLayer, verbose_name='Capa Base', null=True, blank=True, on_delete=models.SET_NULL)    
@@ -361,7 +368,7 @@ class Mapa(models.Model):
         
     @property
     def dame_projection(self):
-        return unicode(self.srs) if self.srs!='' else str(MAPA_DEFAULT_SRS)
+        return unicode(self.srs) if self.srs!='' and RepresentsPositiveInt(self.srs) else str(MAPA_DEFAULT_SRS)
 
     @property
     def dame_wxs_url(self):
@@ -390,7 +397,7 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layer_def('WMS')
             else:
                 l=msl.dame_mapserver_layer_def(msl.dame_layer_connection_type())
-                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid)
+                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326'
             layers.append(l)
         data = {
             "idMapa": self.id_mapa,
@@ -399,6 +406,7 @@ class Mapa(models.Model):
                 "color": color
             },
             "srid": srid,
+            "srs": 'epsg:%s'%(srid) if self.srs=='' or RepresentsPositiveInt(self.srs) else self.srs,
             "mapFullExtent": mapExtent,
             "mapBoundingBox": map(lambda x: float(x), bbox.split(',')) if bbox!="" else mapExtent,
             "mapSize": self.dame_mapserver_size,
@@ -416,7 +424,7 @@ class Mapa(models.Model):
                 "mg_baselayerurl": self.tms_base_layer.url if self.tms_base_layer else settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png',
                 "mg_tmsbaselayer": str(self.tms_base_layer.tms) if self.tms_base_layer else str(True),
                 "mg_mapid": unicode(self.id_mapa),
-                "ows_srs": 'epsg:%s epsg:4326'%(srid), # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
+                "ows_srs": 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
                 "ows_encoding": 'UTF-8', # siempre
                 "ows_enable_request": '*',
@@ -475,16 +483,22 @@ class Mapa(models.Model):
             wms_url = mapserver.get_wms_request_url(self.id_mapa, 'default', self.srs, 110, 150, self.dame_extent(',','3857'))
         elif self.tipo_de_mapa=='layer_original_srs':
             c=self.capas.first()
-            wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs))
-            try:
-                sld=c.archivosld_set.filter(default=True)[0]
-                sld_url = getSldUrl(sld.filename.url)
-                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs), sld_url)
-            except:
-                pass 
+            if (c.srid > 0):
+                wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs))
+                try:
+                    sld=c.archivosld_set.filter(default=True)[0]
+                    sld_url = getSldUrl(sld.filename.url)
+                    wms_url = mapserver.get_wms_request_url(self.id_mapa, c.nombre, str(c.srid), 110, 150, c.dame_extent(',', self.srs), sld_url)
+                except:
+                    pass 
+            else:
+                wms_url = ''
         print wms_url
         thumb=os.path.join(settings.MEDIA_ROOT, self.id_mapa+'.png')
-        return urlToFile(wms_url, thumb)
+        if wms_url != '':
+            return urlToFile(wms_url, thumb)
+        else:
+            return mapserver.draw_map_to_file(self.id_mapa, thumb)
 
     def generar_legend(self):
         # capa = self.capas.first()
@@ -655,6 +669,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
                 mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
             except:
                 pass
+
         mapa.save(escribir_imagen_y_mapfile=False)
         MapServerLayer(mapa=mapa, capa=instance, orden_de_capa=0).save()
         mapa.save()
@@ -662,6 +677,11 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         # creamos el mapa en la proyeccion original
         extent_capa = instance.dame_extent(',', instance.srid)
         mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
+        # Esto es para cuando tenemos una proyeccion no identificada
+        if instance.proyeccion_proj4 != None and instance.proyeccion_proj4 != '':
+            print "Seteando proyeccion custom para el mapa %s"%instance.proyeccion_proj4
+            mapa_layer_srs.srs = instance.proyeccion_proj4
+
         mapa_layer_srs.save(escribir_imagen_y_mapfile=False)
         MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
         mapa_layer_srs.save()

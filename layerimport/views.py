@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 from __future__ import absolute_import
+# import traceback
 
 from django.contrib.gis.geos import Point
 from django.shortcuts import render
@@ -123,10 +124,10 @@ def LayerImportView(request, filename):
             if raster is None:
                 return render(request, template_name, {
                     "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar importar la capa "{0}" '.format(filename)})
+                    "error_msg": 'Se produjo un error al intentar importar la capa "{0}" CODE: R1'.format(filename)})
 
             extent_capa = raster['extent_capa']
-            srid = raster['srid'] if raster['srid'] is not None else 4326   # temporal...TODO: pensar que hacemos en este caso
+            srid = raster['srid'] if raster['srid'] is not None else 0   # temporal...TODO: pensar que hacemos en este caso
 
             # El 'import' del raster consiste en moverlo al path destino...
             directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
@@ -138,7 +139,7 @@ def LayerImportView(request, filename):
             except Exception as e:
                 return render(request, template_name, {
                     "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar copiar el archivo raster {0}: {1}'.format(filename, unicode(e))})
+                    "error_msg": 'Se produjo un error al intentar copiar el archivo raster {0}: {1}  CODE: R2'.format(filename, unicode(e))})
 
             # ...y luego creamos los objetos
             try:
@@ -176,6 +177,7 @@ def LayerImportView(request, filename):
             except Exception as e:
                 return render(request, template_name, {
                     "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}'.format(filename, unicode(e))})
+                    "error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(unicode(e)))})
+                    #"error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(traceback.format_exc()))})
 
     return HttpResponseRedirect(reverse('layers:metadatos', args=(c.id_capa,)))

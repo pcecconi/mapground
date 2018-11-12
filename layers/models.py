@@ -152,14 +152,15 @@ class Capa(SingleOwnerMixin, models.Model):
 
     def dame_extent(self, separador=',', srid=4326):
         # heuristica para arreglar thumbnails: corta por la mitad a la antartida (lo maximo es -90)
-        # print 'layer.dame_extent(srid=%i), original srid: %i'%(srid, self.srid)
+        print 'layer.dame_extent(srid=%s), original srid: %s'%(srid, self.srid)
         if srid == self.srid:
             return self.layer_srs_extent.replace(' ', separador)
         if srid == 3857:
             if self.extent_minx_miny.y < -70:
                 self.extent_minx_miny.y = -70
-        min = self.extent_minx_miny.transform(srid, clone=True)
-        max = self.extent_maxx_maxy.transform(srid, clone=True)
+
+        min = self.extent_minx_miny.transform(srid, clone=True) if self.srid > 0 else self.extent_minx_miny
+        max = self.extent_maxx_maxy.transform(srid, clone=True) if self.srid > 0 else self.extent_maxx_maxy
         if separador == []:
             return [min, max]
         else:
