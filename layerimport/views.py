@@ -127,7 +127,15 @@ def LayerImportView(request, filename):
                     "error_msg": 'Se produjo un error al intentar importar la capa "{0}" CODE: R1'.format(filename)})
 
             extent_capa = raster['extent_capa']
-            srid = raster['srid'] if raster['srid'] is not None else 0   # temporal...TODO: pensar que hacemos en este caso
+            proyeccion_proj4 = raster['proyeccion_proj4']
+
+            # srid = raster['srid'] if raster['srid'] is not None else 0
+            srid = raster['srid']           # casos GeoTiff o cualquier otro raster con dato SRID valido
+            if srid is None:
+                if proyeccion_proj4 != '':
+                    srid = 0                # casos GRIB, no hay SRID pero hay proj4
+                else:
+                    srid = 4326             # casos netCDF, no hay nada, pero son 4326, y algo tenemos que asumir
 
             # El 'import' del raster consiste en moverlo al path destino...
             directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
@@ -165,7 +173,7 @@ def LayerImportView(request, filename):
                     gdal_driver_shortname=raster['driver_short_name'],
                     gdal_driver_longname=raster['driver_long_name'],
                     tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
-                    proyeccion_proj4=raster['proyeccion_proj4'],
+                    proyeccion_proj4=proyeccion_proj4,
                     srid=srid,
                     extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),
                     extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),
@@ -178,6 +186,6 @@ def LayerImportView(request, filename):
                 return render(request, template_name, {
                     "capa": filename, "ok": False,
                     "error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(unicode(e)))})
-                    #"error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(traceback.format_exc()))})
+            # "error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(traceback.format_exc()))})
 
     return HttpResponseRedirect(reverse('layers:metadatos', args=(c.id_capa,)))
