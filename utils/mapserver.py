@@ -56,7 +56,12 @@ def __agregar_simbologia_basica__(layer):
         layer.offsite = mapscript.colorObj(0, 0, 0)
 
 
-def __agregar_simbologia_grib__(layer, band_type, bandas, minimo, maximo):
+def __agregar_simbologia_grib__(layer, band_info):
+    # band_info es de la forma ("4", {'rango:'[1,2], 'elemento': 'TMP', 'descripcion': 'Temp'})
+    bands, info = band_info
+    band_type = info['elemento']
+    minimo = info['rango'][0]
+    maximo = info['rango'][1]
     if band_type == 'TMP':
         archivo = MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME
     elif band_type == 'WIND':
@@ -88,8 +93,8 @@ def __agregar_simbologia_grib__(layer, band_type, bandas, minimo, maximo):
         style0.updateFromString('STYLE\n  DATARANGE {} {}\n  END'.format(minimo, maximo))
         class0.name = '{} < {} < {}'.format(minimo, 'valor', maximo)
 
-    if bandas != '':    # deberia venir siempre lleno
-        layer.addProcessing('BANDS={}'.format(bandas))
+    if bands != '':    # deberia venir siempre lleno
+        layer.addProcessing('BANDS={}'.format(bands))
 
     return True
 
@@ -113,7 +118,7 @@ def create_mapfile(data, save=True):
     mapa.outputformat.transparent = True
 
     # if data['srs']!='':
-    print "mapserver: Seteando proyeccion para el mapa: %s"%data['srs']
+    print "mapserver: Seteando proyeccion para el mapa: %s" % data['srs']
     mapa.setProjection(data['srs'])
     # else:
     #    print "mapserver: Seteando proyeccion para el mapa: epsg:%s"%data['srid']
@@ -212,8 +217,7 @@ def create_ms_layer(data):
 
         if data['driver'] == 'GRIB':
             # data['rasterBandInfo'] es de la forma ("4", {'rango:'[1,2], 'elemento': 'TMP', 'descripcion': 'Temp'})
-            bandas, info = data['rasterBandInfo']
-            __agregar_simbologia_grib__(layer, info['elemento'], bandas, info['rango'][0], info['rango'][1])
+            __agregar_simbologia_grib__(layer, data['rasterBandInfo'])
         else:
             __agregar_simbologia_basica__(layer)
 
@@ -338,10 +342,11 @@ def get_feature_url(map_id, typename, outputformat):
         outputformat
     )
 
+
 def draw_map_to_file(map_id, output_file):
-    print 'mapserver.draw_map_to_file(%s, %s)'%(map_id, output_file)
+    print 'mapserver.draw_map_to_file(%s, %s)' % (map_id, output_file)
     try:
-        mapa = mapscript.mapObj('%s.map'%os.path.join(settings.MAPAS_PATH, map_id))
+        mapa = mapscript.mapObj('%s.map' % os.path.join(settings.MAPAS_PATH, map_id))
         mapa.draw().save(output_file)
         return True
     except Exception:
