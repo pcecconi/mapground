@@ -285,8 +285,6 @@ def get_raster_metadata(file, con_stats=True):
     if raster is None:
         return None
 
-    stats_param = '-stats' if con_stats else ''
-
     # https://gis.stackexchange.com/questions/267321/extracting-epsg-from-a-raster-using-gdal-bindings-in-python
     proj = osr.SpatialReference(wkt=raster.GetProjectionRef())
     proj.AutoIdentifyEPSG()
@@ -299,18 +297,12 @@ def get_raster_metadata(file, con_stats=True):
     miny = maxy + geotransform[5] * raster.RasterYSize
     extent_capa = (minx, miny, maxx, maxy)
 
-    metadata_gdalinfo_json = json.loads(subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True))
-    if con_stats:
-        # Eliminamos el archivo .aux.xml (PAM, Permanent Auxiliar Metadata) que se crea al aplicar gdalinfo -stats
-        try:
-            os.remove('{}.aux.xml'.format(file))
-        except:
-            pass
-
+    metadata_gdalinfo_json = run_gdalinfo(file, con_stats)
     variables_detectadas = {}
 
     # Segun el formato del raster, determinamos las bandas para armar los mapas 'layer_raster_band' (mapas de variables)
     if raster.GetDriver().ShortName == 'GRIB':
+        # en el caso de GRIB nos interesan los elementos en 'bands'
         if 'bands' in metadata_gdalinfo_json:
             wind_u_band = wind_v_band = None
             for banda in metadata_gdalinfo_json['bands']:
@@ -343,11 +335,30 @@ def get_raster_metadata(file, con_stats=True):
                     }
                     wind_u_band = wind_v_band = None
 
+    elif raster.GetDriver().ShortName == 'netCDF':
+        # en el caso de netCDF nos interesan los subdatasets: una variable por subdataset
+        subdatasets = raster.GetSubDatasets()
+        if subdatasets:
+            # completamos metadatos del subdataset en metadata_gdalinfo_json para almacenarlos en metadatos de la Capa
+            metadata_gdalinfo_json['subdatasets_metadata'] = {}     # Entrada inventada por nosotros
+            for subdataset in subdatasets:  # Ejemplo: ('NETCDF:"/vagrant/data/SABANCAYA_2018062806_fcst_VAG_18.res.nc":TOPOGRAPHY', '[41x65] TOPOGRAPHY (32-bit floating-point)')
+                formato, path, identificador = subdataset[0].split(':')
+                subdataset_gdalinfo_json = run_gdalinfo(subdataset[0], con_stats)
+                metadata_gdalinfo_json['subdatasets_metadata'][identificador] = subdataset_gdalinfo_json  # Ej: {'NETCDF:"/vagrant/data/SABANCAYA_2018062806_fcst_VAG_18.res.nc":TOPOGRAPHY': {...metadatos...}}
+
+                banda0 = subdataset_gdalinfo_json['bands'][0]
+                variables_detectadas[identificador] = {
+                    'elemento': banda0['metadata'][''].get('NETCDF_VARNAME', ''),    # aparentemente todo netCDF tiene este campo y es igual para toda banda del subdataset
+                    'descripcion': banda0['metadata'][''].get('description', ''),    # algunos netCDF no tienen este campo
+                    'rango': (banda0.get('minimum'), banda0.get('maximum')),         # en principio este rango no nos va a servir para nada porque este formato se renderiza directamente
+                }
+
     # construimos la respuesta
     return {
         'driver_short_name': raster.GetDriver().ShortName,
         'driver_long_name': raster.GetDriver().LongName,
         'raster_count': raster.RasterCount,
+        'subdataset_count': len(raster.GetSubDatasets()),
         'srid': srid,   # puede ser None
         'extent_capa': extent_capa,
         'metadata_json': {
@@ -374,6 +385,20 @@ def get_raster_basic_metadata(file):
         'driver_short_name': raster.GetDriver().ShortName,
         'driver_long_name': raster.GetDriver().LongName,
         'raster_count': raster.RasterCount,
+        'subdataset_count': len(raster.GetSubDatasets()),
         'size_height': raster.RasterYSize,
         'size_width': raster.RasterXSize,
     }
+
+
+def run_gdalinfo(file, con_stats=True):
+    stats_param = '-stats' if con_stats else ''
+    gdalinfo_json = json.loads(subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True))
+    if con_stats:
+        # Eliminamos el archivo .aux.xml (PAM, Permanent Auxiliar Metadata) que se crea al aplicar gdalinfo -stats
+        try:
+            os.remove('{}.aux.xml'.format(file))
+        except:
+            pass
+
+    return gdalinfo_json
