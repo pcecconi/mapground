@@ -618,6 +618,7 @@ class MapServerLayer(models.Model):
                 "proj4": self.capa.proyeccion_proj4,    # TODO: revisar
             }
 
+            # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
             if self.capa.gdal_driver_shortname == 'GRIB':
                 if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):   # es el caso del mapa por defecto de GRIB, sin variables específicas
                     # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
@@ -628,26 +629,72 @@ class MapServerLayer(models.Model):
                     for banda, variable in self.capa.gdal_metadata['variables_detectadas'].iteritems():
                         if variable['elemento'] == 'TMP':
                             data['rasterBandInfo'] = (banda, variable)
-                elif self.mapa.tipo_de_mapa == 'layer_raster_band': # es el caso de una banda específica, tenemos que ver metadatos
+                elif self.mapa.tipo_de_mapa == 'layer_raster_band':     # es el caso de una banda específica, tenemos que ver metadatos
                     try:
                         data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
                     except:     # no debería pasar por construcción...sino se renderizará vacía, queda todo violeta
                         pass
+            # En el caso de netCDF, solo tenemos que pisar el DATA de la capa
+            elif self.capa.gdal_driver_shortname == 'netCDF':
+                if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):
+                    if len(self.capa.gdal_metadata['variables_detectadas']) == 0:
+                        # no hay subdatasets, renderizo directo (NETCDF:/path/al/archivo)
+                        data["layerData"] = '{}:{}'.format(
+                            'NETCDF',
+                            data["layerData"])
+                    else:
+                        # hay subdatasets, estoy obligado a renderizar alguno pues mapserver no se banca el render directo en este caso (NETCDF:/path/al/archivo:subdataset)
+                        cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
+                        data["layerData"] = '{}:{}:{}'.format(
+                            'NETCDF',
+                            data["layerData"],
+                            cualquier_banda)
+                elif self.mapa.tipo_de_mapa == 'layer_raster_band':
+                    data["layerData"] = '{}:{}:{}'.format(
+                        'NETCDF',
+                        data["layerData"],
+                        self.bandas)
+            # En el caso de HDF5, es igual, solo tenemos que pisar el DATA de la capa
+            elif self.capa.gdal_driver_shortname == 'HDF5':
+                if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):
+                    if len(self.capa.gdal_metadata['variables_detectadas']) == 0:
+                        # no hay subdatasets, renderizo directo (HDF5:/path/al/archivo)
+                        data["layerData"] = '{}:{}'.format(
+                            'HDF5',
+                            data["layerData"])
+                    else:
+                        # hay subdatasets, estoy obligado a renderizar alguno pues mapserver no se banca el render directo en este caso (HDF5:/path/al/archivo:subdataset)
+                        cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
+                        data["layerData"] = '{}:{}:{}'.format(
+                            'HDF5',
+                            data["layerData"],
+                            cualquier_banda)
+                elif self.mapa.tipo_de_mapa == 'layer_raster_band':
+                    data["layerData"] = '{}:{}:{}'.format(
+                        'HDF5',
+                        data["layerData"],
+                        self.bandas)
 
         return data
 
     def dame_metadatos_asociado_a_banda(self):
-        try:
-            res = []
-            if self.bandas != '':
-                bandas = str(self.bandas).split(',')     # array de bandas, Ej: ['4'], ['5', '6']
-                for b in self.capa.gdal_metadata['gdalinfo']['bands']:
-                    if str(b['band']) in bandas:
-                        metadatos = b['metadata']['']
-                        metadatos['BAND'] = b['band']
-                        res.append(sorted(metadatos.iteritems()))
-            return res
-        except:
+        if self.bandas != '':
+            try:
+                metadatos = self.capa.gdal_metadata['gdalinfo']['subdatasets_metadata'][self.bandas]['metadata']['']
+                return [sorted(metadatos.iteritems())]
+            except:
+                try:
+                    res = []
+                    bandas = str(self.bandas).split(',')     # array de bandas, Ej: ['4'], ['5', '6']
+                    for b in self.capa.gdal_metadata['gdalinfo']['bands']:
+                        if str(b['band']) in bandas:
+                            metadatos = b['metadata']['']
+                            metadatos['BAND'] = b['band']
+                            res.append(sorted(metadatos.iteritems()))
+                    return res
+                except:
+                    return []
+        else:
             return []
 
 
@@ -683,36 +730,37 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         extent_capa = instance.dame_extent(',', instance.srid)
         mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
         # Esto es para cuando tenemos una proyeccion no identificada
-        if instance.proyeccion_proj4 != None and instance.proyeccion_proj4 != '':
-            print "Seteando proyeccion custom para el mapa %s"%instance.proyeccion_proj4
+        if instance.proyeccion_proj4 is not None and instance.proyeccion_proj4 != '':
+            print "Seteando proyeccion custom para el mapa {}".format(instance.proyeccion_proj4)
             mapa_layer_srs.srs = instance.proyeccion_proj4
 
         mapa_layer_srs.save(escribir_imagen_y_mapfile=False)
         MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
         mapa_layer_srs.save()
 
-        if instance.gdal_driver_shortname == 'GRIB':
-            for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
-                sufijo_mapa = '_band_{}_{}'.format(str(bandas).replace(',', '_'), variable['elemento'].lower())
-                mapa = Mapa(
-                    owner=instance.owner,
-                    nombre=instance.nombre + sufijo_mapa,
-                    id_mapa=instance.id_capa + sufijo_mapa,
-                    titulo='{} - {}: {}'.format(bandas, variable['elemento'], variable['descripcion']),
-                    tipo_de_mapa='layer_raster_band')
-                try:
-                    print "Intentando setear baselayer..."
-                    mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
-                except:
-                    pass
+        # if instance.gdal_driver_shortname in ('GRIB', 'netCDF', 'HDF5'):
+        for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
+            id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
+            sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
+            mapa = Mapa(
+                owner=instance.owner,
+                nombre=instance.nombre + sufijo_mapa,
+                id_mapa=instance.id_capa + sufijo_mapa,
+                titulo='{} - {}: {}'.format(bandas, variable['elemento'], variable['descripcion']),
+                tipo_de_mapa='layer_raster_band')
+            try:
+                print "Intentando setear baselayer..."
+                mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
+            except:
+                pass
 
-                mapa.save(escribir_imagen_y_mapfile=False)
-                MapServerLayer.objects.create(
-                    mapa=mapa,
-                    capa=instance,
-                    bandas=bandas,
-                    orden_de_capa=0)
-                mapa.save()
+            mapa.save(escribir_imagen_y_mapfile=False)
+            MapServerLayer.objects.create(
+                mapa=mapa,
+                capa=instance,
+                bandas=bandas,
+                orden_de_capa=0)
+            mapa.save()
 
         # actualizamos el mapa de usuario
         ManejadorDeMapas.delete_mapfile(instance.owner.username)
