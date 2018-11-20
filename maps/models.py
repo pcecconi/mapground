@@ -615,7 +615,7 @@ class MapServerLayer(models.Model):
                 "metadata": {},
                 "driver": self.capa.gdal_driver_shortname,
                 "rasterBandInfo": "",
-                "proj4": self.capa.proyeccion_proj4,    # TODO: revisar
+                "proj4": self.capa.proyeccion_proj4,
             }
 
             # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
@@ -630,22 +630,20 @@ class MapServerLayer(models.Model):
                         if variable['elemento'] == 'TMP':
                             data['rasterBandInfo'] = (banda, variable)
                 elif self.mapa.tipo_de_mapa == 'layer_raster_band':     # es el caso de una banda específica, tenemos que ver metadatos
-                    try:
-                        data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
-                    except:     # no debería pasar por construcción...sino se renderizará vacía, queda todo violeta
-                        pass
+                    data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
 
-            # En el caso de netCDF y HDF5, solo tenemos que pisar el DATA de la capa
+            # En el caso de netCDF y HDF5, solo tenemos que overridear el DATA de la capa
             elif self.capa.gdal_driver_shortname in ('netCDF', 'HDF5'):
                 prefijo_data = self.capa.gdal_driver_shortname.upper()  # NETCDF|HDF5
                 if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):
-                    if len(self.capa.gdal_metadata['variables_detectadas']) == 0:
-                        # no hay subdatasets, renderizo directo (NETCDF:/path/al/archivo)
+                    # if len(self.capa.gdal_metadata['variables_detectadas']) == 0:
+                    if len(self.capa.gdal_metadata['subdatasets']) == 0:
+                        # no hay subdatasets, renderizamos directo (NETCDF|HDF5:/path/al/archivo)
                         data["layerData"] = '{}:{}'.format(prefijo_data, data["layerData"])
                     else:
-                        # hay subdatasets, estoy obligado a renderizar alguno pues mapserver no se banca el render directo en este caso (NETCDF:/path/al/archivo:subdataset)
-                        cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
-                        data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], cualquier_banda)
+                        # hay subdatasets y es mapa de capa => estamos obligados a renderizar alguno pues mapserver no se banca el render directo en este caso (NETCDF|HDF5:/path/al/archivo:subdataset)
+                        primer_subdataset = self.capa.gdal_metadata['subdatasets'][0][0]    # Ejemplo: "formato:/path/al/archivo:subdataset"
+                        data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], primer_subdataset.split(':')[2])
                 elif self.mapa.tipo_de_mapa == 'layer_raster_band':
                     data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], self.bandas)
 
