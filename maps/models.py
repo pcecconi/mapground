@@ -206,7 +206,6 @@ class Mapa(models.Model):
     def actualizar_input_search_index(self):
         if self.tipo_de_mapa=='general':
             textos = []
-            #TODO: ver si indexamos los titulos de las capas que lo componen
             textos.append(normalizar_texto(self.titulo))
             textos.append(normalizar_texto(self.palabras_claves))
             textos.append(normalizar_texto(self.escala))
@@ -304,7 +303,8 @@ class Mapa(models.Model):
         return ''
     # devuelve un string parametrizable tipo '-71.55 -41.966667 -63.0 -37.9'
     def dame_extent(self, separator=' ', srid=4326):
-        if self.tipo_de_mapa in ('layer_original_srs', 'layer'):
+        # TODO: creo que en el caso de layer_raster_band habria que sacar el extent de los metadatos de la banda, ya que *quizas* cada uno podria tener uno distinto
+        if self.tipo_de_mapa in ('layer_original_srs', 'layer', 'layer_raster_band'):
             try:
                 c = self.capas.first()
                 return c.dame_extent(separator, srid)
@@ -642,19 +642,24 @@ class MapServerLayer(models.Model):
                         data["layerData"] = '{}:{}'.format(prefijo_data, data["layerData"])
                     else:
                         # hay subdatasets y es mapa de capa => estamos obligados a renderizar alguno pues mapserver no se banca el render directo en este caso (NETCDF|HDF5:/path/al/archivo:subdataset)
-                        primer_subdataset = self.capa.gdal_metadata['subdatasets'][0][0]    # Ejemplo: "formato:/path/al/archivo:subdataset"
-                        data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], primer_subdataset.split(':')[2])
+                        primer_subdataset_identificador = self.capa.gdal_metadata['subdatasets'][0]['identificador']   # Ejemplo: "formato:/path/al/archivo:subdataset"
+                        data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], primer_subdataset_identificador)
                 elif self.mapa.tipo_de_mapa == 'layer_raster_band':
                     data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], self.bandas)
 
         return data
 
+
     def dame_metadatos_asociado_a_banda(self):
+        """ Esta version del metodo tiene en cuenta el raster_layer del mapa actual,
+        o sea, solo devuelve metadatos de ese "subproducto", pensado para llamar desde la vista detalle del mapa
+        """
         if self.bandas != '':
-            try:
-                metadatos = self.capa.gdal_metadata['gdalinfo']['subdatasets_metadata'][self.bandas]['metadata']['']
-                return [sorted(metadatos.iteritems())]
-            except:
+            if 'subdatasets' in self.capa.gdal_metadata:
+                for b in self.capa.gdal_metadata['subdatasets']:
+                    if b.get('identificador') == self.bandas:
+                        return [sorted(b['gdalinfo']['metadata'][''].iteritems())]
+            else:
                 try:
                     res = []
                     bandas = str(self.bandas).split(',')     # array de bandas, Ej: ['4'], ['5', '6']
@@ -710,7 +715,6 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
         mapa_layer_srs.save()
 
-        # if instance.gdal_driver_shortname in ('GRIB', 'netCDF', 'HDF5'):
         for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
             id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
             sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())

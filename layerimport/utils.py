@@ -285,11 +285,13 @@ def get_raster_metadata(file, con_stats=True):
     if raster is None:
         return None
 
-    # extraemos toda la info posible del raster
+    # extraemos toda info de proyeccion del raster usando gdal
     srid, proj, extent_capa = _get_raster_proj_info(raster)
+    # extraemos todos los metadatos del raster usando gdalinfo
     metadata_gdalinfo_json = _run_gdalinfo(file, con_stats)
 
     variables_detectadas = {}
+    subdatasets = []
     # Segun el formato del raster, determinamos las bandas para armar los mapas 'layer_raster_band' (mapas de variables)
     if raster.GetDriver().ShortName == 'GRIB':
         # en el caso de GRIB nos interesan los elementos en 'bands'
@@ -325,42 +327,47 @@ def get_raster_metadata(file, con_stats=True):
                     }
                     wind_u_band = wind_v_band = None
 
-    # else:
-        # en el caso de netCDF y HDF5 (y quizas con otro format eventual) nos interesan los subdatasets: una variable por subdataset
-    subdatasets = raster.GetSubDatasets()
-    if subdatasets:
-        # convencion: tomamos el primer subdataset para definir el render de la capa
-        srid, proj, extent_capa = _get_raster_proj_info(gdal.Open(subdatasets[0][0], gdal.GA_ReadOnly))
+    # Ahora analizamos subdatasets
+    for subdataset in raster.GetSubDatasets():
+        # Ejemplo de un subdataset: ('NETCDF:"/vagrant/data/SABANCAYA_2018062806_fcst_VAG_18.res.nc":TOPOGRAPHY', '[41x65] TOPOGRAPHY (32-bit floating-point)')
+        # Ejemplo de un subdataset: ('HDF5:"data/RMA1_0201_01_TH_20180713T164924Z.H5"://dataset1/data1/data', '[360x526] //dataset1/data1/data (64-bit floating-point)')
+        raster_subdataset = gdal.Open(subdataset[0], gdal.GA_ReadOnly)
+        srid, proj, extent = _get_raster_proj_info(raster_subdataset)
+        subdataset_gdalinfo_json = _run_gdalinfo(subdataset[0], con_stats)
+        formato, path, identificador = subdataset[0].split(':')
+        # Creamos la siguiente estructura para guardar todala info en la IDE, independientemente del formato
+        subdatasets.append({
+            'definicion': subdataset,               # Ej: ('HDF5:/path/al/archivo:identificador', [alguna descripcion])
+            'identificador': identificador,         # Ej: TOPOGRAPHY
+            'gdalinfo': subdataset_gdalinfo_json,   # toda la matadata provista por gdalinfo para el subdataset actual
+        })
 
-        # completamos metadatos del subdataset en metadata_gdalinfo_json para almacenarlos en metadatos de la Capa
-        metadata_gdalinfo_json['subdatasets_metadata'] = {}     # Entrada inventada por nosotros
-        for subdataset in subdatasets:
-            # Ejemplo: ('NETCDF:"/vagrant/data/SABANCAYA_2018062806_fcst_VAG_18.res.nc":TOPOGRAPHY', '[41x65] TOPOGRAPHY (32-bit floating-point)')
-            # Ejemplo: ('HDF5:"data/RMA1_0201_01_TH_20180713T164924Z.H5"://dataset1/data1/data', '[360x526] //dataset1/data1/data (64-bit floating-point)')
-            subdataset_gdalinfo_json = _run_gdalinfo(subdataset[0], con_stats)
-            formato, path, identificador = subdataset[0].split(':')
-            metadata_gdalinfo_json['subdatasets_metadata'][identificador] = subdataset_gdalinfo_json
-            # Ejemplo: {'NETCDF:"/vagrant/data/SABANCAYA_2018062806_fcst_VAG_18.res.nc":TOPOGRAPHY': {...metadatos...}}
-            # Ejemplo: {'HDF5:"data/RMA1_0201_01_TH_20180713T164924Z.H5"://dataset1/data1/data': {...metadatos...}}
+        # Y en el caso de netCDF y HDF5, detectamos variables para crear los mapas layer_raster_band, como hacemos con GRIBs
+        # Tomamos la primer banda por convencion, ya que mapserver no permite trabajar especificamente una banda dentro de un subdataset (la unidad es el dataset),
+        # y en todos los casos que vimos las bandas tienen la misma variable, solo cambia el timestamp
+        banda0 = subdataset_gdalinfo_json['bands'][0]
+        if raster.GetDriver().ShortName == 'netCDF':
+            variables_detectadas[identificador] = {
+                'elemento': banda0['metadata'][''].get('NETCDF_VARNAME', ''),   # aparentemente todo netCDF tiene este campo y es igual para toda banda del subdataset
+                'descripcion': banda0['metadata'][''].get('description', ''),   # algunos netCDF no tienen este campo
+                'rango': (banda0.get('minimum'), banda0.get('maximum')),        # en principio este rango no nos interesa porque este formato se renderiza directamente, va por compatibilidad
+                'extent': extent                                                # extent, necesario para cada mapa layer_raster_band
+            }
+        elif raster.GetDriver().ShortName == 'HDF5':
+            variables_detectadas[identificador] = {
+                'elemento': subdataset_gdalinfo_json['metadata'][''].get('what_object', ''),    # aparentemente los HDF5 de SMN tienen toooodo duplicado en todas bandas y son todas iguales
+                'descripcion': '',                                                              # no encontre nada para cargar...
+                'rango': (None, None),                                                          # no nos interesa este campo, solo por compatibilidad
+                'extent': extent                                                                # extent, necesario para cada mapa layer_raster_band
+            }
+        else:
+            # Necesitamos info estructural especifica si es otro formato...
+            pass
 
-            # Tomamos una banda cualquiera, ya que mapserver no permite trabajar especificamente una banda dentro de un subdataset (la unidad es el dataset),
-            # y en todos los casos que vimos las bandas tienen la misma variable, solo cambia el timestamp
-            banda0 = subdataset_gdalinfo_json['bands'][0]
-            if raster.GetDriver().ShortName == 'netCDF':
-                variables_detectadas[identificador] = {
-                    'elemento': banda0['metadata'][''].get('NETCDF_VARNAME', ''),    # aparentemente todo netCDF tiene este campo y es igual para toda banda del subdataset
-                    'descripcion': banda0['metadata'][''].get('description', ''),    # algunos netCDF no tienen este campo
-                    'rango': (banda0.get('minimum'), banda0.get('maximum')),         # en principio este rango no nos interesa porque este formato se renderiza directamente, va por compatibilidad
-                }
-            elif raster.GetDriver().ShortName == 'HDF5':
-                variables_detectadas[identificador] = {
-                    'elemento': subdataset_gdalinfo_json['metadata'][''].get('what_object', ''),    # aparentemente los HDF5 de SMN tienen toooodo duplicado en todas bandas y son todas iguales
-                    'descripcion': '',                                                              # no encontre nada para cargar''
-                    'rango': (None, None)                                                           # no nos interesa este campo, solo por compatibilidad
-                }
-            else:
-                # Necesitamos info estructural especifica si es otro formato...
-                pass
+    # Lamentablemente hay inconsistencias en algunos archivos analizados con respecto al extent:
+    # a veces el de la capa no coincide con el de los subdatasets. Tomamos el primero, que se utilizara para renderizar
+    if len(subdatasets) > 0:
+        extent_capa = variables_detectadas[subdatasets[0]['identificador']]['extent']
 
     # construimos la respuesta
     return {
@@ -402,6 +409,7 @@ def get_raster_basic_metadata(file):
 
 
 def _run_gdalinfo(file, con_stats=True):
+    """Ejecuta el gdalinfo en disco, con o sin stats."""
     stats_param = '-stats' if con_stats else ''
     res = subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True)
     # BUG FIX para casos donde gdalinfo devuelve un json invalido con campostipo: "stdDev":inf,
@@ -421,7 +429,10 @@ def _run_gdalinfo(file, con_stats=True):
 
 
 def _get_raster_proj_info(raster):
-    """ TODO:
+    """
+    Devuelve info de proyeccion y extent de un raster o de un dataset dentro del raster.
+
+    En el caso de que haya subdatasets, no hay otra que abrirlos de a uno, no se puede obtener toda esta info con un solo acceso
     """
     # https://gis.stackexchange.com/questions/267321/extracting-epsg-from-a-raster-using-gdal-bindings-in-python
     proj = osr.SpatialReference(wkt=raster.GetProjectionRef())
@@ -433,6 +444,6 @@ def _get_raster_proj_info(raster):
     maxy = geotransform[3]
     maxx = minx + geotransform[1] * raster.RasterXSize
     miny = maxy + geotransform[5] * raster.RasterYSize
-    extent_capa = (minx, miny, maxx, maxy)
+    extent = (minx, miny, maxx, maxy)
 
-    return srid, proj, extent_capa
+    return srid, proj, extent
