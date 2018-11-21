@@ -655,7 +655,7 @@ class MapServerLayer(models.Model):
         o sea, solo devuelve metadatos de ese "subproducto", pensado para llamar desde la vista detalle del mapa
         """
         if self.bandas != '':
-            if 'subdatasets' in self.capa.gdal_metadata:
+            if len(self.capa.gdal_metadata['subdatasets']) > 0:
                 for b in self.capa.gdal_metadata['subdatasets']:
                     if b.get('identificador') == self.bandas:
                         return [sorted(b['gdalinfo']['metadata'][''].iteritems())]
