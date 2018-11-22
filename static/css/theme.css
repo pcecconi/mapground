@@ -67,7 +67,7 @@ body {
   
   background-repeat: repeat-x;
 }
-.nav-tabs > li.active > a:hover {
+.nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
   background-color: #2d6ca2;
   color: #fff;
   border: 1px solid #2d6ca2;
