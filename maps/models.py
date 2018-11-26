@@ -715,28 +715,29 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
         mapa_layer_srs.save()
 
-        for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
-            id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
-            sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
-            mapa = Mapa(
-                owner=instance.owner,
-                nombre=instance.nombre + sufijo_mapa,
-                id_mapa=instance.id_capa + sufijo_mapa,
-                titulo='{} - {}{}'.format(bandas, variable['elemento'], ': {}'.format(variable['descripcion']) if variable['descripcion'] != '' else ''),
-                tipo_de_mapa='layer_raster_band')
-            try:
-                print "Intentando setear baselayer..."
-                mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
-            except:
-                pass
+        if instance.tipo_de_capa == CONST_RASTER:
+            for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
+                id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
+                sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
+                mapa = Mapa(
+                    owner=instance.owner,
+                    nombre=instance.nombre + sufijo_mapa,
+                    id_mapa=instance.id_capa + sufijo_mapa,
+                    titulo='{} - {}{}'.format(bandas, variable['elemento'], ': {}'.format(variable['descripcion']) if variable['descripcion'] != '' else ''),
+                    tipo_de_mapa='layer_raster_band')
+                try:
+                    print "Intentando setear baselayer..."
+                    mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
+                except:
+                    pass
 
-            mapa.save(escribir_imagen_y_mapfile=False)
-            MapServerLayer.objects.create(
-                mapa=mapa,
-                capa=instance,
-                bandas=bandas,
-                orden_de_capa=0)
-            mapa.save()
+                mapa.save(escribir_imagen_y_mapfile=False)
+                MapServerLayer.objects.create(
+                    mapa=mapa,
+                    capa=instance,
+                    bandas=bandas,
+                    orden_de_capa=0)
+                mapa.save()
 
         # actualizamos el mapa de usuario
         ManejadorDeMapas.delete_mapfile(instance.owner.username)
