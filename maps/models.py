@@ -620,7 +620,9 @@ class MapServerLayer(models.Model):
 
             # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
             if self.capa.gdal_driver_shortname == 'GRIB':
-                if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):   # es el caso del mapa por defecto de GRIB, sin variables específicas
+                if self.mapa.tipo_de_mapa == 'layer_raster_band':   # es el caso de una banda específica, tenemos que ver metadatos
+                    data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
+                else:                                               # es el caso del mapa por defecto de GRIB, sin variables específicas
                     # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
                     # primero una default cualquiera
                     cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
@@ -629,13 +631,13 @@ class MapServerLayer(models.Model):
                     for banda, variable in self.capa.gdal_metadata['variables_detectadas'].iteritems():
                         if variable['elemento'] == 'TMP':
                             data['rasterBandInfo'] = (banda, variable)
-                elif self.mapa.tipo_de_mapa == 'layer_raster_band':     # es el caso de una banda específica, tenemos que ver metadatos
-                    data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
 
             # En el caso de netCDF y HDF5, solo tenemos que overridear el DATA de la capa
             elif self.capa.gdal_driver_shortname in ('netCDF', 'HDF5'):
                 prefijo_data = self.capa.gdal_driver_shortname.upper()  # NETCDF|HDF5
-                if self.mapa.tipo_de_mapa in ('layer', 'layer_original_srs'):
+                if self.mapa.tipo_de_mapa == 'layer_raster_band':
+                    data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], self.bandas)
+                else:
                     # if len(self.capa.gdal_metadata['variables_detectadas']) == 0:
                     if len(self.capa.gdal_metadata['subdatasets']) == 0:
                         # no hay subdatasets, renderizamos directo (NETCDF|HDF5:/path/al/archivo)
@@ -644,8 +646,6 @@ class MapServerLayer(models.Model):
                         # hay subdatasets y es mapa de capa => estamos obligados a renderizar alguno pues mapserver no se banca el render directo en este caso (NETCDF|HDF5:/path/al/archivo:subdataset)
                         primer_subdataset_identificador = self.capa.gdal_metadata['subdatasets'][0]['identificador']   # Ejemplo: "formato:/path/al/archivo:subdataset"
                         data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], primer_subdataset_identificador)
-                elif self.mapa.tipo_de_mapa == 'layer_raster_band':
-                    data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], self.bandas)
 
         return data
 
@@ -715,28 +715,29 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
         mapa_layer_srs.save()
 
-        for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
-            id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
-            sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
-            mapa = Mapa(
-                owner=instance.owner,
-                nombre=instance.nombre + sufijo_mapa,
-                id_mapa=instance.id_capa + sufijo_mapa,
-                titulo='{} - {}{}'.format(bandas, variable['elemento'], ': {}'.format(variable['descripcion']) if variable['descripcion'] != '' else ''),
-                tipo_de_mapa='layer_raster_band')
-            try:
-                print "Intentando setear baselayer..."
-                mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
-            except:
-                pass
+        if instance.tipo_de_capa == CONST_RASTER:
+            for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
+                id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
+                sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
+                mapa = Mapa(
+                    owner=instance.owner,
+                    nombre=instance.nombre + sufijo_mapa,
+                    id_mapa=instance.id_capa + sufijo_mapa,
+                    titulo='{} - {}{}'.format(bandas, variable['elemento'], ': {}'.format(variable['descripcion']) if variable['descripcion'] != '' else ''),
+                    tipo_de_mapa='layer_raster_band')
+                try:
+                    print "Intentando setear baselayer..."
+                    mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
+                except:
+                    pass
 
-            mapa.save(escribir_imagen_y_mapfile=False)
-            MapServerLayer.objects.create(
-                mapa=mapa,
-                capa=instance,
-                bandas=bandas,
-                orden_de_capa=0)
-            mapa.save()
+                mapa.save(escribir_imagen_y_mapfile=False)
+                MapServerLayer.objects.create(
+                    mapa=mapa,
+                    capa=instance,
+                    bandas=bandas,
+                    orden_de_capa=0)
+                mapa.save()
 
         # actualizamos el mapa de usuario
         ManejadorDeMapas.delete_mapfile(instance.owner.username)
