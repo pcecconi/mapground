@@ -31,7 +31,7 @@
     <dt>Escala</dt><dd>{{ capa.metadatos.escala }}</dd>
   {% endif %}
   <dt>Encoding</dt><dd>UTF-8</dd>
-  <dt>SRS</dt><dd>{{ capa.srid }}</dd>
+  <dt>SRS</dt><dd>{% if capa.srid != 0 %}{{ capa.srid }}{% else %}Personalizado{% endif %}</dd>
   {% if user.is_authenticated %}
   <dt>WMS/WFS de la capa</dt><dd><a class="user" href="/layers/wxs/{{ capa.id_capa }}/">http://{{ request.get_host }}/layers/wxs/{{ capa.id_capa }}/</a></dd>
   <dt>WMS/WFS del usuario</dt><dd><a class="user" href="/users/{{request.user.username}}/wxs/">http://{{ request.get_host }}/users/{{request.user.username}}/wxs/</a></dd>

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block css %}
+    <link rel="stylesheet" href="{% static "css/layerimport.css" %}">
+{% endblock %}
+
+{% block content %}
+ <div class="row">
+ 	<div class="col-sm-12 main-content">
+    <h1>Actualizaciones importables</h1>
+ 	{% if object_list %}
+    <!-- The table listing the layers available for import -->
+    <table role="presentation" class="table table-striped">
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Formato</th><th>Detalle</th><th>Encoding</th><th>Acción</th></tr></thead>
+        <tbody>
+        {% for capa in object_list %}
+            <tr>
+                <td class="capa-importable">{{ capa.nombre }}</td>
+                <td class="encoding">{{ capa.tipo }}</td>
+                <td class="encoding">{{ capa.formato }}</td>
+                <td class="encoding">{{ capa.detalle }}</td>
+                <td class="encoding">
+                    {% if capa.tipo == 'vector' %}
+                    <form class="form-inline">
+                    <div class="form-group">
+                        <select class="form-control" data-id="{{ capa.nombre }}">
+                            {% for key, val in encodings %}
+                              <option value="{{ key }}">{{ val }}</option>
+                            {% endfor %}
+                        </select>                        
+                    </div>
+                    </form>
+                    {% endif %}
+                </td>
+            	<td>
+                    {% if capa.importable %}
+                        <a href="{% url 'layerimport:layer-import-update-view' id_capa capa.nombre %}" type="button" id="link_{{ id_capa }}" class="btn btn-primary pull-right">
+	       		          <span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;&nbsp;Importar actualización
+                        </a>
+                    {% else %}
+                        <a type="button" id="link_{{ id_capa }}" class="btn btn-primary pull-right disabled"
+                           title="La actualización no puede importarse porque el formato no se corresponde con el de la capa">
+                          Formato inválido
+                        </a>
+                    {% endif %}            
+			    </td>
+			</tr>
+        {% endfor %}
+    </tbody></table>
+    {% else %}
+    <p>No se hallaron actualizaciones para importar.</p>
+    {% endif %}
+ 	{% if errors_list %}
+    <h3>Problemas encontrados</h3>
+    <ul class="bg-danger">
+        {% for e in errors_list %}
+            <li>{{ e }}</li>
+        {% endfor %}
+    </ul>
+    <br/>
+    <a href="/upload/new" type="button" class="btn btn-primary btn-lg pull-right">
+      <span class="glyphicon glyphicon-upload"></span>&nbsp;&nbsp;Subir Archivos
+    </a>
+    {% endif %}
+   	</div>
+ </div>
+{% endblock %}
+{% block javascript %}
+{{ block.super }}
+<script>
+$('select').change(function(ev) {
+    var base_url = $('#link_'+$(this).attr('data-id')).attr('href').split('?')[0];
+    $('#link_'+$(this).attr('data-id')).attr('href', base_url+'?enc='+$(this).val());
+    // console.log($(this).val(), $(this).attr('data-id') );
+});
+</script>
+{% endblock %}

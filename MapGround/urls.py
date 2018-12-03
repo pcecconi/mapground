@@ -33,7 +33,7 @@ urlpatterns = [
     # Examples:
     # url(r'^$', 'MapGround.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
-    url(r'^$', lambda x: HttpResponseRedirect('/layers/ultimas')),
+    url(r'^$', lambda x: HttpResponseRedirect('/layers/last')),
     url(r'^layers/', include('layers.urls', namespace='layers')),
     url(r'^maps/', include('maps.urls', namespace='maps')),
     url(r'^upload/', include('fileupload.urls', namespace="fileupload")),

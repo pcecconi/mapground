@@ -304,6 +304,30 @@ def metadatos(request, id_capa):
 
     return render(request, 'layers/metadatos.html', {'form': form, 'capa': c })
 
+@login_required
+def actualizar_capa(request, id_capa):
+    c=get_object_or_404(Capa, id_capa=id_capa)
+    if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) not in ('owner','write','superuser'):
+        return HttpResponseRedirect(reverse('layers:index'))
+
+    m=c.metadatos
+    if request.method == 'POST':
+        if '_cancel' in request.POST:
+            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa':id_capa}))
+        form = MetadatosForm(request.POST, instance=m)
+        if form.is_valid():
+            form.save()
+            #c.save() # no es necesario llamar al save de la capa para actualizar timestamp y regenerarmapa, usamos una senial
+            if '_save_and_continue' in request.POST:
+                return HttpResponseRedirect(reverse('layers:metadatos', kwargs={'id_capa':id_capa}))
+            if '_save_and_next' in request.POST:
+                return HttpResponseRedirect(reverse('layers:atributos', kwargs={'id_capa':id_capa}))
+            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa':id_capa}))
+    else:
+        form = MetadatosForm(instance=m)
+
+    return render(request, 'layers/metadatos.html', {'form': form, 'capa': c })
+
 
 @login_required
 def atributos(request, id_capa):

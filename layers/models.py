@@ -47,7 +47,6 @@ class TipoDeGeometria(models.Model):
     def __unicode__(self):
         return unicode(self.nombre)
 
-
 # TODO: el save de esta clase debe garantizar datos minimos necesarios de raster o bin de vector
 class Capa(SingleOwnerMixin, models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, max_length=255)  # puede repetirse para distintos usuarios
@@ -137,7 +136,7 @@ class Capa(SingleOwnerMixin, models.Model):
     @property
     def dame_download_url(self):
         if self.tipo_de_capa == CONST_RASTER:
-            return settings.UPLOADED_RASTERS_URL + unicode(self.owner) + '/' + self.nombre_del_archivo
+            return os.path.join(settings.UPLOADED_RASTERS_URL, unicode(self.owner), self.nombre_del_archivo)
         else:
             return ''
 
@@ -148,7 +147,14 @@ class Capa(SingleOwnerMixin, models.Model):
             else:
                 return "%s from %s.%s" % (self.campo_geom, self.esquema, self.tabla)
         elif self.tipo_de_capa == CONST_RASTER:
-            return settings.UPLOADED_RASTERS_PATH + unicode(self.owner) + '/' + self.nombre_del_archivo
+            return os.path.join(settings.UPLOADED_RASTERS_PATH, unicode(self.owner), self.nombre_del_archivo)
+
+    def dame_datasource_data(self):
+        if self.tipo_de_capa == CONST_VECTOR:
+            # Esto es solo copy & paste de arriba... cuando hagamos WMS-T hay que ver que va!
+            return "%s from %s.%s" % (self.campo_geom, self.esquema, self.tabla)
+        elif self.tipo_de_capa == CONST_RASTER:
+            return "extent from (select * from layers_rasterdatasource where capa_id=%d) as g using unique id"%(self.id)
 
     def dame_extent(self, separador=',', srid=4326):
         # heuristica para arreglar thumbnails: corta por la mitad a la antartida (lo maximo es -90)
@@ -234,6 +240,37 @@ class AreaTematica(models.Model):
     def __unicode__(self):
         return unicode(self.nombre)
 
+class DataSource(SingleOwnerMixin, models.Model):
+    capa = models.ForeignKey(Capa, null=False)
+    proyeccion_proj4 = models.CharField(null=False, blank=True, max_length=255, default='')
+    srid = models.IntegerField('SRID', null=False, blank=False)
+    extent = models.MultiPolygonField(null=False, blank=False)
+    timestamp_modificacion = models.DateTimeField(auto_now=True, verbose_name='Fecha de última modificación')
+    objects = models.GeoManager()
+
+    class Meta:
+        abstract=True
+
+class VectorDataSource(DataSource):
+    conexion_postgres = models.ForeignKey('ConexionPostgres', null=True, blank=True)
+    esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)
+    tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)
+    campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')
+    cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only, 0 a n para vector, None para raster
+    objects = models.GeoManager()
+
+class RasterDataSource(DataSource):
+    nombre_del_archivo = models.CharField('Nombre del archivo', null=False, max_length=255)
+    location = models.CharField('Ubicación del archivo', null=False, max_length=255)
+    gdal_driver_shortname = models.CharField('Driver - Short Name', null=False, blank=True, max_length=100, default='')
+    gdal_driver_longname = models.CharField('Driver - Long Name', null=False, blank=True, max_length=100, default='')
+    gdal_metadata = JSONField(default=dict())  # guarda informacion de gdalinfo para rasters y podria extenderse a ogrinfo para vectores
+    cantidad_de_bandas = models.IntegerField(null=True, blank=True)
+    size_height = models.IntegerField(null=True, blank=True)
+    size_width = models.IntegerField(null=True, blank=True)
+    data_datetime = models.DateTimeField(auto_now=False, null=False, blank=False)    
+    active = models.BooleanField(default=False, null=False, blank=False)
+    objects = models.GeoManager()
 
 class Escala(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=100)

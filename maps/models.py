@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 # import mapscript
 from layerimport.models import TablaGeografica, ArchivoRaster
-from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, CONST_VECTOR, CONST_RASTER
+from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, RasterDataSource, CONST_VECTOR, CONST_RASTER
 import os
 # slugs
 from django.utils.text import slugify
@@ -616,7 +616,19 @@ class MapServerLayer(models.Model):
                 "driver": self.capa.gdal_driver_shortname,
                 "rasterBandInfo": "",
                 "proj4": self.capa.proyeccion_proj4,
+                "layerExtent": self.capa.layer_srs_extent,
             }
+
+            print "Data sources #: %d"%RasterDataSource.objects.filter(capa=self.capa).count()
+            if RasterDataSource.objects.filter(capa=self.capa).count() > 0:
+                ds = RasterDataSource.objects.filter(capa=self.capa)
+                data["timeItem"] = 'data_datetime'
+                data["tileItem"] = 'location'
+                data["timeIndexData"] = self.capa.dame_datasource_data()
+                data["timeExtentMin"] = ds.earliest('data_datetime').data_datetime.isoformat()
+                data["timeExtentMax"] = ds.latest('data_datetime').data_datetime.isoformat()
+                # Por ahora dejo el max...
+                data["timeDefault"] = ds.latest('data_datetime').data_datetime.isoformat()
 
             # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
             if self.capa.gdal_driver_shortname == 'GRIB':

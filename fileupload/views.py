@@ -21,6 +21,26 @@ class ArchivoCreateView(CreateView):
         response['Content-Disposition'] = 'inline; filename=files.json'
         return response
 
+class ArchivoActualizacionCreateView(CreateView):
+    template_name = 'archivo_update_form.html'
+    model = Archivo
+    fields = ['file']
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(ArchivoActualizacionCreateView, self).get_context_data(*args, **kwargs)
+        context['id_capa'] = self.kwargs['id_capa']
+        return context
+
+    def form_valid(self, form):
+        form.instance.owner = self.request.user
+        super(ArchivoActualizacionCreateView, self).form_valid(form)
+        self.object = form.save()
+        files = [serialize(self.object)]
+        data = {'files': files}
+        response = JSONResponse(data, mimetype=response_mimetype(self.request))
+        response['Content-Disposition'] = 'inline; filename=files.json'
+        return response
+
 
 class ArchivoDeleteView(DeleteView):
     model = Archivo

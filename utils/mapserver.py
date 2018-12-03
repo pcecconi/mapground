@@ -187,6 +187,9 @@ def create_mapfile(data, save=True):
     # try:
     for layer_def in data['layers']:
         # print(layer_def)
+        # La capa tiene Time Index (WMS-T)
+        if layer_def.get('timeIndexData', None) is not None:
+            mapa.insertLayer(create_tile_index_layer(layer_def))            
         mapa.insertLayer(create_ms_layer(layer_def))
     # except Exception, e:
     #     print "Failed to insert layers on mapfile: %s"%str(e)
@@ -197,6 +200,20 @@ def create_mapfile(data, save=True):
 
     return mapa
 
+def create_tile_index_layer(data):
+    layer = mapscript.layerObj()
+    layer.name = 'time_idx'
+    layer.type = mapscript.MS_LAYER_POLYGON
+    layer.data = data['timeIndexData']
+    layer.connection = data['layerConnection']
+    layer.connectiontype = mapscript.MS_POSTGIS
+    layer.setMetaData('wms_title', 'TIME INDEX')
+    layer.setMetaData('wms_extent', data['layerExtent'])
+    layer.setMetaData('wms_timeextent', data['timeExtentMin']+'/'+data['timeExtentMax'])
+    layer.setMetaData('wms_timedefault', data['timeDefault'])
+    layer.setMetaData('wms_timeitem', data['timeItem'])
+    layer.setMetaData('wms_enable_request', '*')    
+    return layer
 
 def create_ms_layer(data):
     layer = mapscript.layerObj()
@@ -208,7 +225,15 @@ def create_ms_layer(data):
     # print('create_ms_layer - connectionType: %s'%ata['connectionType'])
     if data['connectionType'] == 'RASTER':
         layer.type = mapscript.MS_LAYER_RASTER
-        layer.data = data['layerData']
+        if data.get('timeIndexData', None) is not None:
+            layer.tileitem = data['tileItem']
+            layer.tileindex = 'time_idx'
+            layer.setMetaData('wms_timeextent', data['timeExtentMin']+'/'+data['timeExtentMax'])
+            layer.setMetaData('wms_timedefault', data['timeDefault'])
+            layer.setMetaData('wms_timeitem', data['timeItem'])
+            layer.setMetaData('wms_enable_request', '*') 
+        else:
+            layer.data = data['layerData']
 
         if data['proj4'] != '':
             layer.setProjection(data['proj4'])

@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 from django.contrib import admin
 from django.contrib.gis.admin import GeoModelAdmin
 
-from models import Capa, Categoria, TipoDeGeometria, Metadatos, Escala, ConexionPostgres, Atributo, ArchivoSLD, AreaTematica
+from models import Capa, RasterDataSource, VectorDataSource,Categoria, TipoDeGeometria, Metadatos, Escala, ConexionPostgres, Atributo, ArchivoSLD, AreaTematica
 
 
 class AtributoAdmin(admin.ModelAdmin):
@@ -73,8 +73,8 @@ class CapaAdmin(GeoModelAdmin):
     def has_add_permission(self, request):
         return False
 
-    def has_delete_permission(self, request, obj=None):
-        return False
+    # def has_delete_permission(self, request, obj=None):
+    #     return False
 
 admin.site.register(Capa, CapaAdmin)
 
@@ -122,3 +122,5 @@ admin.site.register(ArchivoSLD, ArchivoSLDAdmin)
 # modelos con admins genericos
 admin.site.register(ConexionPostgres)
 admin.site.register(Escala)
+admin.site.register(RasterDataSource)
+admin.site.register(VectorDataSource)
