@@ -209,7 +209,7 @@ def create_tile_index_layer(data):
     layer.connectiontype = mapscript.MS_POSTGIS
     layer.setMetaData('wms_title', 'TIME INDEX')
     layer.setMetaData('wms_extent', data['layerExtent'])
-    layer.setMetaData('wms_timeextent', data['timeExtentMin']+'/'+data['timeExtentMax'])
+    layer.setMetaData('wms_timeextent', data['timeExtent'])
     layer.setMetaData('wms_timedefault', data['timeDefault'])
     layer.setMetaData('wms_timeitem', data['timeItem'])
     layer.setMetaData('wms_enable_request', '*')    
@@ -228,7 +228,7 @@ def create_ms_layer(data):
         if data.get('timeIndexData', None) is not None:
             layer.tileitem = data['tileItem']
             layer.tileindex = 'time_idx'
-            layer.setMetaData('wms_timeextent', data['timeExtentMin']+'/'+data['timeExtentMax'])
+            layer.setMetaData('wms_timeextent', data['timeExtent'])
             layer.setMetaData('wms_timedefault', data['timeDefault'])
             layer.setMetaData('wms_timeitem', data['timeItem'])
             layer.setMetaData('wms_enable_request', '*') 

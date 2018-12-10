@@ -1,78 +1,200 @@
 // Definicion del namespace
-var planif = planif || {};
-planif.proj = {
-	'EPSG:22172': new L.Proj.CRS.TMS('EPSG:22172',
-	  '+proj=tmerc +lat_0=-90 +lon_0=-69 +k=1 +x_0=2500000 +y_0=0 +ellps=GRS80 +units=m +no_defs',
-	  [-2200000, -189000, 9100000, 11111000],
-	  {
-		resolutions: [44140.625, 22070.3125, 11035.15625, 5517.578125, 2758.7890625, 1379.39453125, 689.697265625, 344.848632813, 172.424316406, 86.212158203, 43.106079102, 21.553039551, 10.776519775]
-	  }
-	),
-	'EPSG:22173': new L.Proj.CRS.TMS('EPSG:22173',
-	  '+proj=tmerc +lat_0=-90 +lon_0=-66 +k=1 +x_0=3500000 +y_0=0 +ellps=GRS80 +units=m +no_defs',
-	  [-2200000, -189000, 9100000, 11111000],
-	  {
-		resolutions: [44140.625, 22070.3125, 11035.15625, 5517.578125, 2758.7890625, 1379.39453125, 689.697265625, 344.848632813, 172.424316406, 86.212158203, 43.106079102, 21.553039551, 10.776519775]
-	  }
-	),
-	'EPSG:22176': new L.Proj.CRS.TMS('EPSG:22176',
-	  '+proj=tmerc +lat_0=-90 +lon_0=-57 +k=1 +x_0=6500000 +y_0=0 +ellps=GRS80 +units=m +no_defs',
-	  [-2200000, -189000, 9100000, 11111000],
-	  {
-		resolutions: [44140.625, 22070.3125, 11035.15625, 5517.578125, 2758.7890625, 1379.39453125, 689.697265625, 344.848632813, 172.424316406, 86.212158203, 43.106079102, 21.553039551, 10.776519775]
-	  }
-	)	
-}
+var mg = mg || {};
 
-planif.Mapa = (function($) {
-	var map = null, layer = null, refLayer = null;
+mg.Mapa = (function() {
+	var mapa = null, layers = [], contextMarker, enableContextInfo=true;
+
+    function redimensionarMapa() {
+        $('#mapa').css('width', $(window).width()).css('height', $(window).height()).css('margin', 0);        
+        if (mapa) {
+            mapa.invalidateSize();            
+        }
+    }
+
+    function getQueryParameters(str) {
+        str = str || document.location.search;
+        return (!str && {}) || str.replace(/(^\?)/,'').split("&").map(function(n){return n = n.split("="),this[n[0]] = decodeURIComponent(n[1].replace(/\+/g, ' ')),this}.bind({}))[0];
+    }    
+    
+    function stopPropagation(ev) {
+        if (ev.stopPropagation) {
+            ev.stopPropagation();
+        } else {
+            ev.cancelBubble = true;
+        }            
+    }
+
+    function removeContextMarker() {
+        contextMarker.off('popupclose');
+        contextMarker.unbindPopup();
+        try {
+            mapa.removeLayer(contextMarker);
+        } catch(e) {
+            console.log(e);
+        }
+        contextMarker = undefined;
+    }
+
+    function onContextMenu(ev) {
+        if (contextMarker) {
+            removeContextMarker();
+        }
+        if (enableContextInfo) {
+            var marker = L.marker(ev.latlng).addTo(mapa),
+                self = this;
+            var ne = L.CRS.EPSG3857.project(mapa.getBounds()._northEast), 
+                sw = L.CRS.EPSG3857.project(mapa.getBounds()._southWest),
+                sz = mapa.getSize();
+            marker.id = '_'+(new Date().getTime());
+            $.ajax({
+                url: '/maps/getfeatureinfo/'+mg.map.config.mapid+'/',
+                dataType: 'json',
+                data: {
+                    BBOX: sw.x+','+sw.y+','+ne.x+','+ne.y,
+                    I: ev.containerPoint.x,
+                    J: ev.containerPoint.y,
+                    WIDTH: sz.x,
+                    HEIGHT: sz.y
+                },
+                success: function(data) {
+                    if (marker.id == contextMarker.id) {
+                        if (data.count > 0) {
+                            var content='<h3>'+data.layers[0].name+'</h3><ul>';
+                            $.each(data.layers[0].items[0], function(k, v) {
+                                content+='<li><b>'+k+': </b>'+v+'</li>';
+                            });
+                            content+='</ul>';
+                            marker.getPopup().setContent(content);
+                            // marker.getPopup().setContent(self.templateMarkersMenu({ titulo: data.resultados[0].objetos[0].nombre, subtitulo: data.resultados[0].clase, markerClass: 'context', id: -2, latlng: ev.latlng.lat+','+ev.latlng.lng }));
+                        } else {
+                            marker.getPopup().setContent('<p>No se halló información para este punto.</p>');
+                        }
+                    }
+                },
+                timeout: 10000,
+                error: function(e) { 
+                    marker.getPopup().setContent('<p>Se produjo un error al intentar acceder a la información contextual.</p>');                      
+                }
+            });     
+            
+            marker.bindPopup('Buscando información...').openPopup();
+            marker.on('popupclose', removeContextMarker, this);
+            marker.on('click', removeContextMarker, this);
+            contextMarker = marker;
+        }
+    }
 
 	return {
-		init: function(divId, mapConfig) {
-			var wgs84 = new proj4.Proj("EPSG:4326"),
-				origin = new proj4.Proj(mapConfig.srs),
-				leftBottom = new proj4.Point(mapConfig.extent[0],mapConfig.extent[1]),
-				rightTop = new proj4.Point(mapConfig.extent[2],mapConfig.extent[3]);
-			proj4.transform(origin, wgs84, leftBottom);
-			proj4.transform(origin, wgs84, rightTop);
-			console.log(leftBottom, rightTop);
-			console.log(L.latLngBounds(L.latLng(leftBottom.y, leftBottom.x), L.latLng(rightTop.y, rightTop.x)));
-			mapa = L.map(divId, {
-			  // crs: planif.proj[mapConfig.srs],
-			  continuousWorld: true,
-			  worldCopyJump: false
-			}).fitBounds(L.latLngBounds(L.latLng(leftBottom.y, leftBottom.x), L.latLng(rightTop.y, rightTop.x))); // .setView([-46.18, -60.37], 2);
-		
-			var layer = L.tileLayer(mapConfig.onlineresource+'{z}/{x}/{y}.png', {
-				attribution: '<b>Fuente:</b> '+mapConfig.attribution,
-			    tms: true,
-			    continuousWorld: true
-			}).addTo(mapa);
-		
-			// add an OpenStreetMap tile layer to minimap
+		init: function(divId, config) { 
+            var mapDivId = $('.mg-map')[0].id;
 
-			var refLayer = L.tileLayer(mapConfig.onlineresource+'{z}/{x}/{y}.png', {
-			    tms: true
-			});
-	/*
-			var layer2 = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-				attribution: '<b>Fuente:</b> INDEC, Censo 2010</span>'
+            // Elimino el "Cargando..."
+            $('#'+mapDivId).empty();
 
-			}).addTo(map);
-	*/
+            // El div del mapa tiene que ocupar toda la ventana
+            redimensionarMapa();
 
-			/*
-		    jQuery.get('http://sig.planificacion.gob.ar/cgi-bin/mapserv?callback=?', {
-		      map: mapConfig.map,
-		      mode: 'legend',
-		      layers: 'all'
-		    }, 'jsonp').done(function(data) {
-				mapa.addControl(new Abstract(mapConfig, data));
-		    }).fail(function(error) { console.log(error); });
-			*/
+            $(window).on('resize', function() {
+                redimensionarMapa();
+            });
 
-			// mapa.addControl(new Abstract(mapConfig));
-			// var miniMap = new L.Control.MiniMap(refLayer, { toggleDisplay: true, minimized: true }).addTo(mapa);
+            var params = getQueryParameters();
+
+            if (mg.map && mg.map.config) {
+                var c = mg.map.config,
+                    ext = c.extent.split(' ').map(parseFloat);
+                enableContextInfo = c.enableContextInfo == 'False'?false:true;
+                try {
+                    mapa = L.map(mapDivId, {
+                        continuousWorld: true,
+                        worldCopyJump: false,
+                        attributionControl: false,
+                        timeDimension: true,
+                        timeDimensionControl: false,
+                        minZoom: 2
+                    }).fitBounds(
+                        L.latLngBounds(
+                            L.latLng(ext[1], ext[0]),
+                            L.latLng(ext[3], ext[2])
+                        )
+                    ); 
+                    var attribution = L.control.attribution({
+                        prefix: ''
+                    }).addTo(mapa);
+
+                    var timeDimension = L.control.timeDimension({
+                        speedSlider: false
+                    }).addTo(mapa);
+
+                    var base_layer = L.tileLayer(c.baselayerurl, {
+                        tms: c.tmsbaselayer=='False'?false:true,
+                        continuousWorld: true
+                    }).addTo(mapa);
+
+                    var ref_layer = L.tileLayer(c.baselayerurl, {
+                        tms: true,
+                        continuousWorld: true
+                    });
+
+                    if (c.wmslayer=='True') {
+                        var layer =  L.nonTiledLayer.wms(c.wmsonlineresource, {
+                            layers: c.layerName,
+                            format: 'image/png',
+                            attribution: '<b>Fuente:</b> '+c.attribution,
+                            transparent: true,
+                            pane: 'tilePane'
+                        }) // .addTo(mapa);
+                        var timeLayer = L.timeDimension.layer.wms(layer, {
+                            updateTimeDimension: true,
+                            requestTimeFromCapabilities: true,
+                            wmsVersion: '1.3.0'
+                        });
+                        timeLayer.addTo(mapa);
+                    } else {
+                        var layer = L.tileLayer(c.onlineresource, {
+                            attribution: '<b>Fuente:</b> '+c.attribution,
+                            tms: true,
+                            continuousWorld: true
+                        }).addTo(mapa);    
+                    }
+
+                    var layerRedrawTimeout = null,
+                        numRedraws = 0;
+
+                    layer.on('tileerror', function(ev) {
+                        if (!layerRedrawTimeout && numRedraws < 10) {
+                            layerRedrawTimeout = setTimeout(function() { 
+                                console.log('Retrying layer drawing...');
+                                layer.redraw(); 
+                                numRedraws++;
+                                layerRedrawTimeout = null;
+                            }, 1000);
+                        }
+                        // console.log('ev, numRedraws');
+                    });
+
+                    L.control.scale({imperial: false}).addTo(mapa);
+
+                    mapa.addControl(new mg.Abstract(c, '<p class="legend_title">Referencias</p>\
+<img src="/media/'+c.mapid+'_legend.png?t='+Math.floor(Math.random()*100001)+'"/>', { abstract: (params.abstract && params.abstract != 0), title: (params.title && params.title != 0), minimized: (params.refs && params.refs == 0) }));
+
+                    var miniMap = new L.Control.MiniMap(ref_layer, { toggleDisplay: true, minimized: true }).addTo(mapa);
+                    
+                    mapa.on('click', onContextMenu, this);
+
+                    // Esto es para evitar que los clicks sobre los elementos flotantes sobre el
+                    // mapa sean capturados por el mapa y generen movimientos no previstos        
+                    $('.leaflet-control')
+                        .on('mousedown', stopPropagation)
+                        .on('dblclick', stopPropagation);
+
+                } catch(e) {
+                    console.log('Se produjo un error al inicializar el mapa. Revise la configuración.');
+                }
+
+            } else {
+                console.log('Missing configuration mg.map.config');
+            }
 		}
-	}
-})(jQuery);
+	};
+})();

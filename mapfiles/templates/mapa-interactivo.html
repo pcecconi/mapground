@@ -22,6 +22,7 @@
     <link rel="stylesheet" type="text/css" href="/static/libs/leaflet/leaflet.css" />
     <link rel="stylesheet" type="text/css" href="/static/css/abstract.control.css" />
     <link rel="stylesheet" type="text/css" href="/static/assets/js/leaflet-minimap/src/Control.MiniMap.css" />
+    <link rel="stylesheet" type="text/css" href="/static/assets/js/Leaflet.TimeDimension-master/dist/leaflet.timedimension.control.min.css" />
     <style>
         body {
           font-family: 'Roboto Condensed', 'Helvetica', 'Arial', sans-serif;
@@ -57,8 +58,11 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script type="text/javascript" src="/static/libs/leaflet/leaflet.js"></script>
 <script type="text/javascript" src="/static/js/abstract.control.js"></script>    
+<script type="text/javascript" src="/static/assets/js/Leaflet.NonTiledLayer-master/dist/NonTiledLayer.js"></script>
+<script type="text/javascript" src="/static/assets/js/iso8601-js-period-master/iso8601.min.js"></script>
 <script type="text/javascript" src="/static/assets/js/leaflet-minimap/src/Control.MiniMap.js"></script>
-<script type="text/javascript" src="/static/js/mapapp.js"></script>
+<script type="text/javascript" src="/static/assets/js/Leaflet.TimeDimension-master/dist/leaflet.timedimension.min.js"></script>
+<script type="text/javascript" src="/static/js/mapa.js"></script>
 
 <script type="text/template" id="template-panel-informacion">
 </script>
@@ -79,11 +83,14 @@ mg.map.config = {
     "baselayerurl":"[web_mg_baselayerurl]",
     "tmsbaselayer":"[web_mg_tmsbaselayer]",
     "onlineresource":"[web_mg_onlineresource]",
+    "wmsonlineresource": "[web_wfs_onlineresource]",
+    "wmslayer": "[web_mg_iswmslayer]",
+    "layerName": "[web_mg_layername]",
     "mapid": "[web_mg_mapid]",
     "enableContextInfo":"[web_mg_enablecontextinfo]",
 };
 
-$(document).ready(mg.MapApp.init);
+$(document).ready(mg.Mapa.init);
 </script>
 </body>
 </html>

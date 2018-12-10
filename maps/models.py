@@ -427,7 +427,9 @@ class Mapa(models.Model):
                 "mg_siteurl": unicode(settings.SITE_URL).encode('UTF-8'),
                 "mg_baselayerurl": self.tms_base_layer.url if self.tms_base_layer else settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png',
                 "mg_tmsbaselayer": str(self.tms_base_layer.tms) if self.tms_base_layer else str(True),
+                "mg_iswmslayer": str(self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band'),
                 "mg_mapid": unicode(self.id_mapa),
+                "mg_layername": unicode(c.nombre),
                 "mg_enablecontextinfo": str(enableContextInfo),
                 "ows_srs": 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
@@ -621,14 +623,13 @@ class MapServerLayer(models.Model):
 
             print "Data sources #: %d"%RasterDataSource.objects.filter(capa=self.capa).count()
             if RasterDataSource.objects.filter(capa=self.capa).count() > 0:
-                ds = RasterDataSource.objects.filter(capa=self.capa)
+                ds = RasterDataSource.objects.filter(capa=self.capa).order_by('data_datetime')
                 data["timeItem"] = 'data_datetime'
                 data["tileItem"] = 'location'
                 data["timeIndexData"] = self.capa.dame_datasource_data()
-                data["timeExtentMin"] = ds.earliest('data_datetime').data_datetime.isoformat()
-                data["timeExtentMax"] = ds.latest('data_datetime').data_datetime.isoformat()
+                data["timeExtent"] = ','.join([rec.data_datetime.isoformat() for rec in ds])
                 # Por ahora dejo el max...
-                data["timeDefault"] = ds.latest('data_datetime').data_datetime.isoformat()
+                data["timeDefault"] = ds.last().data_datetime.isoformat()
 
             # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
             if self.capa.gdal_driver_shortname == 'GRIB':
