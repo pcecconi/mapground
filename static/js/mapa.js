@@ -122,10 +122,6 @@ mg.Mapa = (function() {
                         prefix: ''
                     }).addTo(mapa);
 
-                    var timeDimension = L.control.timeDimension({
-                        speedSlider: false
-                    }).addTo(mapa);
-
                     var base_layer = L.tileLayer(c.baselayerurl, {
                         tms: c.tmsbaselayer=='False'?false:true,
                         continuousWorld: true
@@ -137,6 +133,15 @@ mg.Mapa = (function() {
                     });
 
                     if (c.wmslayer=='True') {
+                        var timeDimension = L.control.timeDimension({
+                            speedSlider: false,
+                            playerOptions: {
+                                transitionTime: 300,
+                                buffer: 10,
+                                loop: true,
+                                startOver: true
+                            }
+                        }).addTo(mapa);    
                         var layer =  L.nonTiledLayer.wms(c.wmsonlineresource, {
                             layers: c.layerName,
                             format: 'image/png',

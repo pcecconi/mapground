@@ -427,9 +427,9 @@ class Mapa(models.Model):
                 "mg_siteurl": unicode(settings.SITE_URL).encode('UTF-8'),
                 "mg_baselayerurl": self.tms_base_layer.url if self.tms_base_layer else settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png',
                 "mg_tmsbaselayer": str(self.tms_base_layer.tms) if self.tms_base_layer else str(True),
-                "mg_iswmslayer": str(self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band'),
+                "mg_iswmslayer": str((self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band') and c is not None and c.tipo_de_capa == 'raster'),
                 "mg_mapid": unicode(self.id_mapa),
-                "mg_layername": unicode(c.nombre),
+                "mg_layername": unicode(c.nombre) if c is not None else "",
                 "mg_enablecontextinfo": str(enableContextInfo),
                 "ows_srs": 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',

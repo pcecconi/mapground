@@ -58,10 +58,14 @@
         <li><a href="#layerPermissions" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-lock"></span>
         &nbsp;Permisos</a></li>
         {% endif %}
+        {% if capa.tipo_de_capa == 'vector' %}
         <li><a href="#layerData" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-list-alt"></span>
         &nbsp;Registros</a></li>
+        {% endif %}
         <li><a href="#layerSymbology" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-eye-close"></span>
         &nbsp;Simbología</a></li>
+        <li><a href="#layerHistory" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-time"></span>
+          &nbsp;Actualizaciones</a></li>
       </ul>
 
       <div class="tab-content">
@@ -150,6 +154,7 @@
         </div>
         {% endif %}
         
+        {% if capa.tipo_de_capa == 'vector' %}
         <div class="tab-pane fade" id="layerData">
             {% if capa.cantidad_de_registros == 0 or capa.cantidad_de_registros is None %}
                 <p>La capa no tiene registros.</p>
@@ -181,6 +186,7 @@
               </table>
             {% endif %}
         </div>
+        {% endif %}
 
         <div class="tab-pane fade" id="layerSymbology">
           {% if capa.archivosld_set.count > 0 %}
@@ -218,6 +224,21 @@
             -->
           </table>
         </div>
+
+        <div class="tab-pane fade" id="layerHistory">
+            {% if capa.tipo_de_capa == 'raster' %}
+            <table class="table table-striped">
+                <thead><tr><th>Nombre</th><th>Tipo</th><th>Fecha</th></tr></thead>
+                <tbody>
+                    {% for ds in capa.rasterdatasource_set.all %}
+                      <tr><td>{{ ds.nombre_del_archivo }}</td><td>{{ ds.gdal_driver_longname }}</td><td>{{ ds.data_datetime }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Aún no hay historial para esta capa.</p> 
+           {% endif %}
+         </div>
         
       </div>   
 

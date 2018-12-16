@@ -89,7 +89,7 @@ def LayersUpdateListView(request, id_capa):
     return render(request, template_name, {"object_list": l, "errors_list": errores, "encodings": ENCODINGS, "id_capa": id_capa})
 
 def _get_raster_date_time(raster_metadata):
-    data_datetime = None
+    data_datetime = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if raster_metadata['raster_count'] > 0:
         try:
             # Toda esta logica es MUY ad-hoc
