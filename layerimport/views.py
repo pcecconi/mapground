@@ -80,6 +80,7 @@ def __borrarArchivoRasterConMismoDatetime(capa, dt):
     q=capa.rasterdatasource_set.filter(data_datetime=dt)
     if q.count() > 0:
         rds=q.first()
+        print 'Ya existe un archivo con el mismo datetime: %s. Borrandolo...'%(rds.location)
         arch=ArchivoRaster.objects.get(path_del_archivo=rds.location)
         arch.delete()
         rds.delete()
@@ -96,7 +97,8 @@ def LayersUpdateListView(request, id_capa):
     return render(request, template_name, {"object_list": l, "errors_list": errores, "encodings": ENCODINGS, "id_capa": id_capa})
 
 def _get_raster_date_time(raster_metadata):
-    data_datetime = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    # Mapserver no soporta datetimes con microsegundos en WMS-T
+    data_datetime = datetime.now().replace(microsecond=0).replace(tzinfo=pytz.utc)
     if raster_metadata['raster_count'] > 0:
         try:
             # Toda esta logica es MUY ad-hoc
@@ -291,6 +293,7 @@ def LayerImportUpdateView(request, id_capa, filename):
     else:   # casos rasters
 
         # Validamos primero la consistencia entre el 'filename' y un raster valido, por ejemplo, para evitar vulnerabilidad por url
+        print 'Archivo raster para actualizar: %s'%(archivo.file.name)
         raster = get_raster_metadata(archivo.file.name)
         if raster is None:
             return render(request, template_name, {
@@ -325,6 +328,13 @@ def LayerImportUpdateView(request, id_capa, filename):
 
         # ...y luego creamos los objetos
         try:
+
+            # Esto sirve para permitir actualizar los datos de una capa para una fecha dada
+            # en forma automatica (sin tener que borrar a mano la versión anterior)
+            # Tipicamente seria cuando detectas un error en los datos, lo corregis y volves a 
+            # subir o bien para el caso de SMN cuando actualizan el pronostico.
+            __borrarArchivoRasterConMismoDatetime(capa, data_datetime)
+
             # print MultiPolygon(Polygon.from_bbox(extent_capa))
             # return render(request, template_name, {
             #     "capa": filename, "ok": False,
@@ -371,12 +381,6 @@ def LayerImportUpdateView(request, id_capa, filename):
             capa.save()
 
             archivo.delete()
-
-            # Esto sirve para permitir actualizar los datos de una capa para una fecha dada
-            # en forma automatica (sin tener que borrar a mano la versión anterior)
-            # Tipicamente seria cuando detectas un error en los datos, lo corregis y volves a 
-            # subir o bien para el caso de SMN cuando actualizan el pronostico.
-            __borrarArchivoRasterConMismoDatetime(capa, data_datetime)
 
         except Exception as e:
             return render(request, template_name, {
