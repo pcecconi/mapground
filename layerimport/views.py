@@ -9,7 +9,7 @@ from fileupload.models import Archivo
 from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
 from .utils import get_shapefile_files, import_layer, determinar_id_capa, get_raster_metadata, get_raster_basic_metadata
-from layers.models import Capa, TipoDeGeometria, RasterDataSource, CONST_VECTOR, CONST_RASTER
+from layers.models import Capa, TipoDeGeometria, RasterDataSource, VectorDataSource, CONST_VECTOR, CONST_RASTER
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from MapGround import MapGroundException
 from django.core.urlresolvers import reverse
@@ -128,6 +128,7 @@ def LayerImportView(request, filename):
 
     # determinamos el id unico que le corresponde a esta capa, sin importar si es vector o raster, y verificamos que no exista en la IDE
     id_capa = determinar_id_capa(request, archivo.nombre)
+    next_version=1
 
     try:
         existe = Capa.objects.get(id_capa=id_capa)     # este chequeo podría ser reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
@@ -137,13 +138,14 @@ def LayerImportView(request, filename):
     except:
         if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
             try:
-                srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding)
+                nombre_de_tabla = id_capa + '_v' + str(next_version)
+                srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
                 tabla_geografica = TablaGeografica.objects.create(
                     nombre_normalizado=normalizar_texto(archivo.nombre),
                     nombre_del_archivo=os.path.basename(unicode(archivo.file)),
                     esquema=IMPORT_SCHEMA,
                     srid=srid,
-                    tabla=id_capa,
+                    tabla=nombre_de_tabla,
                     owner=request.user)
 
                 c = Capa.objects.create(
@@ -161,6 +163,21 @@ def LayerImportView(request, filename):
                     tipo_de_geometria=TipoDeGeometria.objects.all()[0],  # uno cualquiera, pues el capa_pre_save lo calcula y lo overridea
                     proyeccion_proj4='',    # TODO:!
                     srid=tabla_geografica.srid)
+
+                VectorDataSource.objects.create(
+                    owner=request.user,
+                    capa=c,
+                    proyeccion_proj4=c.proyeccion_proj4,
+                    srid=srid,
+                    extent=MultiPolygon(Polygon.from_bbox(
+                        (c.extent_minx_miny.x,c.extent_minx_miny.y,
+                        c.extent_maxx_maxy.x,c.extent_maxx_maxy.y))),
+                    conexion_postgres=None,
+                    esquema=tabla_geografica.esquema,
+                    tabla=tabla_geografica.tabla,
+                    campo_geom='geom',
+                    cantidad_de_registros=c.cantidad_de_registros
+                )
 
                 for a in Archivo.objects.filter(owner=request.user, nombre=os.path.splitext(filename)[0]):
                     a.delete()
@@ -194,7 +211,6 @@ def LayerImportView(request, filename):
             # directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
             # filename_destino = directorio_destino + id_capa + archivo.extension
             # El 'import' del raster consiste en moverlo al path destino...
-            next_version=1
             directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
             nombre_del_archivo = id_capa + '_v' + str(next_version) + archivo.extension
             filename_destino = directorio_destino + nombre_del_archivo 

@@ -194,6 +194,7 @@ mg.Mapa = (function() {
                         .on('dblclick', stopPropagation);
 
                 } catch(e) {
+                    console.error(e)
                     console.log('Se produjo un error al inicializar el mapa. Revise la configuración.');
                 }
 
