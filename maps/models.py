@@ -790,6 +790,7 @@ def onCapaPostDelete(sender, instance, **kwargs):
         pass
     if instance.tipo_de_capa == CONST_VECTOR:
         try:
+            # ERROR Hay que cambiar esto!
             TablaGeografica.objects.filter(tabla=instance.id_capa)[0].delete()
         except:
             pass
