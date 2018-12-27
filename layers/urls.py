@@ -4,6 +4,7 @@ from layers import views
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^wxs/(?P<id_capa>.+)/$', views.wxs, name='wxs'),
+    url(r'^wxs_raster_band/(?P<id_mapa>.+)/$', views.wxs_raster_band, name='wxs_raster_band'),
     url(r'^public_wxs/$', views.wxs_public, name='wxs_public'),
     url(r'^detalle_capa/(?P<id_capa>.+)/$', views.detalle_capa, name='detalle_capa'),
     url(r'^borrar_capa/(?P<id_capa>.+)/$', views.borrar_capa, name='borrar_capa'),

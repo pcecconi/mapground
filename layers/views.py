@@ -468,6 +468,20 @@ def wxs_public(request):
     remote_url = mapserver.get_wms_url('mapground_public_layers')
     return views.proxy_view(request, remote_url, extra_requests_args)
 
+
+@logged_in_or_basicauth()
+def wxs_raster_band(request, id_mapa):
+    mapa = get_object_or_404(Mapa, id_mapa=id_mapa)
+    ManejadorDePermisos.anotar_permiso_a_mapa(request.user, mapa)
+    if mapa.permiso is None:
+        return HttpResponseForbidden()
+
+    extra_requests_args = {}
+    mapfile = ManejadorDeMapas.commit_mapfile(mapa.id_mapa)
+    remote_url = mapserver.get_wms_url(mapa.id_mapa)
+    # TODO: falta SLD
+    return views.proxy_view(request, remote_url, extra_requests_args)
+
 # @login_required
 def download(request, id_capa, format='shapezip'):
     capa = get_object_or_404(Capa, id_capa=id_capa)
