@@ -85,6 +85,14 @@ def __borrarArchivoRasterConMismoDatetime(capa, dt):
         arch.delete()
         rds.delete()
 
+def _hasSameStructure(t1, t2):
+    # TODO
+    return True
+
+def _dropTable(table):
+    # TODO
+    return True
+
 @login_required
 def LayersUpdateListView(request, id_capa):
     template_name = 'layers_update.html'
@@ -302,10 +310,45 @@ def LayerImportUpdateView(request, id_capa, filename):
             "error_msg": 'No se pudo encontrar la capa "{0}" para importar.'.format(filename)})
 
     if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
-        return render(request, template_name, {
-            "capa": filename, "ok": False,
-            "error_msg": 'La actualizacion de capas vectoriales no se encuentra implementada.'})
+        try:
+            next_version=VectorDataSource.objects.filter(capa=capa).count()+1
+            nombre_de_tabla = id_capa + '_v' + str(next_version)
+            srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
+            if not _hasSameStructure(id_capa+'_v1', nombre_de_tabla):
+                _dropTable(nombre_de_tabla)
+                raise ValueError('La tabla no tiene la misma estructura que la original.')
 
+            tabla_geografica = TablaGeografica.objects.create(
+                nombre_normalizado=normalizar_texto(archivo.nombre),
+                nombre_del_archivo=os.path.basename(unicode(archivo.file)),
+                esquema=IMPORT_SCHEMA,
+                srid=srid,
+                tabla=nombre_de_tabla,
+                owner=request.user)
+
+            capa.tabla=nombre_de_tabla
+            capa.save()
+
+            VectorDataSource.objects.create(
+                owner=request.user,
+                capa=capa,
+                proyeccion_proj4=capa.proyeccion_proj4,
+                srid=srid,
+                extent=MultiPolygon(Polygon.from_bbox(
+                    (capa.extent_minx_miny.x,capa.extent_minx_miny.y,
+                    capa.extent_maxx_maxy.x,capa.extent_maxx_maxy.y))),
+                conexion_postgres=None,
+                esquema=tabla_geografica.esquema,
+                tabla=tabla_geografica.tabla,
+                campo_geom='geom',
+                cantidad_de_registros=capa.cantidad_de_registros
+            )
+            
+        except Exception as e:
+            return render(request, template_name, {
+                "capa": filename, "ok": False,
+                "error_msg": 'Se produjo un error al intentar importar la capa vectorial "{0}": {1}'.format(filename, unicode(e))})
+            
     else:   # casos rasters
 
         # Validamos primero la consistencia entre el 'filename' y un raster valido, por ejemplo, para evitar vulnerabilidad por url
