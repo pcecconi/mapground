@@ -343,6 +343,9 @@ def LayerImportUpdateView(request, id_capa, filename):
                 campo_geom='geom',
                 cantidad_de_registros=capa.cantidad_de_registros
             )
+
+            for a in Archivo.objects.filter(owner=request.user, nombre=os.path.splitext(filename)[0]):
+                a.delete()
             
         except Exception as e:
             return render(request, template_name, {
