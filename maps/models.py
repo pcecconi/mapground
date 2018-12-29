@@ -378,6 +378,8 @@ class Mapa(models.Model):
             return urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'/wxs/')
         elif self.tipo_de_mapa=='layer_original_srs':
             return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa.replace('_layer_srs',''))+'/')
+        elif self.tipo_de_mapa=='layer_raster_band':
+            return urlparse.urljoin(settings.SITE_URL, 'layers/wxs_raster_band/' + unicode(self.id_mapa) + '/')
 
         return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
 
