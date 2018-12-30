@@ -38,6 +38,7 @@ INSTALLED_APPS = (
     'django.contrib.humanize',
     'django.contrib.gis',
     'background_task',
+    'sequences.apps.SequencesConfig',
     'commons',
     'fileupload',
     'layerimport',
@@ -45,7 +46,6 @@ INSTALLED_APPS = (
     'maps',
     'users',
 )
-
 # original del proyecto, en django 1.6
 # MIDDLEWARE_CLASSES = (
 #     'django.contrib.sessions.middleware.SessionMiddleware',

@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 # import mapscript
 from layerimport.models import TablaGeografica, ArchivoRaster
-from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, RasterDataSource, CONST_VECTOR, CONST_RASTER
+from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, RasterDataSource, VectorDataSource, CONST_VECTOR, CONST_RASTER
 import os
 # slugs
 from django.utils.text import slugify
@@ -29,6 +29,7 @@ from utils import mapserver
 from mapcache import mapcache
 from .tasks import add_tileset, rm_tileset, add_or_replace_tileset
 import json
+from sequences.models import Sequence
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -793,7 +794,8 @@ def onCapaPostDelete(sender, instance, **kwargs):
     if instance.tipo_de_capa == CONST_VECTOR:
         try:
             # ERROR Hay que cambiar esto!
-            TablaGeografica.objects.filter(tabla=instance.tabla)[0].delete()
+            print "Borrando tabla master %s"%(instance.id_capa)
+            TablaGeografica.objects.filter(tabla=instance.id_capa).delete()
         except:
             pass
     elif instance.tipo_de_capa == CONST_RASTER:
@@ -801,6 +803,12 @@ def onCapaPostDelete(sender, instance, **kwargs):
             ArchivoRaster.objects.filter(nombre_del_archivo=instance.nombre_del_archivo, owner=instance.owner)[0].delete()
         except:
             pass
+    # Eliminamos la secuencia asociada a versiones de la capa
+    try: 
+        Sequence.objects.filter(name=instance.id_capa).delete()
+    except:
+        pass
+
 
 @receiver(post_delete, sender=Mapa)
 def onMapaPostDelete(sender, instance, **kwargs):

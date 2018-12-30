@@ -8,7 +8,7 @@ from django.contrib.postgres.fields import JSONField
 # slugs
 from django.utils.text import slugify
 # signals
-from django.db.models.signals import post_save, pre_save  # , post_delete
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 # fts
 from djorm_pgfulltext.models import SearchManager
@@ -25,6 +25,8 @@ import urlparse
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point
 from django_extras.contrib.auth.models import SingleOwnerMixin
+
+from layerimport.models import TablaGeografica
 
 CONST_VECTOR = 'vector'
 CONST_RASTER = 'raster'
@@ -503,3 +505,9 @@ def onArchivoSLDPreSave(sender, instance, **kwargs):
                 os.remove(os.path.join(settings.MEDIA_ROOT, old_filename.name))
         except:
             pass
+
+@receiver(post_delete, sender=VectorDataSource)
+def onVectorDataSourcePostDelete(sender, instance, **kwargs):
+    print "VectorDataSource para tabla %s borrado."%(instance.tabla)
+    print "Borrando tabla geografica..."
+    TablaGeografica.objects.filter(tabla=instance.tabla).delete()

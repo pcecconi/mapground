@@ -136,7 +136,7 @@ def drop_table(schema, table):
     cur.execute(query)
 
 
-def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
+def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1', create_table_only=False):
     print 'loading shape with encoding %s ' % encoding
     shp2pgsql_call = ('shp2pgsql -s %s -W %s -p -I -D -N skip "%s" %s.%s') % (srid, encoding,
             shapefile, schema, table)
@@ -178,30 +178,31 @@ def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1'):
         os.remove(tmp_filename)
         raise MapGroundException(e)
 
-    try:
-        copy_query += 'COMMIT;'
-        with open(tmp_copy_filename, 'w') as text_file:
-            text_file.write(copy_query.replace('COPY', '\\copy'))
-        copy_call = 'PGPASSWORD="%s" psql -d %s -U %s -w -h %s -f %s' % (DATABASES['default']['PASSWORD'],
-        DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['HOST'], tmp_copy_filename)
-        fout, ferr = StringIO(), StringIO()
-        exitcode = teed_call(copy_call, stdout=fout, stderr=ferr, shell=True)
-        # print copy_call
-        err = ferr.getvalue()
-        if exitcode != 0:
-            raise MapGroundException(err)
-        # cur = connection.cursor()
-        # cur.execute(copy_query)
-    except Exception, e:
-        os.remove(tmp_filename)
-        os.remove(tmp_copy_filename)
-        raise MapGroundException(e)
+    if not create_table_only:
+        try:
+            copy_query += 'COMMIT;'
+            with open(tmp_copy_filename, 'w') as text_file:
+                text_file.write(copy_query.replace('COPY', '\\copy'))
+            copy_call = 'PGPASSWORD="%s" psql -d %s -U %s -w -h %s -f %s' % (DATABASES['default']['PASSWORD'],
+            DATABASES['default']['NAME'], DATABASES['default']['USER'], DATABASES['default']['HOST'], tmp_copy_filename)
+            fout, ferr = StringIO(), StringIO()
+            exitcode = teed_call(copy_call, stdout=fout, stderr=ferr, shell=True)
+            # print copy_call
+            err = ferr.getvalue()
+            if exitcode != 0:
+                raise MapGroundException(err)
+            # cur = connection.cursor()
+            # cur.execute(copy_query)
+        except Exception, e:
+            os.remove(tmp_filename)
+            os.remove(tmp_copy_filename)
+            raise MapGroundException(e)
 
-    try:
-        os.remove(tmp_filename)
-        os.remove(tmp_copy_filename)
-    except:
-        pass
+        try:
+            os.remove(tmp_filename)
+            os.remove(tmp_copy_filename)
+        except:
+            pass
 
 
 def get_epsg_from_prj(prjfile):
@@ -250,7 +251,7 @@ def get_srid_from_hash(h):
     return epsg_hashes[h]
 
 
-def import_layer(filename, schema, table, encoding='LATIN1'):
+def import_layer(filename, schema, table, encoding='LATIN1', create_table_only=False):
     try:
         st = get_shapefile_files(filename)
     except MapGroundException:
@@ -263,7 +264,7 @@ def import_layer(filename, schema, table, encoding='LATIN1'):
         pass
 
     try:
-        load_shape(st['shp'], schema, table, srid, encoding)
+        load_shape(st['shp'], schema, table, srid, encoding, create_table_only)
     except MapGroundException:
         raise
     print 'import srid %d' % srid

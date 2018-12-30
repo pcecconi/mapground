@@ -18,6 +18,7 @@ import os
 import shutil
 from datetime import datetime
 import pytz
+from sequences import get_next_value
 
 def _get_posibles_rasters(request):
     l = []
@@ -136,7 +137,8 @@ def LayerImportView(request, filename):
 
     # determinamos el id unico que le corresponde a esta capa, sin importar si es vector o raster, y verificamos que no exista en la IDE
     id_capa = determinar_id_capa(request, archivo.nombre)
-    next_version=1
+    next_version=get_next_value(id_capa)
+    print "Proxima version es %d"%(next_version)
 
     try:
         existe = Capa.objects.get(id_capa=id_capa)     # este chequeo podría ser reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
@@ -147,6 +149,8 @@ def LayerImportView(request, filename):
         if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
             try:
                 nombre_de_tabla = id_capa + '_v' + str(next_version)
+                # Acá se crea un tabla padre vacía con el id_capa para después heredar
+                import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding, create_table_only=True)
                 srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
                 tabla_geografica = TablaGeografica.objects.create(
                     nombre_normalizado=normalizar_texto(archivo.nombre),
@@ -308,10 +312,12 @@ def LayerImportUpdateView(request, id_capa, filename):
         return render(request, template_name, {
             "capa": filename, "ok": False,
             "error_msg": 'No se pudo encontrar la capa "{0}" para importar.'.format(filename)})
+    
+    next_version=get_next_value(capa.id_capa)
+    print "Proxima version es %d"%(next_version)
 
     if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
         try:
-            next_version=VectorDataSource.objects.filter(capa=capa).count()+1
             nombre_de_tabla = id_capa + '_v' + str(next_version)
             srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
             if not _hasSameStructure(id_capa+'_v1', nombre_de_tabla):
@@ -374,7 +380,6 @@ def LayerImportUpdateView(request, id_capa, filename):
                 srid = 4326             # casos netCDF, no hay nada, pero son 4326, y algo tenemos que asumir
 
         # El 'import' del raster consiste en moverlo al path destino...
-        next_version=RasterDataSource.objects.filter(capa=capa).count()+1
         directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
         nombre_del_archivo = id_capa + '_v' + str(next_version) + archivo.extension
         filename_destino = directorio_destino + nombre_del_archivo 
