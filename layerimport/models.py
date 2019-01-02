@@ -29,11 +29,12 @@ class TablaGeografica(SingleOwnerMixin, models.Model):
 
 @receiver(post_delete, sender=TablaGeografica)
 def onTablaGeograficaPostDelete(sender, instance, **kwargs):
+    pass
     # print 'onTablaGeograficaPostDelete'
-    try:
-        drop_table(instance.esquema, instance.tabla)
-    except:
-        pass
+    # try:
+    #    drop_table(instance.esquema, instance.tabla)
+    # except:
+    #    pass
 
 
 # Clase equivalente a TablaGeografica pero a nivel raster, o sea, todo raster en la IDE subido via GDAL con metadatos determinados por esta libreria

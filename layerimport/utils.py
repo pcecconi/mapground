@@ -129,12 +129,13 @@ def get_random_string(len=20):
     return "".join([random.SystemRandom().choice(string.digits + string.letters) for i in range(len)])
 
 
-def drop_table(schema, table):
+def drop_table(schema, table, cascade=False):
     query = ('SELECT DropGeometryColumn(\'%s\',\'%s\',\'geom\'); '
                 'DROP TABLE "%s"."%s"') % (schema, table, schema, table)
+    if cascade:
+        query += ' CASCADE'
     cur = connection.cursor()
     cur.execute(query)
-
 
 def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1', create_table_only=False):
     print 'loading shape with encoding %s ' % encoding

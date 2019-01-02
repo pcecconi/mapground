@@ -19,6 +19,7 @@ import shutil
 from datetime import datetime
 import pytz
 from sequences import get_next_value
+from utils.db import drop_table, setup_inheritance, add_column
 
 def _get_posibles_rasters(request):
     l = []
@@ -90,10 +91,6 @@ def _hasSameStructure(t1, t2):
     # TODO
     return True
 
-def _dropTable(table):
-    # TODO
-    return True
-
 @login_required
 def LayersUpdateListView(request, id_capa):
     template_name = 'layers_update.html'
@@ -152,6 +149,10 @@ def LayerImportView(request, filename):
                 # Acá se crea un tabla padre vacía con el id_capa para después heredar
                 import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding, create_table_only=True)
                 srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
+                setup_inheritance(IMPORT_SCHEMA, id_capa, nombre_de_tabla)
+                data_datetime = datetime.now().replace(microsecond=0).replace(tzinfo=pytz.utc)
+                add_column(IMPORT_SCHEMA, id_capa, "data_datetime", "timestamp with time zone", data_datetime)
+
                 tabla_geografica = TablaGeografica.objects.create(
                     nombre_normalizado=normalizar_texto(archivo.nombre),
                     nombre_del_archivo=os.path.basename(unicode(archivo.file)),
@@ -320,9 +321,13 @@ def LayerImportUpdateView(request, id_capa, filename):
         try:
             nombre_de_tabla = id_capa + '_v' + str(next_version)
             srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
-            if not _hasSameStructure(id_capa+'_v1', nombre_de_tabla):
-                _dropTable(nombre_de_tabla)
+            if not _hasSameStructure(id_capa, nombre_de_tabla):
+                drop_table(IMPORT_SCHEMA, nombre_de_tabla)
                 raise ValueError('La tabla no tiene la misma estructura que la original.')
+            else:
+                data_datetime = datetime.now().replace(microsecond=0).replace(tzinfo=pytz.utc)
+                add_column(IMPORT_SCHEMA, nombre_de_tabla, "data_datetime", "timestamp with time zone", data_datetime)
+                setup_inheritance(IMPORT_SCHEMA, id_capa, nombre_de_tabla)
 
             tabla_geografica = TablaGeografica.objects.create(
                 nombre_normalizado=normalizar_texto(archivo.nombre),

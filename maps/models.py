@@ -30,6 +30,8 @@ from mapcache import mapcache
 from .tasks import add_tileset, rm_tileset, add_or_replace_tileset
 import json
 from sequences.models import Sequence
+from utils.db import drop_table
+import pytz
 
 MAPA_DEFAULT_SRS = 3857
 MAPA_DEFAULT_SIZE = (110, 150)
@@ -383,6 +385,14 @@ class Mapa(models.Model):
             return urlparse.urljoin(settings.SITE_URL, 'layers/wxs_raster_band/' + unicode(self.id_mapa) + '/')
 
         return urlparse.urljoin(settings.WXS_ONLINERESOURCE,unicode(self.id_mapa)+'/')
+    
+    @property
+    def showAsWMSLayer(self):
+        c=self.capas.first()
+        if self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band':
+            if c is not None:
+                return c.tipo_de_capa == 'raster' # or len(VectorDataSource.objects.filter(capa=c)) > 1
+        return False
 
     def dame_mapserver_map_def(self):
         es_hexa, color = self.dame_imagecolor
@@ -430,7 +440,7 @@ class Mapa(models.Model):
                 "mg_siteurl": unicode(settings.SITE_URL).encode('UTF-8'),
                 "mg_baselayerurl": self.tms_base_layer.url if self.tms_base_layer else settings.MAPCACHE_URL+'tms/1.0.0/world_borders@GoogleMapsCompatible/{z}/{x}/{y}.png',
                 "mg_tmsbaselayer": str(self.tms_base_layer.tms) if self.tms_base_layer else str(True),
-                "mg_iswmslayer": str((self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band') and c is not None and c.tipo_de_capa == 'raster'),
+                "mg_iswmslayer": str(self.showAsWMSLayer),
                 "mg_mapid": unicode(self.id_mapa),
                 "mg_layername": unicode(c.nombre) if c is not None else "",
                 "mg_enablecontextinfo": str(enableContextInfo),
@@ -604,6 +614,15 @@ class MapServerLayer(models.Model):
                 "rasterBandInfo": "",
                 "proj4": '',
             }
+
+            print "Data sources #: %d"%len(VectorDataSource.objects.filter(capa=self.capa))
+            if len(VectorDataSource.objects.filter(capa=self.capa)) > 1:
+                ds = VectorDataSource.objects.filter(capa=self.capa).order_by('timestamp_modificacion')
+                data["timeItem"] = 'data_datetime'
+                data["timeExtent"] = ','.join([rec.timestamp_modificacion.replace(microsecond=0).replace(tzinfo=pytz.utc).isoformat() for rec in ds])
+                # Por ahora dejo el max...
+                data["timeDefault"] = ds.last().timestamp_modificacion.replace(microsecond=0).isoformat()
+
         elif self.capa.tipo_de_capa == CONST_RASTER:
             data = {
                 "connectionType": connectiontype,
@@ -795,7 +814,8 @@ def onCapaPostDelete(sender, instance, **kwargs):
         try:
             # ERROR Hay que cambiar esto!
             print "Borrando tabla master %s"%(instance.id_capa)
-            TablaGeografica.objects.filter(tabla=instance.id_capa).delete()
+            drop_table(instance.esquema, instance.id_capa, True)
+            # TablaGeografica.objects.filter(tabla=instance.id_capa).delete()
         except:
             pass
     elif instance.tipo_de_capa == CONST_RASTER:

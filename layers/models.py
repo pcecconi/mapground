@@ -145,9 +145,9 @@ class Capa(SingleOwnerMixin, models.Model):
     def dame_data(self, srid=None):
         if self.tipo_de_capa == CONST_VECTOR:
             if srid is not None:
-                return "geom_proj from (select *, st_transform(%s, %d) as geom_proj from %s.%s) aa using unique gid using srid=%d" % (self.campo_geom, srid, self.esquema, self.tabla, srid)
+                return "geom_proj from (select *, st_transform(%s, %d) as geom_proj from %s.%s) aa using unique gid using srid=%d" % (self.campo_geom, srid, self.esquema, self.id_capa, srid)
             else:
-                return "%s from %s.%s" % (self.campo_geom, self.esquema, self.tabla)
+                return "%s from %s.%s" % (self.campo_geom, self.esquema, self.id_capa)
         elif self.tipo_de_capa == CONST_RASTER:
             return os.path.join(settings.UPLOADED_RASTERS_PATH, unicode(self.owner), self.nombre_del_archivo)
 

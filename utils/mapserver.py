@@ -284,6 +284,11 @@ def create_ms_layer(data):
         layer.setMetaData('wms_enable_request', '*')
         layer.setMetaData('wfs_enable_request', '*')
 
+        if data.get('timeItem', None) is not None and data['timeItem'] != '':
+            layer.setMetaData('wms_timeitem', data['timeItem'])
+            layer.setMetaData('wms_timeextent', data['timeExtent'])
+            layer.setMetaData('wms_timedefault', data['timeDefault'])
+
         if len(data['metadataIncludeItems']) > 0:
             layer.setMetaData('gml_include_items', ','.join(data['metadataIncludeItems']))
         for alias in data['metadataAliases']:
