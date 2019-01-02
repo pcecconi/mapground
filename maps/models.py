@@ -391,7 +391,7 @@ class Mapa(models.Model):
         c=self.capas.first()
         if self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band':
             if c is not None:
-                return c.tipo_de_capa == 'raster' # or len(VectorDataSource.objects.filter(capa=c)) > 1
+                return c.tipo_de_capa == 'raster' or len(VectorDataSource.objects.filter(capa=c)) > 1
         return False
 
     def dame_mapserver_map_def(self):
@@ -414,7 +414,7 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layer_def('WMS')
             else:
                 l=msl.dame_mapserver_layer_def(msl.dame_layer_connection_type())
-                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326'
+                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326'
             layers.append(l)
         data = {
             "idMapa": self.id_mapa,
@@ -444,7 +444,7 @@ class Mapa(models.Model):
                 "mg_mapid": unicode(self.id_mapa),
                 "mg_layername": unicode(c.nombre) if c is not None else "",
                 "mg_enablecontextinfo": str(enableContextInfo),
-                "ows_srs": 'epsg:%s epsg:4326'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
+                "ows_srs": 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
                 "ows_encoding": 'UTF-8', # siempre
                 "ows_enable_request": '*',
@@ -619,9 +619,9 @@ class MapServerLayer(models.Model):
             if len(VectorDataSource.objects.filter(capa=self.capa)) > 1:
                 ds = VectorDataSource.objects.filter(capa=self.capa).order_by('timestamp_modificacion')
                 data["timeItem"] = 'data_datetime'
-                data["timeExtent"] = ','.join([rec.timestamp_modificacion.replace(microsecond=0).replace(tzinfo=pytz.utc).isoformat() for rec in ds])
+                data["timeExtent"] = ','.join([rec.timestamp_modificacion.replace(second=0,microsecond=0).replace(tzinfo=pytz.utc).isoformat() for rec in ds])
                 # Por ahora dejo el max...
-                data["timeDefault"] = ds.last().timestamp_modificacion.replace(microsecond=0).isoformat()
+                data["timeDefault"] = ds.last().timestamp_modificacion.replace(second=0,microsecond=0).isoformat()
 
         elif self.capa.tipo_de_capa == CONST_RASTER:
             data = {
