@@ -19,7 +19,7 @@ import shutil
 from datetime import datetime
 import pytz
 from sequences import get_next_value
-from utils.db import drop_table, setup_inheritance, add_column
+from utils.db import drop_table, setup_inheritance, add_column, have_same_structure
 
 def _get_posibles_rasters(request):
     l = []
@@ -87,9 +87,8 @@ def __borrarArchivoRasterConMismoDatetime(capa, dt):
         arch.delete()
         rds.delete()
 
-def _hasSameStructure(t1, t2):
-    # TODO
-    return True
+def _haveSameStructure(t1, t2):
+    return have_same_structure(t1, t2)
 
 @login_required
 def LayersUpdateListView(request, id_capa):
@@ -321,12 +320,12 @@ def LayerImportUpdateView(request, id_capa, filename):
         try:
             nombre_de_tabla = id_capa + '_v' + str(next_version)
             srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
-            if not _hasSameStructure(id_capa, nombre_de_tabla):
+            data_datetime = datetime.now().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
+            add_column(IMPORT_SCHEMA, nombre_de_tabla, "data_datetime", "timestamp with time zone", data_datetime)
+            if not _haveSameStructure(id_capa, nombre_de_tabla):
                 drop_table(IMPORT_SCHEMA, nombre_de_tabla)
                 raise ValueError('La tabla no tiene la misma estructura que la original.')
             else:
-                data_datetime = datetime.now().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
-                add_column(IMPORT_SCHEMA, nombre_de_tabla, "data_datetime", "timestamp with time zone", data_datetime)
                 setup_inheritance(IMPORT_SCHEMA, id_capa, nombre_de_tabla)
 
             tabla_geografica = TablaGeografica.objects.create(

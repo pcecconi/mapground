@@ -22,3 +22,13 @@ def add_column(schema, table, col_name, col_type, default_val=None):
         query+=" DEFAULT '%s'"%(default_val)
     cur = connection.cursor()
     cur.execute(query)
+
+def have_same_structure(table1, table2):
+    info_query = "select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where table_name='%s'"
+    diff_query = "%s EXCEPT %s"
+    query = diff_query%(info_query%(table1),info_query%(table2))
+    cur = connection.cursor()
+    cur.execute(query)
+    rows = cur.fetchone()
+    return rows is None
+
