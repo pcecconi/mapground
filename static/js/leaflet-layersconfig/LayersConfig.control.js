@@ -121,7 +121,7 @@ L.Control.LayersConfig = L.Control.extend({
 		if (layerId) {
 			if (!self.slds[layerId]) {
 				$.ajax({
-		            url: '/layers/archivos_sld_de_capa/'+layerId+'/',
+		            url: '/layers/symbology/'+layerId+'/',
 		            dataType: 'json',
 		            data: {},
 		            success: function(data) {
