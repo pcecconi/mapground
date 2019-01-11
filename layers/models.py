@@ -435,26 +435,26 @@ class Metadatos(models.Model):
 def onCapaPreSave(sender, instance, **kwargs):
     print 'onCapaPreSave %s' % (str(instance))
     # carga inicial de campos read only de la capa
-    if instance.id is None:
-        print '...carga inicial de datos read only'
-        if instance.tipo_de_capa == CONST_VECTOR:
-            cursor = connection.cursor()
-            # esta escritura (segura y recomendada) no funciona porque internamente escapea strings con ' y no sirve para el FROM
-            # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
-            cursor.execute("SELECT count(*) from %s.%s" % (instance.esquema, instance.tabla))
-            rows = cursor.fetchone()
-            instance.cantidad_de_registros = int(rows[0])
-            cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" % (instance.campo_geom, instance.esquema, instance.tabla))
-            rows = cursor.fetchone()
-            instance.tipo_de_geometria = TipoDeGeometria.objects.get(postgres_type=rows[0])
-            cursor.execute("SELECT st_extent(%s) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
-            rows = cursor.fetchone()
-            instance.layer_srs_extent = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ')
-            cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
-            rows = cursor.fetchone()
-            extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
-            instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
-            instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
+    # if instance.id is None: # Al haber actualizaciones hay que hacerlo siempre
+    print '...carga inicial de datos read only'
+    if instance.tipo_de_capa == CONST_VECTOR:
+        cursor = connection.cursor()
+        # esta escritura (segura y recomendada) no funciona porque internamente escapea strings con ' y no sirve para el FROM
+        # cursor.execute("SELECT count(*) from %s.%s", [instance.esquema, instance.tabla])
+        cursor.execute("SELECT count(*) from %s.%s" % (instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        instance.cantidad_de_registros = int(rows[0])
+        cursor.execute("SELECT GeometryType(%s) FROM %s.%s LIMIT 1" % (instance.campo_geom, instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        instance.tipo_de_geometria = TipoDeGeometria.objects.get(postgres_type=rows[0])
+        cursor.execute("SELECT st_extent(%s) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        instance.layer_srs_extent = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ')
+        cursor.execute("SELECT st_extent(st_transform(%s,4326)) from %s.%s;" % (instance.campo_geom, instance.esquema, instance.tabla))
+        rows = cursor.fetchone()
+        extent_capa = rows[0].replace('BOX(', '').replace(')', '').replace(',', ' ').split(' ')
+        instance.extent_minx_miny = Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
+        instance.extent_maxx_maxy = Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
 
 
 @receiver(post_save, sender=Metadatos)
