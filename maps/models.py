@@ -494,12 +494,12 @@ class Mapa(models.Model):
                 add_or_replace_tileset(self.id_mapa, layers, srid, sld.id, sld_url)
                 if sld.default:
                     print "default sld: %s"%(sld.filename.url)
-                    default_sld_url = sld.filename.url
+                    default_sld_url = urlparse.urljoin(settings.SITE_URL, sld.filename.url)
         elif self.tipo_de_mapa == 'general':
             layers = 'default'
 
         # mapcache.add_map(self.id_mapa, layers, srid, '', sld_url)
-        add_or_replace_tileset(self.id_mapa, layers, srid, '',  urlparse.urljoin(settings.SITE_URL, default_sld_url))
+        add_or_replace_tileset(self.id_mapa, layers, srid, '',  default_sld_url)
 
     def generar_thumbnail(self):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
