@@ -789,7 +789,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         print '...capa actualizada (ya existia)'
         # actualizamos los mapas relacionados con la capa
         ManejadorDeMapas.delete_mapfile('mapground_public_layers')
-        for m in instance.mapa_set.filter(tipo_de_mapa__in=['layer', 'layer_original_srs', 'general']):
+        for m in instance.mapa_set.filter(tipo_de_mapa__in=['layer', 'layer_original_srs', 'general', 'layer_raster_band']):
             ManejadorDeMapas.delete_mapfile(m.id_mapa)
         for m in Mapa.objects.all().filter(tipo_de_mapa='user'):
             ManejadorDeMapas.delete_mapfile(m.id_mapa)
