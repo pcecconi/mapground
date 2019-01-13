@@ -103,7 +103,7 @@ def LayersUpdateListView(request, id_capa):
 
 def _get_raster_date_time(raster_metadata):
     # Mapserver no soporta datetimes con microsegundos en WMS-T
-    data_datetime = datetime.now().replace(microsecond=0).replace(tzinfo=pytz.utc)
+    data_datetime = datetime.utcnow().replace(microsecond=0).replace(tzinfo=pytz.utc)
     if raster_metadata['raster_count'] > 0:
         try:
             # Toda esta logica es MUY ad-hoc
@@ -149,7 +149,7 @@ def LayerImportView(request, filename):
                 import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding, create_table_only=True)
                 srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
                 setup_inheritance(IMPORT_SCHEMA, id_capa, nombre_de_tabla)
-                data_datetime = datetime.now().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
+                data_datetime = datetime.utcnow().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
                 add_column(IMPORT_SCHEMA, id_capa, "data_datetime", "timestamp with time zone", data_datetime)
 
                 tabla_geografica = TablaGeografica.objects.create(
@@ -320,7 +320,7 @@ def LayerImportUpdateView(request, id_capa, filename):
         try:
             nombre_de_tabla = id_capa + '_v' + str(next_version)
             srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
-            data_datetime = datetime.now().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
+            data_datetime = datetime.utcnow().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
             add_column(IMPORT_SCHEMA, nombre_de_tabla, "data_datetime", "timestamp with time zone", data_datetime)
             if not _haveSameStructure(id_capa, nombre_de_tabla):
                 drop_table(IMPORT_SCHEMA, nombre_de_tabla)
