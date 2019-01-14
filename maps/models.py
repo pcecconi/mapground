@@ -626,9 +626,9 @@ class MapServerLayer(models.Model):
             if len(VectorDataSource.objects.filter(capa=self.capa)) > 1:
                 ds = VectorDataSource.objects.filter(capa=self.capa).order_by('timestamp_modificacion')
                 data["timeItem"] = 'data_datetime'
-                data["timeExtent"] = ','.join([rec.timestamp_modificacion.replace(second=0,microsecond=0).astimezone(get_default_timezone()).isoformat() for rec in ds])
+                data["timeExtent"] = ','.join([rec.timestamp_modificacion.replace(second=0,microsecond=0).isoformat() for rec in ds])
                 # Por ahora dejo el max...
-                data["timeDefault"] = ds.last().timestamp_modificacion.replace(second=0,microsecond=0).astimezone(get_default_timezone()).isoformat()
+                data["timeDefault"] = ds.last().timestamp_modificacion.replace(second=0,microsecond=0).isoformat()
 
         elif self.capa.tipo_de_capa == CONST_RASTER:
             data = {
@@ -656,9 +656,9 @@ class MapServerLayer(models.Model):
                 data["timeItem"] = 'data_datetime'
                 data["tileItem"] = 'location'
                 data["timeIndexData"] = self.capa.dame_datasource_data()
-                data["timeExtent"] = ','.join([rec.data_datetime.astimezone(get_default_timezone()).isoformat() for rec in ds])
+                data["timeExtent"] = ','.join([rec.data_datetime.isoformat() for rec in ds])
                 # Por ahora dejo el max...
-                data["timeDefault"] = ds.last().data_datetime.astimezone(get_default_timezone()).isoformat()
+                data["timeDefault"] = ds.last().data_datetime.isoformat()
 
             # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
             if self.capa.gdal_driver_shortname == 'GRIB':
