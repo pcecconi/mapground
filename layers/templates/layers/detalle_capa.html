@@ -240,7 +240,7 @@
               <thead><tr><th>Nombre</th><th>Cantidad de registros</th><th>Fecha</th></tr></thead>
               <tbody>
                   {% for ds in capa.vectordatasource_set.all %}
-                    <tr><td>{{ ds.tabla }}</td><td>{{ ds.cantidad_de_registros }}</td><td>{{ ds.timestamp_modificacion }}</td></tr>
+                    <tr><td>{{ ds.tabla }}</td><td>{{ ds.cantidad_de_registros }}</td><td>{{ ds.data_datetime }}</td></tr>
                   {% endfor %}
               </tbody>
             </table>

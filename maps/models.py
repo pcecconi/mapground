@@ -623,11 +623,11 @@ class MapServerLayer(models.Model):
 
             print "Data sources #: %d"%len(VectorDataSource.objects.filter(capa=self.capa))
             if len(VectorDataSource.objects.filter(capa=self.capa)) > 1:
-                ds = VectorDataSource.objects.filter(capa=self.capa).order_by('timestamp_modificacion')
+                ds = VectorDataSource.objects.filter(capa=self.capa).order_by('data_datetime')
                 data["timeItem"] = 'data_datetime'
-                data["timeExtent"] = ','.join([rec.timestamp_modificacion.replace(second=0,microsecond=0).isoformat() for rec in ds])
+                data["timeExtent"] = ','.join([rec.data_datetime.replace(second=0,microsecond=0).isoformat() for rec in ds])
                 # Por ahora dejo el max...
-                data["timeDefault"] = ds.last().timestamp_modificacion.replace(second=0,microsecond=0).isoformat()
+                data["timeDefault"] = ds.last().data_datetime.replace(second=0,microsecond=0).isoformat()
 
         elif self.capa.tipo_de_capa == CONST_RASTER:
             data = {

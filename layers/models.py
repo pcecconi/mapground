@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import connection
 from django.contrib.postgres.fields import JSONField
+from django.utils import timezone
 # slugs
 from django.utils.text import slugify
 # signals
@@ -264,6 +265,7 @@ class VectorDataSource(DataSource):
     tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)
     campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')
     cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only, 0 a n para vector, None para raster
+    data_datetime = models.DateTimeField(auto_now=True, null=False, blank=False)    
     objects = models.GeoManager()
 
 class RasterDataSource(DataSource):
