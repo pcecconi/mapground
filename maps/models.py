@@ -4,7 +4,6 @@
 from django.db import models, connection, connections
 from django.contrib.auth.models import User
 from django.conf import settings
-from django.utils.timezone import get_default_timezone
 # import mapscript
 from layerimport.models import TablaGeografica, ArchivoRaster
 from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, RasterDataSource, VectorDataSource, CONST_VECTOR, CONST_RASTER

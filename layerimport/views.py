@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 from django.contrib.gis.geos import Point, Polygon, MultiPolygon
 from django.shortcuts import HttpResponseRedirect, render, get_object_or_404
-from django.utils.timezone import get_default_timezone
 from fileupload.models import Archivo
 from layerimport.models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
@@ -104,13 +103,13 @@ def LayersUpdateListView(request, id_capa):
 
 def _get_raster_date_time(raster_metadata):
     # Mapserver no soporta datetimes con microsegundos en WMS-T
-    data_datetime = datetime.utcnow().replace(microsecond=0).replace(tzinfo=pytz.utc).astimezone(get_default_timezone())
+    data_datetime = datetime.utcnow().replace(microsecond=0).replace(tzinfo=pytz.utc)
     if raster_metadata['raster_count'] > 0:
         try:
             # Toda esta logica es MUY ad-hoc
             # Cuanto de esto funcionara en general para otros gribs y/o rasters es dudosisimo
             grib_ref_time = raster_metadata['metadata_json']['gdalinfo']['bands'][0]['metadata']['']['GRIB_VALID_TIME']
-            data_datetime = datetime.utcfromtimestamp(int(grib_ref_time.split(' ')[0], 10)).replace(tzinfo=pytz.utc).astimezone(get_default_timezone())
+            data_datetime = datetime.utcfromtimestamp(int(grib_ref_time.split(' ')[0], 10)).replace(tzinfo=pytz.utc)
         except Exception as e:
             print unicode(e)
     return data_datetime

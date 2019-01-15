@@ -122,5 +122,13 @@ admin.site.register(ArchivoSLD, ArchivoSLDAdmin)
 # modelos con admins genericos
 admin.site.register(ConexionPostgres)
 admin.site.register(Escala)
-admin.site.register(RasterDataSource)
+
+class RasterDataSourceAdmin(admin.ModelAdmin):
+    search_fields = ('nombre_del_archivo', 'capa')
+    list_display = ['id', 'nombre_del_archivo', 'capa', 'owner']
+    list_display_links = ['id', 'nombre_del_archivo', 'capa', 'owner']
+    ordering = ["nombre_del_archivo"]
+    date_hierarchy = 'data_datetime'
+
+admin.site.register(RasterDataSource, RasterDataSourceAdmin)
 admin.site.register(VectorDataSource)

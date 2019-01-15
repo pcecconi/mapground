@@ -159,22 +159,6 @@ class Capa(SingleOwnerMixin, models.Model):
             return "extent from (select * from layers_rasterdatasource where capa_id=%d) as g using unique id"%(self.id)
 
     def dame_extent(self, separador=',', srid=4326):
-        def _get_min_max(srid):
-            min = self.extent_minx_miny
-            max = self.extent_maxx_maxy
-            try:
-                min = self.extent_minx_miny.transform(srid, clone=True) if self.srid > 0 else self.extent_minx_miny
-                max = self.extent_maxx_maxy.transform(srid, clone=True) if self.srid > 0 else self.extent_maxx_maxy
-            except Exception as e:
-                print "Error intentando transformar coordenadas para capa %s, srid: %s"%(self.id_capa, srid)
-                if self.srid > 0:
-                    try: 
-                        min = self.extent_minx_miny.transform(self.srid, clone=True)
-                        max = self.extent_maxx_maxy.transform(self.srid, clone=True)
-                    except Exception as e:                    
-                        print "Error intentando transformar coordenadas para capa %s, srid: %s"%(self.id_capa, self.srid)
-            return (min, max)
-
         # heuristica para arreglar thumbnails: corta por la mitad a la antartida (lo maximo es -90)
         print 'layer.dame_extent(srid=%s), original srid: %s'%(srid, self.srid)
         if srid == self.srid:
@@ -183,12 +167,17 @@ class Capa(SingleOwnerMixin, models.Model):
             if self.extent_minx_miny.y < -70:
                 self.extent_minx_miny.y = -70
 
-        min, max = _get_min_max(srid)
+        try:
+            min = self.extent_minx_miny.transform(srid, clone=True) if self.srid > 0 else self.extent_minx_miny
+            max = self.extent_maxx_maxy.transform(srid, clone=True) if self.srid > 0 else self.extent_maxx_maxy
 
-        if separador == []:
-            return [min, max]
-        else:
-            return separador.join([str(min.x), str(min.y)]) + separador + separador.join([str(max.x), str(max.y)])
+            if separador == []:
+                return [min, max]
+            else:
+                return separador.join([str(min.x), str(min.y)]) + separador + separador.join([str(max.x), str(max.y)])
+        except Exception as e:
+            print "Error intentando transformar coordenadas para capa %s, srid: %s"%(self.id_capa, srid)
+            raise e 
 
     @property
     def dame_datos(self):
