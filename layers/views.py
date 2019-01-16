@@ -496,7 +496,7 @@ def wxs_public(request):
 
 @logged_in_or_basicauth()
 def wxs_raster_band(request, id_mapa):
-    mapa = get_object_or_404(Mapa, id_mapa=id_mapa)
+    mapa = get_object_or_404(Mapa, id_mapa=id_mapa, tipo_de_mapa='layer_raster_band')
     ManejadorDePermisos.anotar_permiso_a_mapa(request.user, mapa)
     if mapa.permiso is None:
         return HttpResponseForbidden()
