@@ -14,11 +14,12 @@ from django.contrib.auth.decorators import login_required
 import json, os
 from proxy import views
 from django.forms.models import inlineformset_factory, modelformset_factory
+import urlparse
 # models
 from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR
-from maps.models import Mapa, ManejadorDeMapas
+from maps.models import Mapa, ManejadorDeMapas, MapServerLayer
 from layerimport.models import TablaGeografica
-from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, EscalaForm, AreaTematicaForm
+from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, make_band_sld_form, EscalaForm, AreaTematicaForm
 # from mapcache.settings import MAPSERVER_URL
 from users.models import ManejadorDePermisos, PermisoDeCapa, PermisoDeCapaPorGrupo
 # utils
@@ -499,12 +500,14 @@ def wxs_raster_band(request, id_mapa):
     ManejadorDePermisos.anotar_permiso_a_mapa(request.user, mapa)
     if mapa.permiso is None:
         return HttpResponseForbidden()
-
     extra_requests_args = {}
     mapfile = ManejadorDeMapas.commit_mapfile(mapa.id_mapa)
     remote_url = mapserver.get_wms_url(mapa.id_mapa)
-    # TODO: falta SLD
+    sld = mapa.mapserverlayer_set.first().archivo_sld
+    if sld:
+        remote_url = remote_url + '&SLD=' + urlparse.urljoin(settings.SITE_URL, sld.filename.url)
     return views.proxy_view(request, remote_url, extra_requests_args)
+
 
 # @login_required
 def download(request, id_capa, format='shapezip'):
@@ -546,23 +549,36 @@ def download(request, id_capa, format='shapezip'):
 @login_required
 def sld(request, id_capa):
     capa = get_object_or_404(Capa, id_capa=id_capa)
-    if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) not in ('owner','write','superuser'): 
+    if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) not in ('owner', 'write', 'superuser'):
         return HttpResponseForbidden()
 
+    # form1: ArchivoSLD, o sea, todos los SLDs de la capa
     ArchivoSLDInlineFormSet = inlineformset_factory(Capa, ArchivoSLD, form=ArchivoSLDForm, can_delete=True, extra=1)
+
+    # form2: SLD por banda
+    DynamicBandSLDForm = make_band_sld_form(capa)
+    BandSLDFormInlineFormSet = inlineformset_factory(Capa, MapServerLayer, form=DynamicBandSLDForm, can_delete=False, extra=0)
+
     if request.method == 'POST':
         if '_cancel' in request.POST:
-            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa':id_capa}))
-        formset = ArchivoSLDInlineFormSet(request.POST, request.FILES, instance=capa)
-        if formset.is_valid():
-            # formset.save()
-            # reemplazamos el clasico formset.save() por las siguientes lineas que cargan el username y el timestamp en cada objeto
+            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa': id_capa}))
 
-            modificadas=[]
-            for form in formset:    # detecto los objetos que tienen nuevos slds y me guardo los ids
+        formset_archivos_sld = ArchivoSLDInlineFormSet(request.POST, request.FILES, instance=capa)
+        formset_bandas_sld = BandSLDFormInlineFormSet(request.POST, request.FILES, instance=capa)
+
+        if formset_archivos_sld.is_valid() and formset_bandas_sld.is_valid():
+            # grabamos primero las bandas por si el usuario decide borrar un SLD activo:
+            # de esta manera se garantiza un save correcto de SLDs activos (luego el delete se hace en cascada por Django),
+            # si lo hacemos al reves se genera una excepcion porque el SLD ya no existira en este punto
+            formset_bandas_sld.save()
+
+            # formset_archivos_sld.save()
+            # reemplazamos el clasico formset.save() por las siguientes lineas que cargan el username y el timestamp en cada objeto
+            modificadas = []
+            for form in formset_archivos_sld:    # detecto los objetos que tienen nuevos slds y me guardo los ids
                 if 'filename' in form.changed_data:
                     modificadas.append(form.instance.id_archivo_sld)
-            instances = formset.save(commit=False)  # grabo los forms obteniendo las instancias
+            instances = formset_archivos_sld.save(commit=False)  # grabo los forms obteniendo las instancias
             for obj in instances:
                 if obj.pk is None:
                     obj.user_alta = obj.user_modificacion = request.user.username
@@ -572,17 +588,17 @@ def sld(request, id_capa):
                     obj.timestamp_modificacion = datetime.now()
                 obj.save()
 
-            for obj in formset.deleted_objects:
+            for obj in formset_archivos_sld.deleted_objects:
                 obj.delete()
-                
 
             if '_save_and_continue' in request.POST:
-                return HttpResponseRedirect(reverse('layers:sld', kwargs={'id_capa':id_capa}))
-            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa':id_capa}))
+                return HttpResponseRedirect(reverse('layers:sld', kwargs={'id_capa': id_capa}))
+            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa': id_capa}))
     else:
-        formset = ArchivoSLDInlineFormSet(instance=capa)
-  
-    return render(request, 'layers/sld.html', {'formset': formset, 'capa': capa})
+        formset_archivos_sld = ArchivoSLDInlineFormSet(instance=capa)
+        formset_bandas_sld = BandSLDFormInlineFormSet(instance=capa, queryset=MapServerLayer.objects.filter(capa=capa, mapa__tipo_de_mapa='layer_raster_band'))
+
+    return render(request, 'layers/sld.html', {'formset_archivos_sld': formset_archivos_sld, 'formset_bandas_sld': formset_bandas_sld, 'capa': capa})
 
 
 def archivos_sld_de_capa(request, id_capa):
