@@ -106,7 +106,7 @@
             {% else %}
               <table class="table table-striped">
                 <tbody>
-                    {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band' %}
+                    {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band'|ordenar_queryset:'nombre' %}
                         <tr>
                             <td>{{ mapa.titulo }}</td>
                             <td>
@@ -254,7 +254,7 @@
           {% if capa.gdal_metadata.variables_detectadas|length > 0 %}
             <select class="band-selector">
               <option value="{% url 'maps:embeddable' capa.id_capa %}">-- Selección de variables --</option>
-              {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band' %}
+              {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band'|ordenar_queryset:'nombre' %}
                 <option value="{% url 'maps:embeddable' mapa.id_mapa %}" >{{ mapa.titulo }}</option>
               {% endfor %}
             </select>
