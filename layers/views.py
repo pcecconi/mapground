@@ -570,7 +570,12 @@ def sld(request, id_capa):
             # grabamos primero las bandas por si el usuario decide borrar un SLD activo:
             # de esta manera se garantiza un save correcto de SLDs activos (luego el delete se hace en cascada por Django),
             # si lo hacemos al reves se genera una excepcion porque el SLD ya no existira en este punto
-            formset_bandas_sld.save()
+
+            # formset_bandas_sld.save()
+            # reemplazamos el clasico formset.save() por las siguientes lineas que solo graban los objetos que han sido modificados
+            for form in formset_bandas_sld:
+                if 'archivo_sld' in form.changed_data:
+                    form.save()
 
             # formset_archivos_sld.save()
             # reemplazamos el clasico formset.save() por las siguientes lineas que cargan el username y el timestamp en cada objeto
