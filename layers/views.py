@@ -601,7 +601,7 @@ def sld(request, id_capa):
             return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa': id_capa}))
     else:
         formset_archivos_sld = ArchivoSLDInlineFormSet(instance=capa)
-        formset_bandas_sld = BandSLDFormInlineFormSet(instance=capa, queryset=MapServerLayer.objects.filter(capa=capa, mapa__tipo_de_mapa='layer_raster_band'))
+        formset_bandas_sld = BandSLDFormInlineFormSet(instance=capa, queryset=MapServerLayer.objects.filter(capa=capa, mapa__tipo_de_mapa='layer_raster_band').order_by('mapa__nombre'))
 
     return render(request, 'layers/sld.html', {'formset_archivos_sld': formset_archivos_sld, 'formset_bandas_sld': formset_bandas_sld, 'capa': capa})
 
