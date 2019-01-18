@@ -531,7 +531,10 @@ class Mapa(models.Model):
         mapfile=ManejadorDeMapas.commit_mapfile(self.id_mapa)
         filelist = []
         for mslayer in self.mapserverlayer_set.all():
-            sld = urlparse.urljoin(settings.SITE_URL, mslayer.archivo_sld.filename.url) if mslayer.archivo_sld else mslayer.capa.dame_sld_default()
+            if self.tipo_de_mapa == 'layer_raster_band':
+                sld = urlparse.urljoin(settings.SITE_URL, mslayer.archivo_sld.filename.url) if mslayer.archivo_sld else None
+            else:
+                sld = urlparse.urljoin(settings.SITE_URL, mslayer.archivo_sld.filename.url) if mslayer.archivo_sld else mslayer.capa.dame_sld_default()
             url = mapserver.get_legend_graphic_url(self.id_mapa, mslayer.capa.nombre, sld)
             filename=os.path.join(settings.MEDIA_ROOT, self.id_mapa+('_legend_%i.png'%mslayer.orden_de_capa))
             filelist.append(filename)

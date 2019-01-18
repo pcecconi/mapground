@@ -350,11 +350,16 @@ def legend(request, id_mapa):
     mapa = get_object_or_404(Mapa, id_mapa=id_mapa)
     if ManejadorDePermisos.permiso_de_mapa(request.user, mapa) is None:
         return HttpResponseForbidden()
-    
+
     capa = mapa.capas.first()
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.commit_mapfile(id_mapa)
-    remote_url = mapserver.get_legend_graphic_url(id_mapa, capa.nombre, capa.dame_sld_default())
+    mapfile = ManejadorDeMapas.commit_mapfile(id_mapa)
+
+    if mapa.tipo_de_mapa == 'layer_raster_band':
+        sld = mapa.mapserverlayer_set.first().archivo_sld
+    else:
+        sld = capa.dame_sld_default()
+    remote_url = mapserver.get_legend_graphic_url(id_mapa, capa.nombre, sld)
     # remote_url = MAPSERVER_URL+'?map='+mapfile +'&SERVICE=WMS&VERSION=1.3.0&SLD_VERSION=1.1.0&REQUEST=GetLegendGraphic&FORMAT=image/png&LAYER=%s&STYLE=&SLD=%s'%(capa.nombre,capa.dame_sld_default())
     return views.proxy_view(request, remote_url, extra_requests_args)
 
