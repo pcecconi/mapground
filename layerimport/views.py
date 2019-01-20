@@ -211,6 +211,7 @@ def LayerImportView(request, filename):
                     "error_msg": 'Se produjo un error al intentar importar la capa "{0}" CODE: R1'.format(filename)})
 
             extent_capa = raster['extent_capa']
+            extent_capa_4326 = raster['extent_capa_4326']
             proyeccion_proj4 = raster['proyeccion_proj4']
 
             # srid = raster['srid'] if raster['srid'] is not None else 0
@@ -265,8 +266,8 @@ def LayerImportView(request, filename):
                     tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
                     proyeccion_proj4=proyeccion_proj4,
                     srid=srid,
-                    extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326),
-                    extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326),
+                    extent_minx_miny=Point(float(extent_capa_4326[0]), float(extent_capa_4326[1]), srid=4326),
+                    extent_maxx_maxy=Point(float(extent_capa_4326[2]), float(extent_capa_4326[3]), srid=4326),
                     layer_srs_extent=' '.join(map(str, extent_capa)),
                     cantidad_de_registros=None)
 
@@ -277,7 +278,7 @@ def LayerImportView(request, filename):
                     location=filename_destino,
                     proyeccion_proj4=proyeccion_proj4,
                     srid=srid,
-                    extent=MultiPolygon(Polygon.from_bbox(extent_capa)),
+                    extent=MultiPolygon(Polygon.from_bbox(extent_capa_4326)),
                     gdal_driver_shortname=raster['driver_short_name'],
                     gdal_driver_longname=raster['driver_long_name'],
                     gdal_metadata=raster['metadata_json'],
@@ -376,6 +377,7 @@ def LayerImportUpdateView(request, id_capa, filename):
                 "error_msg": 'Se produjo un error al intentar importar la capa "{0}" CODE: R1'.format(filename)})
 
         extent_capa = raster['extent_capa']
+        extent_capa_4326 = raster['extent_capa_4326']
         proyeccion_proj4 = raster['proyeccion_proj4']
 
         # srid = raster['srid'] if raster['srid'] is not None else 0
@@ -429,7 +431,7 @@ def LayerImportUpdateView(request, id_capa, filename):
                 location=filename_destino,
                 proyeccion_proj4=proyeccion_proj4,
                 srid=srid,
-                extent=MultiPolygon(Polygon.from_bbox(extent_capa)),
+                extent=MultiPolygon(Polygon.from_bbox(extent_capa_4326)),
                 gdal_driver_shortname=raster['driver_short_name'],
                 gdal_driver_longname=raster['driver_long_name'],
                 gdal_metadata=raster['metadata_json'],
@@ -449,8 +451,8 @@ def LayerImportUpdateView(request, id_capa, filename):
             capa.tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster')
             capa.proyeccion_proj4=proyeccion_proj4
             capa.srid=srid
-            capa.extent_minx_miny=Point(float(extent_capa[0]), float(extent_capa[1]), srid=4326)
-            capa.extent_maxx_maxy=Point(float(extent_capa[2]), float(extent_capa[3]), srid=4326)
+            capa.extent_minx_miny=Point(float(extent_capa_4326[0]), float(extent_capa_4326[1]), srid=4326)
+            capa.extent_maxx_maxy=Point(float(extent_capa_4326[2]), float(extent_capa_4326[3]), srid=4326)
             capa.layer_srs_extent=' '.join(map(str, extent_capa))
             capa.save()
 

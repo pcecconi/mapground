@@ -276,6 +276,18 @@ def import_layer(filename, schema, table, encoding='LATIN1', create_table_only=F
 def determinar_id_capa(request, nombre):
     return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
 
+def _get_polygon_extent(poly):
+    (minx, miny, maxx, maxy) = poly[0][0], poly[0][1], poly[0][0], poly[0][1]
+    for c in poly:
+        if c[0] < minx:
+            minx = c[0]
+        if c[1] < miny:
+            miny = c[1]
+        if c[0] > maxx:
+            maxx = c[0]
+        if c[1] > maxy:
+            maxy = c[1]
+    return (minx, miny, maxx, maxy)
 
 def get_raster_metadata(file, con_stats=True):
     """Devuelve un json con metadatos detallados de un raster interfaseando con gdal y gdalinfo.
@@ -291,6 +303,14 @@ def get_raster_metadata(file, con_stats=True):
     srid, proj, extent_capa = _get_raster_proj_info(raster)
     # extraemos todos los metadatos del raster usando gdalinfo
     metadata_gdalinfo_json = _run_gdalinfo(file, con_stats)
+
+    print "Calculated extent: %s"%(str(extent_capa))
+    extent_capa_4326 = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
+    print "GDAL Info: proj: %s, srid: %s, extent 4326: %s"%(
+        metadata_gdalinfo_json['coordinateSystem']['wkt'],
+        str(srid),
+        str(extent_capa_4326)
+    )
 
     variables_detectadas = {}
     subdatasets = []
@@ -379,6 +399,7 @@ def get_raster_metadata(file, con_stats=True):
         'subdataset_count': len(raster.GetSubDatasets()),
         'srid': srid,   # puede ser None
         'extent_capa': extent_capa,
+        'extent_capa_4326': extent_capa_4326,
         'metadata_json': {
             'gdalinfo': metadata_gdalinfo_json,
             'variables_detectadas': variables_detectadas,

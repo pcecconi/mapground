@@ -169,8 +169,8 @@ class Capa(SingleOwnerMixin, models.Model):
                 self.extent_minx_miny.y = -70
 
         try:
-            min = self.extent_minx_miny.transform(srid, clone=True) if self.srid > 0 else self.extent_minx_miny
-            max = self.extent_maxx_maxy.transform(srid, clone=True) if self.srid > 0 else self.extent_maxx_maxy
+            min = self.extent_minx_miny.transform(srid, clone=True) 
+            max = self.extent_maxx_maxy.transform(srid, clone=True) 
 
             if separador == []:
                 return [min, max]
