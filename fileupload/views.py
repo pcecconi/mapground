@@ -14,7 +14,8 @@ class ArchivoCreateView(UserPassesTestMixin, CreateView):
 
     # Cambio el signature de esta vista: heredo de UserPassesTestMixin y agrego el siguiente metodo para evitar acceso si no tiene permiso de upload
     # https://stackoverflow.com/questions/4597401/django-user-permissions-to-certain-views?noredirect=1&lq=1
-    # respuesta de 'nesdis'
+    # respuesta de 'nesdis', y aca la documentacion oficial de Django:
+    # https://docs.djangoproject.com/en/1.11/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin
     def test_func(self):
         return self.request.user.userprofile.puede_subir_capas
 
