@@ -304,13 +304,13 @@ def get_raster_metadata(file, con_stats=True):
     # extraemos todos los metadatos del raster usando gdalinfo
     metadata_gdalinfo_json = _run_gdalinfo(file, con_stats)
 
-    print "Calculated extent: %s"%(str(extent_capa))
+    # print "Calculated extent: %s"%(str(extent_capa))
     extent_capa_4326 = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
-    print "GDAL Info: proj: %s, srid: %s, extent 4326: %s"%(
-        metadata_gdalinfo_json['coordinateSystem']['wkt'],
-        str(srid),
-        str(extent_capa_4326)
-    )
+    # print "GDAL Info: proj: %s, srid: %s, extent 4326: %s"%(
+    #     metadata_gdalinfo_json['coordinateSystem']['wkt'],
+    #     str(srid),
+    #     str(extent_capa_4326)
+    # )
 
     variables_detectadas = {}
     subdatasets = []

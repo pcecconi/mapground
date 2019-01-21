@@ -396,9 +396,9 @@ class Mapa(models.Model):
 
     def dame_mapserver_map_def(self):
         es_hexa, color = self.dame_imagecolor
-        srid = self.dame_projection
+        srid = self.srs if self.tipo_de_mapa == 'layer_original_srs' else self.dame_projection
         bbox = self.dame_extent(',', srid)
-        mapExtent = self.dame_mapserver_extent(int(srid))
+        mapExtent = self.extent if self.tipo_de_mapa == 'layer_original_srs' else self.dame_mapserver_extent(int(srid))
         wxs_url = self.dame_wxs_url
         layers = []
         c=self.capas.first()
@@ -414,7 +414,7 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layer_def('WMS')
             else:
                 l=msl.dame_mapserver_layer_def(msl.dame_layer_connection_type())
-                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326'
+                l['metadata']['ows_srs'] = 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326 epsg:3857'
             layers.append(l)
         data = {
             "idMapa": self.id_mapa,
@@ -444,7 +444,7 @@ class Mapa(models.Model):
                 "mg_mapid": unicode(self.id_mapa),
                 "mg_layername": unicode(c.nombre) if c is not None else "",
                 "mg_enablecontextinfo": str(enableContextInfo),
-                "ows_srs": 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
+                "ows_srs": 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326 epsg:3857', # dejamos proyecciones del mapa y 4326 fijas. esta logica la repetimos en las capas 
                 "wfs_getfeature_formatlist": 'geojson,shapezip,csv',
                 "ows_encoding": 'UTF-8', # siempre
                 "ows_enable_request": '*',
@@ -745,7 +745,7 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         mapa.save()
 
         # creamos el mapa en la proyeccion original
-        extent_capa = instance.dame_extent(',', instance.srid)
+        extent_capa = instance.layer_srs_extent
         mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
         # Esto es para cuando tenemos una proyeccion no identificada
         if instance.proyeccion_proj4 is not None and instance.proyeccion_proj4 != '':
