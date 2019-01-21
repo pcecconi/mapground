@@ -2,14 +2,22 @@
 from __future__ import unicode_literals
 
 from django.views.generic import CreateView, DeleteView, ListView
+from django.contrib.auth.mixins import UserPassesTestMixin
 from .models import Archivo
 from .response import JSONResponse, response_mimetype
 from .serialize import serialize
 
 
-class ArchivoCreateView(CreateView):
+class ArchivoCreateView(UserPassesTestMixin, CreateView):
     model = Archivo
     fields = ['file']
+
+    # Cambio el signature de esta vista: heredo de UserPassesTestMixin y agrego el siguiente metodo para evitar acceso si no tiene permiso de upload
+    # https://stackoverflow.com/questions/4597401/django-user-permissions-to-certain-views?noredirect=1&lq=1
+    # respuesta de 'nesdis', y aca la documentacion oficial de Django:
+    # https://docs.djangoproject.com/en/1.11/topics/auth/default/#django.contrib.auth.mixins.UserPassesTestMixin
+    def test_func(self):
+        return self.request.user.userprofile.puede_subir_capas
 
     def form_valid(self, form):
         form.instance.owner = self.request.user
@@ -20,6 +28,7 @@ class ArchivoCreateView(CreateView):
         response = JSONResponse(data, mimetype=response_mimetype(self.request))
         response['Content-Disposition'] = 'inline; filename=files.json'
         return response
+
 
 class ArchivoActualizacionCreateView(CreateView):
     template_name = 'archivo_update_form.html'

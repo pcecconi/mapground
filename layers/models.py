@@ -477,7 +477,7 @@ def get_sld_filename(instance, filename):
 class ArchivoSLD(models.Model):
     id_archivo_sld = models.CharField('Id Archivo SLD', null=False, blank=False, unique=True, max_length=500)
     capa = models.ForeignKey('Capa', null=False)
-    filename = models.FileField('Nombre de Archivo', upload_to=get_sld_filename, max_length=500)
+    filename = models.FileField('Nombre de archivo SLD', upload_to=get_sld_filename, max_length=500)
     descripcion = models.TextField(u'Descripción', null=False, blank=True, max_length=10000)
     default = models.BooleanField(u'Activa', null=False, default=False)
     user_alta = models.CharField(u'Subido por', null=False, blank=True, max_length=50, default='')

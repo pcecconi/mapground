@@ -19,6 +19,11 @@ PERMISOS_ENUM = (
 )
 
 
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    puede_subir_capas = models.BooleanField(default=True, null=False, blank=False)
+
+
 class PermisoDeCapa(models.Model):
     user = models.ForeignKey(User, null=False,blank=False, verbose_name='Usuario')
     capa = models.ForeignKey(Capa, null=False,blank=False)
@@ -223,20 +228,20 @@ class ManejadorDePermisos():
         # ordenamos
         read.sort(key=lambda x:x.username)
         write.sort(key=lambda x:x.username)
-                                
-        return {'owner': capa.owner, 'read': read, 'write': write}            
+
+        return {'owner': capa.owner, 'read': read, 'write': write}
 
     @classmethod
     def capas_agrupadas_por_categoria(cls):
         categorias=Categoria.objects.annotate(total=Count('metadatos')).order_by('nombre')
         sin_categoria=len(Metadatos.objects.filter(categorias=None))
-        return {'categorias': categorias, 'sin_categoria': sin_categoria }
+        return {'categorias': categorias, 'sin_categoria': sin_categoria}
 
     @classmethod
     def mapas_agrupados_por_categoria(cls):
         categorias=Categoria.objects.annotate(total=Count('mapa')).order_by('nombre')
         sin_categoria=len(Mapa.objects.filter(tipo_de_mapa='general',categorias=None))
-        return {'categorias': categorias, 'sin_categoria': sin_categoria }
+        return {'categorias': categorias, 'sin_categoria': sin_categoria}
 
     @classmethod
     def capas_agrupadas_por_escala(cls):
@@ -358,44 +363,51 @@ class ManejadorDePermisos():
             #areaTematicaNode={'text': u'Sin área temática', 'checkable': False, 'nodes': nodes, 'total': len(nodes)}
             areaTematicaNode={'text': u'Sin área temática (%s)'%(str(len(nodes))), 'checkable': False, 'nodes': nodes}
             res.append(areaTematicaNode)
-                
+
         return res
-    
+
+
 @receiver(post_save, sender=PermisoDeCapa)
 def onPermisoDeCapaPostSave(sender, instance, created, **kwargs):
     print 'onPermisoDeCapaPostSave %s'%(str(instance))
     ManejadorDeMapas.delete_mapfile(instance.user.username)
+
 
 @receiver(post_delete, sender=PermisoDeCapa)
 def onPermisoDeCapaPostDelete(sender, instance, **kwargs):
     print 'onPermisoDeCapaPostDelete %s'%(str(instance))
     ManejadorDeMapas.delete_mapfile(instance.user.username)
 
+
 @receiver(post_save, sender=PermisoDeCapaPorGrupo)
 def onPermisoDeCapaPorGrupoPostSave(sender, instance, created, **kwargs):
     print 'onPermisoDeCapaPorGrupoPostSave %s'%(str(instance))
     for u in instance.group.user_set.all():
-    	ManejadorDeMapas.delete_mapfile(u.username)
+        ManejadorDeMapas.delete_mapfile(u.username)
+
 
 @receiver(post_delete, sender=PermisoDeCapaPorGrupo)
 def onPermisoDeCapaPorGrupoPostDelete(sender, instance, **kwargs):
     print 'onPermisoDeCapaPorGrupoPostDelete %s'%(str(instance))
     for u in instance.group.user_set.all():
-    	ManejadorDeMapas.delete_mapfile(u.username)
+        ManejadorDeMapas.delete_mapfile(u.username)
+
 
 @receiver(post_save, sender=User)
 def onUserPostSave(sender, instance, created, **kwargs):
     print 'onUserPostSave %s'%(str(instance))
     if created:
-        mapa_usuario = Mapa.objects.create(owner=instance,nombre=instance.username,id_mapa=instance.username, tipo_de_mapa='user')
+        UserProfile.objects.create(user=instance)
+        mapa_usuario = Mapa.objects.create(owner=instance, nombre=instance.username, id_mapa=instance.username, tipo_de_mapa='user')
         ManejadorDeMapas.regenerar_mapas_de_usuarios([instance])
 
 @receiver(post_save, sender=Group)
 def onGroupPostSave(sender, instance, created, **kwargs):
     print 'onGroupPostSave %s'%(str(instance))
-    #aca no iria nada: una creacion de grupo ni un rename de grupo recalculan nada
-    
+    # aca no iria nada: una creacion de grupo ni un rename de grupo recalculan nada
+
+
 @receiver(post_delete, sender=Group)
 def onGroupPostDelete(sender, instance, **kwargs):
     print 'onGroupPostDelete %s'%(str(instance))
-    #aca no iria nada porque antes ejecuta la senial onPermisoDeCapaPorGrupoPostDelete  
+    # aca no iria nada porque antes ejecuta la senial onPermisoDeCapaPorGrupoPostDelete

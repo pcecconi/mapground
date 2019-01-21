@@ -80,6 +80,14 @@ def filtrar_mapas_por_tipo(value, valor):
 
 register.filter('filtrar_mapas_por_tipo', filtrar_mapas_por_tipo)
 
+
+@register.filter
+def ordenar_queryset(qs, campo):
+    return qs.order_by(campo)
+
+register.filter('ordenar_queryset', ordenar_queryset)
+
+
 def match_format_string(format_str, s):
     """Match s against the given format string, return dict of matches.
 
