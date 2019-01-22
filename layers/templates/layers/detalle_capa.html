@@ -32,7 +32,9 @@
           {% endif %}
           {% if capa.permiso == 'owner' or capa.permiso == 'superuser' or capa.permiso == 'write' %}
             <a href="{% url 'layers:metadatos' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-pencil"></span>&nbsp;Editar</a>
+            {% if user.is_authenticated and user.userprofile.puede_subir_capas %}
             <a href="{% url 'fileupload:upload-update' capa.id_capa %}" type="button" class="btn btn-default"><span class="glyphicon glyphicon-upload"></span>&nbsp;Actualizar</a>
+            {% endif %}
           {% endif %}
           {% if capa.permiso == 'owner' or capa.permiso == 'superuser' %}
             {% if capa.borrable %}
