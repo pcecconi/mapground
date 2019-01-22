@@ -1,3 +1,5 @@
+{% load capas_tags %}
+
 <dl class="dl-horizontal">
   <dt>Tipo</dt><dd>{{ capa.tipo_de_geometria.nombre }}</dd>
   {% if capa.tipo_de_capa == 'vector' %}
@@ -35,6 +37,11 @@
   {% if user.is_authenticated %}
   <dt>WMS/WFS de la capa</dt><dd><a class="user" href="/layers/wxs/{{ capa.id_capa }}/">http://{{ request.get_host }}/layers/wxs/{{ capa.id_capa }}/</a></dd>
   <dt>WMS/WFS del usuario</dt><dd><a class="user" href="/users/{{request.user.username}}/wxs/">http://{{ request.get_host }}/users/{{request.user.username}}/wxs/</a></dd>
+
+  {% for mapa in capa.mapa_set.all|filtrar_mapas_por_tipo:'layer_raster_band'|ordenar_queryset:'nombre' %}
+    <dt> WMS Banda {{ mapa.titulo }}</dt><dd><a class="user" href="/layers/wxs_raster_band/{{ mapa.id_mapa }}/">http://{{ request.get_host }}/layers/wxs_raster_band/{{ mapa.id_mapa }}/</a></dd>
+  {% endfor %}
+
   {% if capa.wxs_publico %}
   <dt>WMS/WFS público</dt><dd><a class="user" href="/layers/public_wxs/">http://{{ request.get_host }}/layers/public_wxs/</a></dd>
   {% endif %}
