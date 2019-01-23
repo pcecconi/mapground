@@ -16,10 +16,10 @@ from proxy import views
 from django.forms.models import inlineformset_factory, modelformset_factory
 import urlparse
 # models
-from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR
+from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR, RasterDataSource, VectorDataSource
 from maps.models import Mapa, ManejadorDeMapas, MapServerLayer
 from layerimport.models import TablaGeografica
-from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, make_band_sld_form, EscalaForm, AreaTematicaForm
+from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, make_band_sld_form, EscalaForm, AreaTematicaForm, RasterDataSourceForm
 # from mapcache.settings import MAPSERVER_URL
 from users.models import ManejadorDePermisos, PermisoDeCapa, PermisoDeCapaPorGrupo
 # utils
@@ -617,3 +617,37 @@ def archivos_sld_de_capa(request, id_capa):
         res.append({'id':sld.id, 'id_archivo_sld': sld.id_archivo_sld, 'url':sld.filename.url.replace('.sld','.png'), 'descripcion':sld.descripcion, 'default':sld.default})    
 
     return HttpResponse(json.dumps(res), content_type="application/json")
+
+@login_required
+def actualizaciones(request, id_capa):
+    capa = get_object_or_404(Capa, id_capa=id_capa)
+    if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) not in ('owner', 'write', 'superuser'):
+        return HttpResponseForbidden()
+
+    # form1: RasterDataSource o VectorDataSouce, o sea, todos los datasets de la capa
+    ActualizacionesInlineFormSet = inlineformset_factory(Capa, RasterDataSource, form=RasterDataSourceForm, can_delete=True, extra=0)
+
+    if request.method == 'POST':
+        if '_cancel' in request.POST:
+            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa': id_capa}))
+
+        formset_actualizaciones = ActualizacionesInlineFormSet(request.POST, request.FILES, instance=capa)
+
+        if formset_actualizaciones.is_valid():
+            instances = formset_actualizaciones.save(commit=False)  # grabo los forms obteniendo las instancias
+
+            for form in formset_actualizaciones:
+                print "form changed data: %s"%(str(form.changed_data))
+                if 'data_datetime' in form.changed_data:
+                    form.save()
+
+            for obj in formset_actualizaciones.deleted_objects:
+                obj.delete()
+
+            if '_save_and_continue' in request.POST:
+                return HttpResponseRedirect(reverse('layers:actualizaciones', kwargs={'id_capa': id_capa}))
+            return HttpResponseRedirect(reverse('layers:detalle_capa', kwargs={'id_capa': id_capa}))
+    else:
+        formset_actualizaciones = ActualizacionesInlineFormSet(instance=capa)
+
+    return render(request, 'layers/actualizaciones.html', {'formset_actualizaciones': formset_actualizaciones, 'capa': capa})

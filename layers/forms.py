@@ -2,11 +2,11 @@
 from django import forms
 from django.forms import ModelForm, ValidationError
 from django.core.validators import MinLengthValidator
-# from django.forms.extras.widgets import SelectDateWidget
+from django.forms.extras.widgets import SelectDateWidget
 from django.contrib.auth.models import User, Group
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
-from layers.models import Metadatos, Atributo, Capa, Categoria, ArchivoSLD, Escala, AreaTematica
+from layers.models import Metadatos, Atributo, Capa, Categoria, ArchivoSLD, Escala, AreaTematica, RasterDataSource, VectorDataSource
 from users.models import PermisoDeCapa, PermisoDeCapaPorGrupo
 from maps.models import MapServerLayer
 from utils.commons import normalizar_texto
@@ -175,3 +175,14 @@ def make_band_sld_form(capa):
             self.fields['banda'].widget.attrs['readonly'] = True
 
     return BandSLDForm
+
+class RasterDataSourceForm(ModelForm):
+
+    class Meta:
+        model = RasterDataSource
+        fields = ['nombre_del_archivo', 'data_datetime']
+
+    def __init__(self, *args, **kwargs):
+        super(RasterDataSourceForm, self).__init__(*args, **kwargs)
+        if self.instance.id:
+            self.fields['nombre_del_archivo'].widget.attrs['readonly'] = 'True'

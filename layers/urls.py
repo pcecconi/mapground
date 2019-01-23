@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^attr/(?P<id_capa>.+)/$', views.atributos, name='atributos'),
     url(r'^perm/(?P<id_capa>.+)/$', views.permisos, name='permisos'),
     url(r'^sld/(?P<id_capa>.+)/$', views.sld, name='sld'),
+    url(r'^updates/(?P<id_capa>.+)/$', views.actualizaciones, name='actualizaciones'),
     url(r'^labels/$', views.categorias, name='categorias'),
     url(r'^scales/$', views.escalas, name='escalas'),
     url(r'^folders/$', views.areas_tematicas, name='areas_tematicas'),

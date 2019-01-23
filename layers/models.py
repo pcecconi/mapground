@@ -277,7 +277,7 @@ class RasterDataSource(DataSource):
     cantidad_de_bandas = models.IntegerField(null=True, blank=True)
     size_height = models.IntegerField(null=True, blank=True)
     size_width = models.IntegerField(null=True, blank=True)
-    data_datetime = models.DateTimeField(auto_now=False, null=False, blank=False)    
+    data_datetime = models.DateTimeField('Fecha de los datos', auto_now=False, null=False, blank=False)    
     active = models.BooleanField(default=False, null=False, blank=False)
     objects = models.GeoManager()
 
