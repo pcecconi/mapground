@@ -30,10 +30,13 @@ class ArchivoCreateView(UserPassesTestMixin, CreateView):
         return response
 
 
-class ArchivoActualizacionCreateView(CreateView):
+class ArchivoActualizacionCreateView(UserPassesTestMixin, CreateView):
     template_name = 'archivo_update_form.html'
     model = Archivo
     fields = ['file']
+
+    def test_func(self):
+        return self.request.user.userprofile.puede_subir_capas
 
     def get_context_data(self, *args, **kwargs):
         context = super(ArchivoActualizacionCreateView, self).get_context_data(*args, **kwargs)

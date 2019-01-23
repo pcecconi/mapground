@@ -3,21 +3,18 @@ from __future__ import unicode_literals
 
 from django.shortcuts import render, get_object_or_404
 
-from django.conf import settings
 from proxy import views
 from layers.views import logged_in_or_basicauth
 # from mapcache.settings import MAPSERVER_URL
 from django.contrib.auth.models import User, Group
-from django.http import HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
-from django.forms.models import modelformset_factory
-from users.forms import UserForm, GroupForm
-from django.http import HttpResponse,HttpResponseRedirect
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from layers.models import Capa
-from maps.models import Mapa, ManejadorDeMapas
+from django.forms.models import modelformset_factory
+from users.models import UserProfile
+from users.forms import UserForm, GroupForm, UserProfileForm
+from maps.models import ManejadorDeMapas
 from utils import mapserver
-import os
 
 
 @logged_in_or_basicauth()
@@ -25,12 +22,13 @@ def wxs(request, username):
     user = get_object_or_404(User, username=username)
     if user != request.user:
         return HttpResponseForbidden()
-    
+
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.commit_mapfile(username)
+    mapfile = ManejadorDeMapas.commit_mapfile(username)
     # remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
     remote_url = mapserver.get_wms_url(username)
     return views.proxy_view(request, remote_url, extra_requests_args)
+
 
 @login_required
 def usuarios(request):
@@ -52,9 +50,10 @@ def usuarios(request):
                 return HttpResponseRedirect(reverse('users:usuarios'))
             return HttpResponseRedirect(reverse('layers:index'))
     else:
-        formset = UserFormSet(queryset=User.objects.exclude(username__in=['admin','mapground']).order_by('username'))
+        formset = UserFormSet(queryset=User.objects.exclude(username__in=['admin', 'mapground']).order_by('username'))
 
     return render(request, 'users/usuarios.html', {'formset': formset})
+
 
 @login_required
 def grupos(request):
@@ -74,5 +73,27 @@ def grupos(request):
             return HttpResponseRedirect(reverse('layers:index'))
     else:
         formset = GroupFormSet(queryset=Group.objects.all().order_by('name'))
+
+    return render(request, 'users/usuarios.html', {'formset': formset})
+
+
+@login_required
+def perfiles(request):
+    if not request.user.is_superuser:
+        return HttpResponseRedirect(reverse('layers:index'))
+
+    UserProfileFormSet = modelformset_factory(UserProfile, form=UserProfileForm, can_delete=False, extra=0)
+
+    if request.method == 'POST':
+        if '_cancel' in request.POST:
+            return HttpResponseRedirect(reverse('layers:index'))
+        formset = UserProfileFormSet(request.POST, request.FILES)
+        if formset.is_valid():
+            formset.save()
+            if '_save_and_continue' in request.POST:
+                return HttpResponseRedirect(reverse('users:perfiles'))
+            return HttpResponseRedirect(reverse('layers:index'))
+    else:
+        formset = UserProfileFormSet(queryset=UserProfile.objects.exclude(user__username__in=['admin', 'mapground']).order_by('user__username'))
 
     return render(request, 'users/usuarios.html', {'formset': formset})

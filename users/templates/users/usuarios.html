@@ -11,6 +11,7 @@
 
 {% url 'users:usuarios' as url_usuarios %}
 {% url 'users:grupos' as url_grupos %}
+{% url 'users:perfiles' as url_perfiles %}
 
 <div class="row">
 	<div class="col-sm-8 main-content">
@@ -18,6 +19,7 @@
 		  <ul class="nav nav-tabs" role="tablist" id="myTab">
 			<li {% if request.path == url_usuarios %}class="active"{% endif %}><a href={{ url_usuarios }}>Usuarios</a></li>
 			<li {% if request.path == url_grupos %}class="active"{% endif %}><a href={{ url_grupos }}>Grupos</a></li>
+            <li {% if request.path == url_perfiles %}class="active"{% endif %}><a href={{ url_perfiles }}>Perfiles</a></li>
 		  </ul>
 
         <div class="clearfix"></div>
@@ -32,7 +34,7 @@
 						<table class="table table-striped">
 								<thead><tr>
 									{% for field in formset|first %}
-										{% if field.name != 'id' %}						 
+										{% if field.name != 'id' %}
 											 <th>{{ field.label }}</th>
 										{% endif %}
 									{% endfor %}
@@ -42,7 +44,7 @@
 							{% if form.non_field_errors %}
 								<tr><td colspan="100%" class="text-danger">{{ form.non_field_errors }}</td></tr>
 							{% endif %}
-					    
+
 					            <tr><td colspan="100%" style="display: none;">{{form.id}}</td></tr>
 					            <tr>
 								{% for field in form %}
@@ -56,7 +58,7 @@
 										    	{% if field.errors|length > 0 %}
 										        <p class="text-danger">{{ field.errors.as_text }}</p>
 										      	{% endif %}
-										      	{{ field|addcss:"form-control" }}											      	
+                                                {{ field|addcss:"form-control" }}
 							                </td>
 							             </div>
 						            {% endif %}
@@ -105,7 +107,7 @@
 										    	{% if field.errors|length > 0 %}
 										        <p class="text-danger">{{ field.errors.as_text }}</p>
 										      	{% endif %}
-										      	{{ field|addcss:"form-control" }}											      	
+                                                {{ field|addcss:"form-control" }}
 							                </td>
 							             </div>
 						            {% endif %}
@@ -119,8 +121,59 @@
 					<button type="submit" class="btn btn-primary" name="_cancel"><i class="glyphicon glyphicon-remove-circle"></i><span>&nbsp;Cancelar</span></button>
 					<button type="submit" class="btn btn-danger" name="_save"><i class="glyphicon glyphicon-save"></i><span>&nbsp;Grabar</span></button>
 					<button type="submit" class="btn btn-danger" name="_save_and_continue"><i class="glyphicon glyphicon-refresh"></i><span>&nbsp;Grabar y continuar editando</span></button>
-				
+
 				</form>
+          <div class="tab-content">
+            {% elif request.path == url_perfiles %}
+                <form action="" method="post" role="form">
+                    {% csrf_token %}
+
+                        {{ formset.management_form }}
+                        {{ formset.non_form_errors }}
+                        <table class="table table-striped">
+                                <thead><tr>
+                                    {% for field in formset|first %}
+                                        {% if field.name != 'id' %}
+                                             <th>{{ field.label }}</th>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tr></thead>
+                            <tbody>
+                        {% for form in formset %}
+                            {% if form.non_field_errors %}
+                                <tr><td colspan="100%" class="text-danger">{{ form.non_field_errors }}</td></tr>
+                            {% endif %}
+
+                                <tr><td colspan="100%" style="display: none;">{{form.id}}</td></tr>
+                                <tr>
+                                {% for field in form %}
+                                    {% if field.name != 'id' %}
+                                        {% if field.errors|length > 0 %}
+                                            <div class="form-group has-error">
+                                        {% else %}
+                                            <div class="form-group">
+                                        {% endif %}
+                                            <td>
+                                                {% if field.errors|length > 0 %}
+                                                <p class="text-danger">{{ field.errors.as_text }}</p>
+                                                {% endif %}
+                                                {{ field|addcss:"form-control" }}
+                                            </td>
+                                         </div>
+                                    {% endif %}
+                                {% endfor %}
+                                </tr>
+                                <tr><td colspan="100%" style="display: none;">&nbsp;</td></tr>
+                        {% endfor %}
+                           </tbody>
+                        </table>
+
+                <button type="submit" class="btn btn-primary" name="_cancel"><i class="glyphicon glyphicon-remove-circle"></i><span>&nbsp;Cancelar</span></button>
+                <button type="submit" class="btn btn-danger" name="_save"><i class="glyphicon glyphicon-save"></i><span>&nbsp;Grabar</span></button>
+                <button type="submit" class="btn btn-danger" name="_save_and_continue"><i class="glyphicon glyphicon-refresh"></i><span>&nbsp;Grabar y continuar editando</span></button>
+
+                </form>
+
 			{% endif %}
 		</div>
 	{% endif %} 
