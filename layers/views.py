@@ -16,7 +16,7 @@ from proxy import views
 from django.forms.models import inlineformset_factory, modelformset_factory
 import urlparse
 # models
-from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR, RasterDataSource, VectorDataSource
+from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR, RasterDataSource, VectorDataSource, get_newest_datasource_for_layer
 from maps.models import Mapa, ManejadorDeMapas, MapServerLayer
 from layerimport.models import TablaGeografica
 from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, make_band_sld_form, EscalaForm, AreaTematicaForm, RasterDataSourceForm
@@ -636,13 +636,24 @@ def actualizaciones(request, id_capa):
         if formset_actualizaciones.is_valid():
             instances = formset_actualizaciones.save(commit=False)  # grabo los forms obteniendo las instancias
 
+            layer_changed = False
             for form in formset_actualizaciones:
-                print "form changed data: %s"%(str(form.changed_data))
                 if 'data_datetime' in form.changed_data:
+                    layer_changed = True
                     form.save()
 
             for obj in formset_actualizaciones.deleted_objects:
-                obj.delete()
+                if not obj.is_only_datasource:
+                    layer_changed = True
+                    obj.delete()
+                else:
+                    print "Can't delete only datasource on layer %s"%(capa.id_capa)
+
+            # Usamos un flag para hacer un unico save independientemente de la 
+            # cantidad de cambios que haya
+            if layer_changed:
+                nds = get_newest_datasource_for_layer(capa)
+                capa.actualizar_datasource(nds)
 
             if '_save_and_continue' in request.POST:
                 return HttpResponseRedirect(reverse('layers:actualizaciones', kwargs={'id_capa': id_capa}))

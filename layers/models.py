@@ -211,6 +211,21 @@ class Capa(SingleOwnerMixin, models.Model):
             except:
                 pass
 
+    def actualizar_datasource(self, datasource):
+        if self.tipo_de_capa == CONST_RASTER:
+            self.nombre_del_archivo=datasource.nombre_del_archivo
+            self.cantidad_de_bandas=datasource.cantidad_de_bandas
+            self.size_height=datasource.size_height
+            self.size_width=datasource.size_width
+            self.gdal_metadata=datasource.gdal_metadata
+            self.gdal_driver_shortname=datasource.gdal_driver_shortname
+            self.gdal_driver_longname=datasource.gdal_driver_longname
+            self.proyeccion_proj4=datasource.proyeccion_proj4
+            self.srid=datasource.srid
+        else:
+            self.tabla=datasource.nombre_de_tabla
+        self.save()
+
     def save(self, *args, **kwargs):
         # TODO: pensar: vamos a permitir que una capa pueda cambiar su nombre? esto cambaria el id con el tiempo, hay que actualizar las referencias en los mapfiles....si no queremos, hay que hacer algun truco:dirtyfields,compararcontra la base,etc
         # if self.slug == '':
@@ -259,13 +274,18 @@ class DataSource(SingleOwnerMixin, models.Model):
     class Meta:
         abstract=True
 
+    @property
+    def is_only_datasource(self):
+        num_ds = self.__class__.objects.filter(capa=self.capa).count()
+        return num_ds == 1
+
 class VectorDataSource(DataSource):
     conexion_postgres = models.ForeignKey('ConexionPostgres', null=True, blank=True)
     esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)
     tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)
     campo_geom = models.CharField(u'Campo de Geometría', null=True, blank=True, max_length=30, default='geom')
     cantidad_de_registros = models.IntegerField('Cantidad de registros', null=True, blank=True)  # read_only, 0 a n para vector, None para raster
-    data_datetime = models.DateTimeField(auto_now=True, null=False, blank=False)    
+    data_datetime = models.DateTimeField('Fecha de los datos', auto_now=False, null=False, blank=False)    
     objects = models.GeoManager()
 
 class RasterDataSource(DataSource):
@@ -280,6 +300,12 @@ class RasterDataSource(DataSource):
     data_datetime = models.DateTimeField('Fecha de los datos', auto_now=False, null=False, blank=False)    
     active = models.BooleanField(default=False, null=False, blank=False)
     objects = models.GeoManager()
+
+def get_newest_datasource_for_layer(capa):
+    if capa.tipo_de_capa == CONST_RASTER:
+        return RasterDataSource.objects.filter(capa=capa).order_by('-data_datetime').first()
+    else:
+        return VectorDataSource.objects.filter(capa=capa).order_by('-data_datetime').first()
 
 class Escala(models.Model):
     nombre = models.CharField('Nombre', null=False, blank=False, unique=True, max_length=100)
@@ -518,3 +544,9 @@ def onVectorDataSourcePostDelete(sender, instance, **kwargs):
     print "VectorDataSource para tabla %s borrado."%(instance.tabla)
     print "Borrando tabla geografica..."
     TablaGeografica.objects.filter(tabla=instance.tabla).delete()
+
+# @receiver(post_save, sender=RasterDataSource)
+# def onVectorDataSourcePostSave(sender, instance, **kwargs):
+#     print "RasterDataSource para capa %s borrado."%(instance.capa.id_capa)
+#     print "Guardando capa para forzar actualización..."
+#     instance.capa.save()

@@ -177,7 +177,6 @@ def make_band_sld_form(capa):
     return BandSLDForm
 
 class RasterDataSourceForm(ModelForm):
-
     class Meta:
         model = RasterDataSource
         fields = ['nombre_del_archivo', 'data_datetime']
@@ -186,3 +185,13 @@ class RasterDataSourceForm(ModelForm):
         super(RasterDataSourceForm, self).__init__(*args, **kwargs)
         if self.instance.id:
             self.fields['nombre_del_archivo'].widget.attrs['readonly'] = 'True'
+
+class VectorDataSourceForm(ModelForm):
+    class Meta:
+        model = VectorDataSource
+        fields = ['tabla', 'data_datetime']
+
+    def __init__(self, *args, **kwargs):
+        super(VectorDataSourceForm, self).__init__(*args, **kwargs)
+        if self.instance.id:
+            self.fields['tabla'].widget.attrs['readonly'] = 'True'
