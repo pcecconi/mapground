@@ -28,6 +28,7 @@ from django.contrib.gis.geos import Point
 from django_extras.contrib.auth.models import SingleOwnerMixin
 
 from layerimport.models import TablaGeografica
+from utils.db import update_table_col
 
 CONST_VECTOR = 'vector'
 CONST_RASTER = 'raster'
@@ -223,7 +224,7 @@ class Capa(SingleOwnerMixin, models.Model):
             self.proyeccion_proj4=datasource.proyeccion_proj4
             self.srid=datasource.srid
         else:
-            self.tabla=datasource.nombre_de_tabla
+            self.tabla=datasource.tabla
         self.save()
 
     def save(self, *args, **kwargs):
@@ -463,7 +464,6 @@ class Metadatos(models.Model):
         auto_update_search_field=True
     )
 
-
 @receiver(pre_save, sender=Capa)
 def onCapaPreSave(sender, instance, **kwargs):
     print 'onCapaPreSave %s' % (str(instance))
@@ -545,8 +545,7 @@ def onVectorDataSourcePostDelete(sender, instance, **kwargs):
     print "Borrando tabla geografica..."
     TablaGeografica.objects.filter(tabla=instance.tabla).delete()
 
-# @receiver(post_save, sender=RasterDataSource)
-# def onVectorDataSourcePostSave(sender, instance, **kwargs):
-#     print "RasterDataSource para capa %s borrado."%(instance.capa.id_capa)
-#     print "Guardando capa para forzar actualización..."
-#     instance.capa.save()
+@receiver(post_save, sender=VectorDataSource)
+def onVectorDataSourcePostSave(sender, instance, **kwargs):
+    print "Actualizacion de vector data source..."
+    update_table_col(instance.esquema, instance.tabla, 'data_datetime', instance.data_datetime.isoformat())

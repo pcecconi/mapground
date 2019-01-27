@@ -23,6 +23,14 @@ def add_column(schema, table, col_name, col_type, default_val=None):
     cur = connection.cursor()
     cur.execute(query)
 
+def update_table_col(schema, table, col_name, val, condition=""):
+    query = ('UPDATE "%s"."%s" SET "%s"=\'%s\'') % (schema, table, 
+        col_name, val)
+    if condition != "":
+        query+=condition
+    cur = connection.cursor()
+    cur.execute(query)
+
 def have_same_structure(table1, table2):
     info_query = "select column_name, data_type from INFORMATION_SCHEMA.COLUMNS where table_name='%s'"
     diff_query = "%s EXCEPT %s"

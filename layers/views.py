@@ -19,7 +19,7 @@ import urlparse
 from layers.models import Capa, Metadatos, Atributo, Categoria, ArchivoSLD, Escala, AreaTematica, CONST_RASTER, CONST_VECTOR, RasterDataSource, VectorDataSource, get_newest_datasource_for_layer
 from maps.models import Mapa, ManejadorDeMapas, MapServerLayer
 from layerimport.models import TablaGeografica
-from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, make_band_sld_form, EscalaForm, AreaTematicaForm, RasterDataSourceForm
+from layers.forms import MetadatosForm, AtributoForm, make_permisodecapa_form, CapaForm, CategoriaForm, PermisoDeCapaPorGrupoForm, ArchivoSLDForm, make_band_sld_form, EscalaForm, AreaTematicaForm, RasterDataSourceForm, VectorDataSourceForm
 # from mapcache.settings import MAPSERVER_URL
 from users.models import ManejadorDePermisos, PermisoDeCapa, PermisoDeCapaPorGrupo
 # utils
@@ -625,7 +625,13 @@ def actualizaciones(request, id_capa):
         return HttpResponseForbidden()
 
     # form1: RasterDataSource o VectorDataSouce, o sea, todos los datasets de la capa
-    ActualizacionesInlineFormSet = inlineformset_factory(Capa, RasterDataSource, form=RasterDataSourceForm, can_delete=True, extra=0)
+    
+    ActualizacionesInlineFormSet = inlineformset_factory(Capa, RasterDataSource, 
+        form=RasterDataSourceForm, 
+        can_delete=True, extra=0) if capa.tipo_de_capa == CONST_RASTER else inlineformset_factory(Capa, 
+        VectorDataSource, 
+        form=VectorDataSourceForm, 
+        can_delete=True, extra=0)
 
     if request.method == 'POST':
         if '_cancel' in request.POST:
