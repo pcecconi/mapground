@@ -33,6 +33,10 @@
   {% endif %}
   <dt>Encoding</dt><dd>UTF-8</dd>
   <dt>SRS</dt><dd>{% if capa.srid != 0 %}{{ capa.srid }}{% else %}Personalizado{% endif %}</dd>
+  {% if capa.proyeccion_proj4 %}
+  <dt>Proyecci&oacute;n proj4</dt><dd>{{ capa.proyeccion_proj4 }}</dd>
+  {% endif %}
+
   {% if capa.metadatos.fuente != "" %}
     <dt>Fuente</dt><dd>{{ capa.metadatos.fuente }}</dd>
   {% endif %}
