@@ -305,12 +305,17 @@ def get_raster_metadata(file, con_stats=True):
     metadata_gdalinfo_json = _run_gdalinfo(file, con_stats)
 
     # print "Calculated extent: %s"%(str(extent_capa))
-    extent_capa_4326 = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
+    # extent_capa_4326 = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
     # print "GDAL Info: proj: %s, srid: %s, extent 4326: %s"%(
     #     metadata_gdalinfo_json['coordinateSystem']['wkt'],
     #     str(srid),
     #     str(extent_capa_4326)
     # )
+    if 'wgs84Extent' in metadata_gdalinfo_json:
+        try:
+            extent_capa = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
+        except:
+            pass
 
     variables_detectadas = {}
     subdatasets = []
@@ -327,9 +332,11 @@ def get_raster_metadata(file, con_stats=True):
                     minimo = banda.get('minimum')
                     maximo = banda.get('maximum')
 
-                    if grib_element == 'UGRD':
+                    # if grib_element == 'UGRD':
+                    if grib_element in ('UGRD', 'UOGRD'):
                         wind_u_band = nro_banda
-                    elif grib_element == 'VGRD':
+                    # elif grib_element == 'VGRD':
+                    elif grib_element in ('VGRD', 'VOGRD'):
                         wind_v_band = nro_banda
                     else:
                         variables_detectadas[nro_banda] = {
@@ -399,7 +406,6 @@ def get_raster_metadata(file, con_stats=True):
         'subdataset_count': len(raster.GetSubDatasets()),
         'srid': srid,   # puede ser None
         'extent_capa': extent_capa,
-        'extent_capa_4326': extent_capa_4326,
         'metadata_json': {
             'gdalinfo': metadata_gdalinfo_json,
             'variables_detectadas': variables_detectadas,
