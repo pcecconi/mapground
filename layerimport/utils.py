@@ -276,6 +276,7 @@ def import_layer(filename, schema, table, encoding='LATIN1', create_table_only=F
 def determinar_id_capa(request, nombre):
     return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
 
+
 def _get_polygon_extent(poly):
     (minx, miny, maxx, maxy) = poly[0][0], poly[0][1], poly[0][0], poly[0][1]
     for c in poly:
@@ -288,6 +289,7 @@ def _get_polygon_extent(poly):
         if c[1] > maxy:
             maxy = c[1]
     return (minx, miny, maxx, maxy)
+
 
 def get_raster_metadata(file, con_stats=True):
     """Devuelve un json con metadatos detallados de un raster interfaseando con gdal y gdalinfo.
@@ -374,24 +376,25 @@ def get_raster_metadata(file, con_stats=True):
         # Y en el caso de netCDF y HDF5, detectamos variables para crear los mapas layer_raster_band, como hacemos con GRIBs
         # Tomamos la primer banda por convencion, ya que mapserver no permite trabajar especificamente una banda dentro de un subdataset (la unidad es el dataset),
         # y en todos los casos que vimos las bandas tienen la misma variable, solo cambia el timestamp
-        banda0 = subdataset_gdalinfo_json['bands'][0]
-        if raster.GetDriver().ShortName == 'netCDF':
-            variables_detectadas[identificador] = {
-                'elemento': banda0['metadata'][''].get('NETCDF_VARNAME', ''),   # aparentemente todo netCDF tiene este campo y es igual para toda banda del subdataset
-                'descripcion': banda0['metadata'][''].get('description', ''),   # algunos netCDF no tienen este campo
-                'rango': (banda0.get('minimum'), banda0.get('maximum')),        # en principio este rango no nos interesa porque este formato se renderiza directamente, va por compatibilidad
-                'extent': extent                                                # extent, necesario para cada mapa layer_raster_band
-            }
-        elif raster.GetDriver().ShortName == 'HDF5':
-            variables_detectadas[identificador] = {
-                'elemento': subdataset_gdalinfo_json['metadata'][''].get('what_object', ''),    # aparentemente los HDF5 de SMN tienen toooodo duplicado en todas bandas y son todas iguales
-                'descripcion': '',                                                              # no encontre nada para cargar...
-                'rango': (None, None),                                                          # no nos interesa este campo, solo por compatibilidad
-                'extent': extent                                                                # extent, necesario para cada mapa layer_raster_band
-            }
-        else:
-            # Necesitamos info estructural especifica si es otro formato...
-            pass
+        if 'bands' in subdataset_gdalinfo_json:
+            banda0 = subdataset_gdalinfo_json['bands'][0]
+            if raster.GetDriver().ShortName == 'netCDF':
+                variables_detectadas[identificador] = {
+                    'elemento': banda0['metadata'][''].get('NETCDF_VARNAME', ''),   # aparentemente todo netCDF tiene este campo y es igual para toda banda del subdataset
+                    'descripcion': banda0['metadata'][''].get('description', ''),   # algunos netCDF no tienen este campo
+                    'rango': (banda0.get('minimum'), banda0.get('maximum')),        # en principio este rango no nos interesa porque este formato se renderiza directamente, va por compatibilidad
+                    'extent': extent                                                # extent, necesario para cada mapa layer_raster_band
+                }
+            elif raster.GetDriver().ShortName == 'HDF5':
+                variables_detectadas[identificador] = {
+                    'elemento': subdataset_gdalinfo_json['metadata'][''].get('what_object', ''),    # aparentemente los HDF5 de SMN tienen toooodo duplicado en todas bandas y son todas iguales
+                    'descripcion': '',                                                              # no encontre nada para cargar...
+                    'rango': (None, None),                                                          # no nos interesa este campo, solo por compatibilidad
+                    'extent': extent                                                                # extent, necesario para cada mapa layer_raster_band
+                }
+            else:
+                # Necesitamos info estructural especifica si es otro formato...
+                pass
 
     # Lamentablemente hay inconsistencias en algunos archivos analizados con respecto al extent:
     # a veces el de la capa no coincide con el de los subdatasets. Tomamos el primero, que se utilizara para renderizar
@@ -427,6 +430,16 @@ def get_raster_basic_metadata(file):
     if raster is None:
         return None
 
+    # BUG FIX: tenemos que agregar además el siguiente chequeo para evitar que suban archivos 'rotos' como el caso de z_cams_c_ecmf_20190125000000_prod_fc_sfc_002_uvbedcs.grib
+    # que al abrirlo con la línea anterior tira este error pero no lo ataja:
+    # Warning: Inside GRIB2Inventory, Message # 2
+    # ERROR: Ran out of file reading SECT0
+    # There were 518 trailing bytes in the file.
+
+    json = _run_gdalinfo(file, con_stats=False)
+    if len(json) == 0:
+        return None
+
     return {
         'driver_short_name': raster.GetDriver().ShortName,
         'driver_long_name': raster.GetDriver().LongName,
@@ -441,6 +454,7 @@ def _run_gdalinfo(file, con_stats=True):
     """Ejecuta el gdalinfo en disco, con o sin stats."""
     stats_param = '-stats' if con_stats else ''
     res = subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True)
+
     # BUG FIX para casos donde gdalinfo devuelve un json invalido con campostipo: "stdDev":inf,
     res = res.replace(':inf,', ': "inf",').replace(':-inf,', ': "-inf",').replace(':nan,', ': "nan",')
     try:

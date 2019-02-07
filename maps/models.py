@@ -667,14 +667,15 @@ class MapServerLayer(models.Model):
                 if self.mapa.tipo_de_mapa == 'layer_raster_band':   # es el caso de una banda específica, tenemos que ver metadatos
                     data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
                 else:                                               # es el caso del mapa por defecto de GRIB, sin variables específicas
-                    # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
-                    # primero una default cualquiera
-                    cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
-                    data['rasterBandInfo'] = (cualquier_banda, self.capa.gdal_metadata['variables_detectadas'][cualquier_banda])
-                    # luego overrideamos si existe alguna de TMP
-                    for banda, variable in self.capa.gdal_metadata['variables_detectadas'].iteritems():
-                        if variable['elemento'] == 'TMP':
-                            data['rasterBandInfo'] = (banda, variable)
+                    if len(self.capa.gdal_metadata['variables_detectadas']) > 0:
+                        # buscamos la banda de temperatura, aunque podría ser cualquier otra definición, y armamos una tupla
+                        # primero una default cualquiera
+                        cualquier_banda = self.capa.gdal_metadata['variables_detectadas'].keys()[0]
+                        data['rasterBandInfo'] = (cualquier_banda, self.capa.gdal_metadata['variables_detectadas'][cualquier_banda])
+                        # luego overrideamos si existe alguna de TMP
+                        for banda, variable in self.capa.gdal_metadata['variables_detectadas'].iteritems():
+                            if variable['elemento'] == 'TMP':
+                                data['rasterBandInfo'] = (banda, variable)
 
             # En el caso de netCDF y HDF5, solo tenemos que overridear el DATA de la capa
             elif self.capa.gdal_driver_shortname in ('netCDF', 'HDF5'):

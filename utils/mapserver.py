@@ -58,10 +58,16 @@ def __agregar_simbologia_basica__(layer):
 
 def __agregar_simbologia_grib__(layer, band_info):
     # band_info es de la forma ("4", {'rango:'[1,2], 'elemento': 'TMP', 'descripcion': 'Temp'})
-    bands, info = band_info
-    band_type = info['elemento']
-    minimo = info['rango'][0]
-    maximo = info['rango'][1]
+    if band_info == '':
+        bands = ''
+        band_type = ''
+        minimo = maximo = None
+    else:
+        bands, info = band_info
+        band_type = info['elemento']
+        minimo = info['rango'][0]
+        maximo = info['rango'][1]
+
     if band_type == 'TMP':
         archivo = MAPA_SIMBOLOGIA_GRIB_TMP_FILENAME
     elif band_type == 'WIND':
