@@ -3,6 +3,8 @@ from MapGround import MapGroundException
 from django.db import connection
 from osgeo import gdal, osr
 from MapGround.settings import DEFAULT_SRID, DATABASES
+from django.contrib.gis.gdal import SpatialReference, CoordTransform
+from django.contrib.gis.geos import Point
 
 from subprocess import Popen, PIPE
 from threading import Thread
@@ -28,6 +30,19 @@ epsg_hashes = dict()
 #     'RH'        # humedad relativa
 # ]
 
+def coordConvert(x, y, sridFrom, sridTo):
+    fromCoord = SpatialReference(sridFrom)
+    toCoord = SpatialReference(sridTo)
+    trans = CoordTransform(fromCoord, toCoord)
+
+    pnt = Point(x, y, srid=sridFrom)
+    pnt.transform(trans)
+    return pnt
+
+def extentConvert(extent, sridFrom, sridTo):
+    minx_miny = coordConvert(extent[0], extent[1], sridFrom, sridTo)
+    maxx_maxy = coordConvert(extent[2], extent[3], sridFrom, sridTo)
+    return (minx_miny.x, minx_miny.y, maxx_maxy.x, maxx_maxy.y)
 
 def tee(infile, *files):
     """Print `infile` to `files` in a separate thread."""
@@ -276,7 +291,6 @@ def import_layer(filename, schema, table, encoding='LATIN1', create_table_only=F
 def determinar_id_capa(request, nombre):
     return unicode(request.user) + '_' + ((nombre.replace('-', '_')).replace(' ', '_').replace('.', '_').lower())
 
-
 def _get_polygon_extent(poly):
     (minx, miny, maxx, maxy) = poly[0][0], poly[0][1], poly[0][0], poly[0][1]
     for c in poly:
@@ -290,7 +304,6 @@ def _get_polygon_extent(poly):
             maxy = c[1]
     return (minx, miny, maxx, maxy)
 
-
 def get_raster_metadata(file, con_stats=True):
     """Devuelve un json con metadatos detallados de un raster interfaseando con gdal y gdalinfo.
 
@@ -303,21 +316,30 @@ def get_raster_metadata(file, con_stats=True):
 
     # extraemos toda info de proyeccion del raster usando gdal
     srid, proj, extent_capa = _get_raster_proj_info(raster)
+
     # extraemos todos los metadatos del raster usando gdalinfo
     metadata_gdalinfo_json = _run_gdalinfo(file, con_stats)
+
+    # esto no es correcto pero va a evitar que explote si faltan metadatos
+    extent_capa_4326 = extent_capa
+    try:
+        extent_capa_4326 = extentConvert(extent_capa, metadata_gdalinfo_json['coordinateSystem']['wkt'], 'EPSG:4326')
+    except:
+        pass
 
     # print "Calculated extent: %s"%(str(extent_capa))
     # extent_capa_4326 = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
     # print "GDAL Info: proj: %s, srid: %s, extent 4326: %s"%(
     #     metadata_gdalinfo_json['coordinateSystem']['wkt'],
     #     str(srid),
-    #     str(extent_capa_4326)
+    #     extentConvert(extent_capa, metadata_gdalinfo_json['coordinateSystem']['wkt'], 'EPSG:4326')
     # )
-    if 'wgs84Extent' in metadata_gdalinfo_json:
-        try:
-            extent_capa = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
-        except:
-            pass
+    # if 'wgs84Extent' in metadata_gdalinfo_json:
+    #     try:
+    #         extent_capa_4326 = _get_polygon_extent(metadata_gdalinfo_json['wgs84Extent']['coordinates'][0])
+    #     except:
+    #         pass
+
 
     variables_detectadas = {}
     subdatasets = []
@@ -334,10 +356,8 @@ def get_raster_metadata(file, con_stats=True):
                     minimo = banda.get('minimum')
                     maximo = banda.get('maximum')
 
-                    # if grib_element == 'UGRD':
                     if grib_element in ('UGRD', 'UOGRD'):
                         wind_u_band = nro_banda
-                    # elif grib_element == 'VGRD':
                     elif grib_element in ('VGRD', 'VOGRD'):
                         wind_v_band = nro_banda
                     else:
@@ -409,6 +429,7 @@ def get_raster_metadata(file, con_stats=True):
         'subdataset_count': len(raster.GetSubDatasets()),
         'srid': srid,   # puede ser None
         'extent_capa': extent_capa,
+        'extent_capa_4326': extent_capa_4326,
         'metadata_json': {
             'gdalinfo': metadata_gdalinfo_json,
             'variables_detectadas': variables_detectadas,
@@ -454,7 +475,6 @@ def _run_gdalinfo(file, con_stats=True):
     """Ejecuta el gdalinfo en disco, con o sin stats."""
     stats_param = '-stats' if con_stats else ''
     res = subprocess.check_output('gdalinfo -json {} {}'.format(stats_param, file), shell=True)
-
     # BUG FIX para casos donde gdalinfo devuelve un json invalido con campostipo: "stdDev":inf,
     res = res.replace(':inf,', ': "inf",').replace(':-inf,', ': "-inf",').replace(':nan,', ': "nan",')
     try:
