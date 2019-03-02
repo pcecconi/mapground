@@ -420,6 +420,11 @@ def get_raster_metadata(file, con_stats=True):
     # a veces el de la capa no coincide con el de los subdatasets. Tomamos el primero, que se utilizara para renderizar
     if len(subdatasets) > 0:
         extent_capa = variables_detectadas[subdatasets[0]['identificador']]['extent']
+        try:
+            # los casos analizados NO incluyen informacion de la proyeccion en bandas, solo coordenadas que parecen ser 4326, como no hay garantia intento reproyectarlo
+            extent_capa_4326 = extentConvert(extent_capa, 'EPSG:4326', 'EPSG:4326')
+        except:
+            pass
 
     # construimos la respuesta
     return {
