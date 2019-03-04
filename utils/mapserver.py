@@ -218,7 +218,8 @@ def create_tile_index_layer(data):
     layer.setMetaData('wms_timeextent', data['timeExtent'])
     layer.setMetaData('wms_timedefault', data['timeDefault'])
     layer.setMetaData('wms_timeitem', data['timeItem'])
-    layer.setMetaData('wms_enable_request', '*')    
+    # Esta capa es auxiliar, no debe figurar en WMS
+    layer.setMetaData('wms_enable_request', '!GetCapabilities !GetMap')    
     return layer
 
 def create_ms_layer(data):

@@ -57,6 +57,7 @@ h3 {
 	margin: 0.5em;
 	float:left;
 	font-weight: 300;
+	overflow: hidden;
 }
 .th-large .thumbnail.active {
 /*	min-height: 385px;*/
@@ -67,6 +68,7 @@ h3 {
 	position: relative;
 	padding-top: 10px;
 	border-color: #eee;
+	overflow: hidden;
 /*	box-shadow: 0 1px 2px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);*/
 }
 .th-list .thumbnail:hover, .th-large .thumbnail:hover {

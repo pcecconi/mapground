@@ -470,8 +470,7 @@ def borrar_capa(request, id_capa):
             capa.delete()
     return HttpResponseRedirect(reverse('layers:index'))
 
-@logged_in_or_basicauth()
-def wxs(request, id_capa):
+def __process_wxs_request(request, id_capa):
     capa = get_object_or_404(Capa, id_capa=id_capa)
     if ManejadorDePermisos.permiso_de_capa(request.user, id_capa) is None:
         return HttpResponseForbidden()
@@ -485,6 +484,13 @@ def wxs(request, id_capa):
         remote_url = remote_url + '&SLD='+sld
         # print remote_url
     return views.proxy_view(request, remote_url, extra_requests_args)
+
+@logged_in_or_basicauth()
+def wxs(request, id_capa):
+    return __process_wxs_request(request, id_capa)
+
+def public_layer_wxs(request, id_capa):
+    return __process_wxs_request(request, id_capa)
 
 def wxs_public(request):
     extra_requests_args = {}

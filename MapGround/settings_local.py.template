@@ -39,7 +39,7 @@ CANTIDAD_DE_ULTIMOS_MAPAS = 5
 #
 # MAPCACHE_URL = 'http://example.com/mapcache/'
 
-WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL, 'layers/wxs/')
+# WXS_ONLINERESOURCE = urlparse.urljoin(SITE_URL, 'layers/wxs/')
 
 VISOR_INITIAL_EXTENT = '-135 -60 135 60'
 VISOR = True
