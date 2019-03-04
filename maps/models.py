@@ -6,7 +6,8 @@ from django.contrib.auth.models import User
 from django.conf import settings
 # import mapscript
 from layerimport.models import TablaGeografica, ArchivoRaster
-from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala, RasterDataSource, VectorDataSource, CONST_VECTOR, CONST_RASTER
+from layers.models import Capa, Categoria, Metadatos, Atributo, ArchivoSLD, Escala
+from layers.models import RasterDataSource, VectorDataSource, CONST_VECTOR, CONST_RASTER
 import os
 # slugs
 from django.utils.text import slugify
@@ -158,6 +159,14 @@ class ManejadorDeMapas:
         try:
             mapa=Mapa.objects.get(id_mapa=id_mapa)
             return mapa.generar_legend()
+        except:
+            return False
+
+    @classmethod
+    def existe_mapa(cls, id_mapa):
+        try:
+            mapa=Mapa.objects.get(id_mapa=id_mapa)
+            return True
         except:
             return False
 
@@ -391,7 +400,7 @@ class Mapa(models.Model):
         c=self.capas.first()
         if self.tipo_de_mapa == 'layer' or self.tipo_de_mapa == 'layer_raster_band':
             if c is not None:
-                return c.tipo_de_capa == 'raster' or len(VectorDataSource.objects.filter(capa=c)) > 1
+                return c.mostrarComoWMS()
         return False
 
     def dame_mapserver_map_def(self):
@@ -653,7 +662,7 @@ class MapServerLayer(models.Model):
             }
 
             print "Data sources #: %d"%RasterDataSource.objects.filter(capa=self.capa).count()
-            if RasterDataSource.objects.filter(capa=self.capa).count() > 0:
+            if RasterDataSource.objects.filter(capa=self.capa).count() > 0 and self.capa.gdal_driver_shortname not in ('netCDF', 'HDF5'):
                 ds = RasterDataSource.objects.filter(capa=self.capa).order_by('data_datetime')
                 data["timeItem"] = 'data_datetime'
                 data["tileItem"] = 'location'
@@ -681,16 +690,13 @@ class MapServerLayer(models.Model):
             elif self.capa.gdal_driver_shortname in ('netCDF', 'HDF5'):
                 prefijo_data = self.capa.gdal_driver_shortname.upper()  # NETCDF|HDF5
                 if self.mapa.tipo_de_mapa == 'layer_raster_band':
-                    data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], self.bandas)
+                    data["layerData"] = '{}:{}'.format(data["layerData"], self.bandas)
                 else:
                     # if len(self.capa.gdal_metadata['variables_detectadas']) == 0:
-                    if len(self.capa.gdal_metadata['subdatasets']) == 0:
-                        # no hay subdatasets, renderizamos directo (NETCDF|HDF5:/path/al/archivo)
-                        data["layerData"] = '{}:{}'.format(prefijo_data, data["layerData"])
-                    else:
+                    if len(self.capa.gdal_metadata['subdatasets']) != 0:
                         # hay subdatasets y es mapa de capa => estamos obligados a renderizar alguno pues mapserver no se banca el render directo en este caso (NETCDF|HDF5:/path/al/archivo:subdataset)
                         primer_subdataset_identificador = self.capa.gdal_metadata['subdatasets'][0]['identificador']   # Ejemplo: "formato:/path/al/archivo:subdataset"
-                        data["layerData"] = '{}:{}:{}'.format(prefijo_data, data["layerData"], primer_subdataset_identificador)
+                        data["layerData"] = '{}:{}'.format(data["layerData"], primer_subdataset_identificador)
 
         return data
 
@@ -719,6 +725,63 @@ class MapServerLayer(models.Model):
         else:
             return []
 
+def inicializarMapasDeCapa(instance):
+    # ------------ creamos/actualizamos mapas
+    # creamos el mapa canónico
+    mapa = Mapa(owner=instance.owner, nombre=instance.nombre, id_mapa=instance.id_capa, tipo_de_mapa='layer')
+    if instance.tipo_de_capa == CONST_RASTER:
+        try:
+            print "Intentando setear baselayer..."
+            mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
+        except:
+            pass
+
+    mapa.save(escribir_imagen_y_mapfile=False)
+    MapServerLayer(mapa=mapa, capa=instance, orden_de_capa=0).save()
+    mapa.save()
+
+    # creamos el mapa en la proyeccion original
+    extent_capa = instance.layer_srs_extent
+    mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
+    # Esto es para cuando tenemos una proyeccion no identificada
+    if instance.proyeccion_proj4 is not None and instance.proyeccion_proj4 != '':
+        print "Seteando proyeccion custom para el mapa {}".format(instance.proyeccion_proj4)
+        mapa_layer_srs.srs = instance.proyeccion_proj4
+
+    mapa_layer_srs.save(escribir_imagen_y_mapfile=False)
+    MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
+    mapa_layer_srs.save()
+
+    if instance.tipo_de_capa == CONST_RASTER:
+        for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
+            id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
+            sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
+            mapa = Mapa(
+                owner=instance.owner,
+                nombre=instance.nombre + sufijo_mapa,
+                id_mapa=instance.id_capa + sufijo_mapa,
+                titulo='{} - {}{}'.format(bandas, variable['elemento'], ': {}'.format(variable['descripcion']) if variable['descripcion'] != '' else ''),
+                tipo_de_mapa='layer_raster_band')
+            try:
+                print "Intentando setear baselayer..."
+                mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
+            except:
+                pass
+
+            mapa.save(escribir_imagen_y_mapfile=False)
+            MapServerLayer.objects.create(
+                mapa=mapa,
+                capa=instance,
+                bandas=bandas,
+                orden_de_capa=0)
+            mapa.save()
+
+    # actualizamos el mapa de usuario
+    ManejadorDeMapas.delete_mapfile(instance.owner.username)
+
+    # actualizamos el mapa de capas públicas
+    ManejadorDeMapas.delete_mapfile('mapground_public_layers')
+
 
 @receiver(post_save, sender=Capa)
 def onCapaPostSave(sender, instance, created, **kwargs):
@@ -734,61 +797,6 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         for r in rows:
             Atributo.objects.create(nombre_del_campo=r[1], tipo=r[2], unico=r[4], metadatos=metadatos)
 
-        # ------------ creamos/actualizamos mapas
-        # creamos el mapa canónico
-        mapa = Mapa(owner=instance.owner, nombre=instance.nombre, id_mapa=instance.id_capa, tipo_de_mapa='layer')
-        if instance.tipo_de_capa == CONST_RASTER:
-            try:
-                print "Intentando setear baselayer..."
-                mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
-            except:
-                pass
-
-        mapa.save(escribir_imagen_y_mapfile=False)
-        MapServerLayer(mapa=mapa, capa=instance, orden_de_capa=0).save()
-        mapa.save()
-
-        # creamos el mapa en la proyeccion original
-        extent_capa = instance.layer_srs_extent
-        mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
-        # Esto es para cuando tenemos una proyeccion no identificada
-        if instance.proyeccion_proj4 is not None and instance.proyeccion_proj4 != '':
-            print "Seteando proyeccion custom para el mapa {}".format(instance.proyeccion_proj4)
-            mapa_layer_srs.srs = instance.proyeccion_proj4
-
-        mapa_layer_srs.save(escribir_imagen_y_mapfile=False)
-        MapServerLayer(mapa=mapa_layer_srs, capa=instance, orden_de_capa=0).save()
-        mapa_layer_srs.save()
-
-        if instance.tipo_de_capa == CONST_RASTER:
-            for bandas, variable in take(settings.CANTIDAD_MAXIMA_DE_BANDAS_POR_RASTER, sorted(instance.gdal_metadata['variables_detectadas'].iteritems())):
-                id_banda = str(bandas).replace(',', '_').replace('/', '').replace('\\', '.').lower()
-                sufijo_mapa = '_band_{}_{}'.format(id_banda, variable['elemento'].lower())
-                mapa = Mapa(
-                    owner=instance.owner,
-                    nombre=instance.nombre + sufijo_mapa,
-                    id_mapa=instance.id_capa + sufijo_mapa,
-                    titulo='{} - {}{}'.format(bandas, variable['elemento'], ': {}'.format(variable['descripcion']) if variable['descripcion'] != '' else ''),
-                    tipo_de_mapa='layer_raster_band')
-                try:
-                    print "Intentando setear baselayer..."
-                    mapa.tms_base_layer = TMSBaseLayer.objects.get(pk=1)
-                except:
-                    pass
-
-                mapa.save(escribir_imagen_y_mapfile=False)
-                MapServerLayer.objects.create(
-                    mapa=mapa,
-                    capa=instance,
-                    bandas=bandas,
-                    orden_de_capa=0)
-                mapa.save()
-
-        # actualizamos el mapa de usuario
-        ManejadorDeMapas.delete_mapfile(instance.owner.username)
-
-        # actualizamos el mapa de capas públicas
-        ManejadorDeMapas.delete_mapfile('mapground_public_layers')
     else:
         print '...capa actualizada (ya existia)'
         # actualizamos los mapas relacionados con la capa
@@ -798,7 +806,22 @@ def onCapaPostSave(sender, instance, created, **kwargs):
         for m in Mapa.objects.all().filter(tipo_de_mapa='user'):
             ManejadorDeMapas.delete_mapfile(m.id_mapa)
 
+@receiver(post_save, sender=VectorDataSource)
+def onVectorDataSourcePostSave(sender, instance, created, **kwargs):
+    tieneMapaCanonico = ManejadorDeMapas.existe_mapa(instance.capa.id_capa)
+    print 'onVectorDataSourcePostSave Capa: %s'%(instance.capa.nombre)
+    if not tieneMapaCanonico:
+        print 'Inicializando mapas de capa %s'%(instance.capa.nombre)
+        inicializarMapasDeCapa(instance.capa)
 
+@receiver(post_save, sender=RasterDataSource)
+def onRasterDataSourcePostSave(sender, instance, created, **kwargs):
+    tieneMapaCanonico = ManejadorDeMapas.existe_mapa(instance.capa.id_capa)
+    print '### onRasterDataSourcePostSave Capa: %s'%(instance.capa.nombre)
+    if not tieneMapaCanonico:
+        print 'Inicializando mapas de capa %s'%(instance.capa.nombre)
+        inicializarMapasDeCapa(instance.capa)
+    
 @receiver(post_delete, sender=MapServerLayer)
 def onMapServerLayerPostDelete(sender, instance, **kwargs):
     print 'onMapServerLayerPostDelete %s'%(str(instance))
