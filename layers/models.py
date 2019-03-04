@@ -151,7 +151,12 @@ class Capa(SingleOwnerMixin, models.Model):
             else:
                 return "%s from %s.%s" % (self.campo_geom, self.esquema, self.id_capa)
         elif self.tipo_de_capa == CONST_RASTER:
-            return os.path.join(settings.UPLOADED_RASTERS_PATH, unicode(self.owner), self.nombre_del_archivo)
+            data = os.path.join(settings.UPLOADED_RASTERS_PATH, unicode(self.owner), self.nombre_del_archivo)
+            if self.gdal_driver_shortname in ('netCDF', 'HDF5'):
+                prefijo_data = self.gdal_driver_shortname.upper()  # NETCDF|HDF5
+                return '{}:{}'.format(prefijo_data, data)
+
+            return data
 
     def dame_datasource_data(self):
         if self.tipo_de_capa == CONST_VECTOR:
@@ -226,6 +231,12 @@ class Capa(SingleOwnerMixin, models.Model):
         else:
             self.tabla=datasource.tabla
         self.save()
+
+    def mostrarComoWMS(self):
+        if (self.tipo_de_capa == 'raster'):
+            return self.gdal_driver_shortname not in ('netCDF', 'HDF5')
+        else:
+            return len(VectorDataSource.objects.filter(capa=self)) > 1
 
     def save(self, *args, **kwargs):
         # TODO: pensar: vamos a permitir que una capa pueda cambiar su nombre? esto cambaria el id con el tiempo, hay que actualizar las referencias en los mapfiles....si no queremos, hay que hacer algun truco:dirtyfields,compararcontra la base,etc

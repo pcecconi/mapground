@@ -208,7 +208,7 @@ def create_mapfile(data, save=True):
 
 def create_tile_index_layer(data):
     layer = mapscript.layerObj()
-    layer.name = 'time_idx'
+    layer.name = 'time_idx_'+data['layerName']
     layer.type = mapscript.MS_LAYER_POLYGON
     layer.data = data['timeIndexData']
     layer.connection = data['layerConnection']
@@ -233,7 +233,7 @@ def create_ms_layer(data):
         layer.type = mapscript.MS_LAYER_RASTER
         if data.get('timeIndexData', None) is not None:
             layer.tileitem = data['tileItem']
-            layer.tileindex = 'time_idx'
+            layer.tileindex = 'time_idx_'+data['layerName']
             layer.setMetaData('wms_timeextent', data['timeExtent'])
             layer.setMetaData('wms_timedefault', data['timeDefault'])
             layer.setMetaData('wms_timeitem', data['timeItem'])
@@ -336,7 +336,7 @@ def get_wms_request_url(map_id, layers, srs, width, height, extent, sld_url=''):
     )
     if sld_url != '':
         url += '&sld=' + sld_url
-    print "get_wms_request_url: %s" % url
+    # print "get_wms_request_url: %s" % url
     return url
 
 
