@@ -234,7 +234,7 @@ class Capa(SingleOwnerMixin, models.Model):
 
     def mostrarComoWMS(self):
         if (self.tipo_de_capa == 'raster'):
-            return self.gdal_driver_shortname not in ('netCDF', 'HDF5')
+            return True # self.gdal_driver_shortname not in ('netCDF', 'HDF5')
         else:
             return len(VectorDataSource.objects.filter(capa=self)) > 1
 
