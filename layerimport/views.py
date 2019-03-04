@@ -275,7 +275,7 @@ def LayerImportView(request, filename):
                     owner=request.user,
                     capa=c,
                     nombre_del_archivo=nombre_del_archivo,
-                    location=filename_destino,
+                    location=c.dame_data(None),
                     proyeccion_proj4=proyeccion_proj4,
                     srid=srid,
                     extent=MultiPolygon(Polygon.from_bbox(extent_capa)),
