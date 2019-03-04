@@ -246,7 +246,7 @@ class Mapa(models.Model):
         if escribir_imagen_y_mapfile:
             self.create_mapfile(True)
             self.generar_thumbnail_y_legend()
-            if self.tipo_de_mapa in ('layer', 'general', 'layer_raster_band'):
+            if self.tipo_de_mapa in ('layer', 'general'):# , 'layer_raster_band'):
                 self.agregar_a_mapcache()
         return True
 
