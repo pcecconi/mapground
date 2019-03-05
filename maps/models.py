@@ -886,7 +886,12 @@ def getSldUrl(sld_file_url):
     return urlparse.urljoin(settings.SITE_URL, sld_file_url)
 
 def generarThumbnailSLD(capa, sld):
-    e = map(float, capa.dame_extent(',', 3857).split(','))
+    try:
+        extent_capa = capa.dame_extent(',', 3857).split(',')
+    except:
+        print "Error generando preview de capa con SLD!!!"
+        return
+    e = map(float, extent_capa)
     ex = e[2]-e[0]
     ey = e[3]-e[1]
     z = (ey - ex)/2 if ey > ex else (ex - ey)/2
