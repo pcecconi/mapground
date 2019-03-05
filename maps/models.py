@@ -429,6 +429,7 @@ class Mapa(models.Model):
                 l=msl.dame_mapserver_layer_def(msl.dame_layer_connection_type())
                 l['metadata']['ows_srs'] = 'epsg:%s epsg:4326 epsg:3857'%(srid) if RepresentsPositiveInt(srid) else 'epsg:4326 epsg:3857'
             layers.append(l)
+
         data = {
             "idMapa": self.id_mapa,
             "imageColor": {
@@ -748,7 +749,7 @@ def inicializarMapasDeCapa(instance):
     extent_capa = instance.layer_srs_extent
     mapa_layer_srs = Mapa(owner=instance.owner, nombre=instance.nombre + '_layer_srs', id_mapa=instance.id_capa + '_layer_srs', tipo_de_mapa='layer_original_srs', srs=instance.srid, extent=extent_capa)
     # Esto es para cuando tenemos una proyeccion no identificada
-    if instance.proyeccion_proj4 is not None and instance.proyeccion_proj4 != '':
+    if instance.proyeccion_proj4 is not None and instance.proyeccion_proj4 != '' and not RepresentsPositiveInt(instance.srid):
         print "Seteando proyeccion custom para el mapa {}".format(instance.proyeccion_proj4)
         mapa_layer_srs.srs = instance.proyeccion_proj4
 
