@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'layers',
     'maps',
     'users',
+    'rest_framework',
 )
 # original del proyecto, en django 1.6
 # MIDDLEWARE_CLASSES = (

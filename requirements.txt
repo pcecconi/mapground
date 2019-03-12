@@ -2,8 +2,11 @@ Django==1.11.13
 django-background-tasks==1.1.13
 django-compat==1.0.15
 django-extras==0.3
+django-filter==2.0.0
 django-proxy==1.1.0
 django-sequences==1.0.1
+djangorestframework==3.9.2
 djorm-ext-pgfulltext==0.10
-# pkg-resources==0.0.0
+Markdown==3.0.1
+pkg-resources==0.0.0
 pytz==2018.4
