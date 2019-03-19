@@ -292,6 +292,7 @@ class DataSource(SingleOwnerMixin, models.Model):
         return num_ds == 1
 
 class VectorDataSource(DataSource):
+    capa = models.ForeignKey(Capa, null=False, related_name='vectordatasources')
     conexion_postgres = models.ForeignKey('ConexionPostgres', null=True, blank=True)
     esquema = models.CharField('Esquema', null=True, blank=True, max_length=100)
     tabla = models.CharField('Tabla', null=True, blank=True, max_length=100)
@@ -301,6 +302,7 @@ class VectorDataSource(DataSource):
     objects = models.GeoManager()
 
 class RasterDataSource(DataSource):
+    capa = models.ForeignKey(Capa, null=False, related_name='rasterdatasources')
     nombre_del_archivo = models.CharField('Nombre del archivo', null=False, max_length=255)
     location = models.CharField('Ubicación del archivo', null=False, max_length=255)
     gdal_driver_shortname = models.CharField('Driver - Short Name', null=False, blank=True, max_length=100, default='')

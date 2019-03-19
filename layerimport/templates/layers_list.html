@@ -70,9 +70,11 @@
 {{ block.super }}
 <script>
 $('select').change(function(ev) {
-    var base_url = $('#link_'+$(this).attr('data-id')).attr('href').split('?')[0];
-    $('#link_'+$(this).attr('data-id')).attr('href', base_url+'?enc='+$(this).val());
-    // console.log($(this).val(), $(this).attr('data-id') );
+    let id = 'link_'+$(this).attr('data-id')
+    id = id.replace('.', '\\.')
+    // console.log($(this).val(), $(this).attr('data-id'), $(this).attr('data-id'), id, $('#'+id).length);
+    var base_url = $('#'+id).attr('href').split('?')[0];
+    $('#'+id).attr('href', base_url+'?enc='+$(this).val());
 });
 </script>
 {% endblock %}

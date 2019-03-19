@@ -45,8 +45,8 @@ urlpatterns = [
     url(r'^accounts/logout/$', views.logout_then_login, name='logout'),
 
     url(r'^media/(.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
-    url(r'^api-auth/', include('rest_framework.urls'))    
-
+    url(r'^api-auth/', include('rest_framework.urls')),
+    url(r'^api/', include('api.urls', namespace='api')),
 ]
 
 # urlpatterns += [

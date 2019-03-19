@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'maps',
     'users',
     'rest_framework',
+    'api',
 )
 # original del proyecto, en django 1.6
 # MIDDLEWARE_CLASSES = (
@@ -137,6 +138,15 @@ TEMPLATES = [
     },
 ]
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.11/howto/static-files/

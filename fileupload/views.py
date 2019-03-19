@@ -7,7 +7,6 @@ from .models import Archivo
 from .response import JSONResponse, response_mimetype
 from .serialize import serialize
 
-
 class ArchivoCreateView(UserPassesTestMixin, CreateView):
     model = Archivo
     fields = ['file']

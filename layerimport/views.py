@@ -121,7 +121,8 @@ def LayerImportView(request, filename):
     template_name = 'layer_import.html'
     try:
         encoding = [item[0] for item in ENCODINGS if item[0] == request.GET['enc']][0]
-    except:
+    except Exception as e:
+        print "ERROR intentando setear encoding: %s, %s"%(unicode(e))
         encoding = 'LATIN1'
 
     # Chequeo basico de consistencia entre el parametro 'filename' de la vista y algun Archivo existente
