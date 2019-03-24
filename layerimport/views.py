@@ -7,12 +7,13 @@ from django.contrib.gis.geos import Point, Polygon, MultiPolygon
 from django.shortcuts import HttpResponseRedirect, render, get_object_or_404
 from django.utils import timezone
 from fileupload.models import Archivo
-from layerimport.models import TablaGeografica, ArchivoRaster
+from .models import TablaGeografica, ArchivoRaster
 from utils.commons import normalizar_texto
-from .utils import get_shapefile_files, import_layer, determinar_id_capa, get_raster_metadata, get_raster_basic_metadata
+from .utils import get_shapefile_files, determinar_id_capa, get_raster_metadata, get_raster_basic_metadata
+from .import_utils import import_layer, import_shapefile
 from layers.models import Capa, TipoDeGeometria, RasterDataSource, VectorDataSource, CONST_VECTOR, CONST_RASTER
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
-from MapGround import MapGroundException
+from MapGround import MapGroundException, LayerAlreadyExists, LayerImportError, LayerNotFound
 from django.core.urlresolvers import reverse
 from django.contrib.auth.decorators import login_required
 import os
@@ -115,6 +116,7 @@ def _get_raster_date_time(raster_metadata):
             print unicode(e)
     return data_datetime
 
+
 @login_required
 def LayerImportView(request, filename):
     # filename tiene la forma "nombre.extension"
@@ -125,179 +127,24 @@ def LayerImportView(request, filename):
         print "ERROR intentando setear encoding: %s"%(unicode(e))
         encoding = 'LATIN1'
 
-    # Chequeo basico de consistencia entre el parametro 'filename' de la vista y algun Archivo existente
     try:
-        archivo = Archivo.objects.get(owner=request.user, slug=filename)  # filename tiene la forma "nombre.extension"
-    except (Archivo.DoesNotExist, MapGroundException) as e:  # no deberia pasar...
+        capa = import_layer(request, filename, encoding)
+    except LayerNotFound as e:
         return render(request, template_name, {
             "capa": filename, "ok": False,
-            "error_msg": 'No se pudo encontrar la capa "{0}" para importar.'.format(filename)})
+            "error_msg": unicode(e)})
 
-    # determinamos el id unico que le corresponde a esta capa, sin importar si es vector o raster, y verificamos que no exista en la IDE
-    id_capa = determinar_id_capa(request, archivo.nombre)
-    next_version=get_next_value(id_capa)
-    print "Proxima version es %d"%(next_version)
-
-    try:
-        existe = Capa.objects.get(id_capa=id_capa)     # este chequeo podría ser reemplazado a futuro por la funcionalidad de "upload nueva versión de la capa"
+    except LayerAlreadyExists as e:
         return render(request, template_name, {
             "capa": filename, "ok": False,
-            "error_msg": 'Ya existe una capa suya con el nombre "{0}" en la IDE.'.format(filename)})
-    except:
-        if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
-            try:
-                nombre_de_tabla = id_capa + '_v' + str(next_version)
-                # Acá se crea un tabla padre vacía con el id_capa para después heredar
-                import_layer(unicode(archivo.file), IMPORT_SCHEMA, id_capa, encoding, create_table_only=True)
-                srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
-                setup_inheritance(IMPORT_SCHEMA, id_capa, nombre_de_tabla)
-                data_datetime = timezone.now().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
-                add_column(IMPORT_SCHEMA, id_capa, "data_datetime", "timestamp with time zone", data_datetime)
+            "error_msg": unicode(e)})
+    
+    except LayerImportError as e:
+        return render(request, template_name, {
+            "capa": filename, "ok": False,
+            "error_msg": unicode(e)})
 
-                tabla_geografica = TablaGeografica.objects.create(
-                    nombre_normalizado=normalizar_texto(archivo.nombre),
-                    nombre_del_archivo=os.path.basename(unicode(archivo.file)),
-                    esquema=IMPORT_SCHEMA,
-                    srid=srid,
-                    tabla=nombre_de_tabla,
-                    owner=request.user)
-
-                c = Capa.objects.create(
-                    owner=tabla_geografica.owner,
-                    nombre=tabla_geografica.nombre_normalizado,
-                    id_capa=id_capa,    # equivalente a tabla_geografica.tabla,
-                    tipo_de_capa=CONST_VECTOR,
-                    nombre_del_archivo=None,
-                    conexion_postgres=None,
-                    esquema=tabla_geografica.esquema,
-                    tabla=tabla_geografica.tabla,
-                    gdal_metadata=dict(),
-                    gdal_driver_shortname='Shapefile',
-                    gdal_driver_longname='ESRI Shapefile',
-                    tipo_de_geometria=TipoDeGeometria.objects.all()[0],  # uno cualquiera, pues el capa_pre_save lo calcula y lo overridea
-                    proyeccion_proj4='',    # TODO:!
-                    srid=tabla_geografica.srid)
-
-                VectorDataSource.objects.create(
-                    owner=request.user,
-                    capa=c,
-                    proyeccion_proj4=c.proyeccion_proj4,
-                    srid=srid,
-                    extent=MultiPolygon(Polygon.from_bbox(
-                        (c.extent_minx_miny.x,c.extent_minx_miny.y,
-                        c.extent_maxx_maxy.x,c.extent_maxx_maxy.y))),
-                    conexion_postgres=None,
-                    esquema=tabla_geografica.esquema,
-                    tabla=tabla_geografica.tabla,
-                    campo_geom='geom',
-                    data_datetime=data_datetime,
-                    cantidad_de_registros=c.cantidad_de_registros
-                )
-
-                for a in Archivo.objects.filter(owner=request.user, nombre=os.path.splitext(filename)[0]):
-                    a.delete()
-
-            except Exception as e:
-                return render(request, template_name, {
-                    "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar importar la capa vectorial "{0}": {1}'.format(filename, unicode(e))})
-
-        else:   # casos rasters
-
-            # Validamos primero la consistencia entre el 'filename' y un raster valido, por ejemplo, para evitar vulnerabilidad por url
-            raster = get_raster_metadata(archivo.file.name)
-            if raster is None:
-                return render(request, template_name, {
-                    "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar importar la capa "{0}" CODE: R1'.format(filename)})
-
-            extent_capa = raster['extent_capa']
-            extent_capa_4326 = raster['extent_capa_4326']
-            proyeccion_proj4 = raster['proyeccion_proj4']
-
-            # srid = raster['srid'] if raster['srid'] is not None else 0
-            srid = raster['srid']           # casos GeoTiff o cualquier otro raster con dato SRID valido
-            if srid is None:
-                if proyeccion_proj4 != '':
-                    srid = 0                # casos GRIB, no hay SRID pero hay proj4
-                else:
-                    srid = 4326             # casos netCDF, no hay nada, pero son 4326, y algo tenemos que asumir
-
-            # El 'import' del raster consiste en moverlo al path destino...
-            # directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
-            # filename_destino = directorio_destino + id_capa + archivo.extension
-            # El 'import' del raster consiste en moverlo al path destino...
-            directorio_destino = UPLOADED_RASTERS_PATH + unicode(request.user) + '/'
-            nombre_del_archivo = id_capa + '_v' + str(next_version) + archivo.extension
-            filename_destino = directorio_destino + nombre_del_archivo 
-            data_datetime = _get_raster_date_time(raster)
-            try:
-                if not os.path.exists(directorio_destino):
-                    os.makedirs(directorio_destino)
-                shutil.move(archivo.file.name, filename_destino)
-            except Exception as e:
-                return render(request, template_name, {
-                    "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar copiar el archivo raster {0}: {1}  CODE: R2'.format(filename, unicode(e))})
-
-            # ...y luego creamos los objetos
-            try:
-                
-                archivo_raster = ArchivoRaster.objects.create(
-                    owner=request.user,
-                    nombre_del_archivo=nombre_del_archivo,
-                    path_del_archivo=filename_destino,
-                    formato_driver_shortname=raster['driver_short_name'],
-                    formato_driver_longname=raster['driver_long_name'],
-                    srid=srid)                
-
-                c = Capa.objects.create(
-                    owner=request.user,
-                    nombre=normalizar_texto(archivo.nombre),
-                    id_capa=id_capa,
-                    tipo_de_capa=CONST_RASTER,
-                    nombre_del_archivo=archivo_raster.nombre_del_archivo,
-                    cantidad_de_bandas=raster['raster_count'],
-                    size_height=raster['size_height'],
-                    size_width=raster['size_width'],
-                    conexion_postgres=None,
-                    gdal_metadata=raster['metadata_json'],
-                    gdal_driver_shortname=raster['driver_short_name'],
-                    gdal_driver_longname=raster['driver_long_name'],
-                    tipo_de_geometria=TipoDeGeometria.objects.get(nombre='Raster'),
-                    proyeccion_proj4=proyeccion_proj4,
-                    srid=srid,
-                    extent_minx_miny=Point(float(extent_capa_4326[0]), float(extent_capa_4326[1]), srid=4326),
-                    extent_maxx_maxy=Point(float(extent_capa_4326[2]), float(extent_capa_4326[3]), srid=4326),
-                    layer_srs_extent=' '.join(map(str, extent_capa)),
-                    cantidad_de_registros=None)
-
-                RasterDataSource.objects.create(
-                    owner=request.user,
-                    capa=c,
-                    nombre_del_archivo=nombre_del_archivo,
-                    location=c.dame_data(None),
-                    proyeccion_proj4=proyeccion_proj4,
-                    srid=srid,
-                    extent=MultiPolygon(Polygon.from_bbox(extent_capa)),
-                    gdal_driver_shortname=raster['driver_short_name'],
-                    gdal_driver_longname=raster['driver_long_name'],
-                    gdal_metadata=raster['metadata_json'],
-                    cantidad_de_bandas=raster['raster_count'],
-                    size_height=raster['size_height'],
-                    size_width=raster['size_width'],   
-                    data_datetime=data_datetime             
-                )
-
-                archivo.delete()
-
-            except Exception as e:
-                return render(request, template_name, {
-                    "capa": filename, "ok": False,
-                    "error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(unicode(e)))})
-            # "error_msg": 'Se produjo un error al intentar importar la capa raster {0}: {1}  CODE: R3'.format(filename, unicode(traceback.format_exc()))})
-
-    return HttpResponseRedirect(reverse('layers:metadatos', args=(c.id_capa,)))
+    return HttpResponseRedirect(reverse('layers:metadatos', args=(capa.id_capa,)))
 
 @login_required
 def LayerImportUpdateView(request, id_capa, filename):
@@ -312,7 +159,7 @@ def LayerImportUpdateView(request, id_capa, filename):
     # Chequeo basico de consistencia entre el parametro 'filename' de la vista y algun Archivo existente
     try:
         archivo = Archivo.objects.get(owner=request.user, slug=filename)  # filename tiene la forma "nombre.extension"
-    except (Archivo.DoesNotExist, MapGroundException) as e:  # no deberia pasar...
+    except (MapGroundException) as e:  # no deberia pasar...
         return render(request, template_name, {
             "capa": filename, "ok": False,
             "error_msg": 'No se pudo encontrar la capa "{0}" para importar.'.format(filename)})
@@ -323,7 +170,7 @@ def LayerImportUpdateView(request, id_capa, filename):
     if archivo.extension == '.shp':     # Esto podría mejorarse guardando el tipo de archivo en el modelo Archivo
         try:
             nombre_de_tabla = id_capa + '_v' + str(next_version)
-            srid = import_layer(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
+            srid = import_shapefile(unicode(archivo.file), IMPORT_SCHEMA, nombre_de_tabla, encoding)
             data_datetime = timezone.now().replace(second=0,microsecond=0).replace(tzinfo=pytz.utc)
             add_column(IMPORT_SCHEMA, nombre_de_tabla, "data_datetime", "timestamp with time zone", data_datetime)
             if not _haveSameStructure(id_capa, nombre_de_tabla):

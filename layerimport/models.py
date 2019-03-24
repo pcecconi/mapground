@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from __future__ import absolute_import
 
 from django.db import models
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 from django_extras.contrib.auth.models import SingleOwnerMixin
-from utils import drop_table
+# from .utils import drop_table
 import os
-
 
 class TablaGeografica(SingleOwnerMixin, models.Model):
     nombre_normalizado = models.CharField('Nombre Normalizado', null=False, blank=False, unique=False, max_length=255)

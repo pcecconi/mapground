@@ -1,15 +1,29 @@
 # -*- coding: utf-8 -*-
-from MapGround import MapGroundException
+from __future__ import unicode_literals
+from __future__ import absolute_import
+# import traceback
+
+from MapGround import MapGroundException, LayerNotFound, LayerAlreadyExists, LayerImportError
 from django.db import connection
+from django.contrib.gis.geos import Point, Polygon, MultiPolygon
 from osgeo import gdal, osr
 from MapGround.settings import DEFAULT_SRID, DATABASES
 from django.contrib.gis.gdal import SpatialReference, CoordTransform
-from django.contrib.gis.geos import Point
+from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
+from sequences import get_next_value
+from utils.db import drop_table, setup_inheritance, add_column, have_same_structure
+from utils.commons import normalizar_texto
+import pytz
+from django.utils import timezone
+from datetime import datetime
+from fileupload.models import Archivo
+from .models import TablaGeografica, ArchivoRaster
 
 from subprocess import Popen, PIPE
 from threading import Thread
 from StringIO import StringIO
 import os
+import shutil
 import subprocess
 import re
 import glob
@@ -144,13 +158,13 @@ def get_random_string(len=20):
     return "".join([random.SystemRandom().choice(string.digits + string.letters) for i in range(len)])
 
 
-def drop_table(schema, table, cascade=False):
-    query = ('SELECT DropGeometryColumn(\'%s\',\'%s\',\'geom\'); '
-                'DROP TABLE "%s"."%s"') % (schema, table, schema, table)
-    if cascade:
-        query += ' CASCADE'
-    cur = connection.cursor()
-    cur.execute(query)
+# def drop_table(schema, table, cascade=False):
+#     query = ('SELECT DropGeometryColumn(\'%s\',\'%s\',\'geom\'); '
+#                 'DROP TABLE "%s"."%s"') % (schema, table, schema, table)
+#     if cascade:
+#         query += ' CASCADE'
+#     cur = connection.cursor()
+#     cur.execute(query)
 
 def load_shape(shapefile, schema, table, srid=0, encoding='LATIN1', create_table_only=False):
     print 'loading shape with encoding %s ' % encoding
@@ -267,25 +281,25 @@ def get_srid_from_hash(h):
     return epsg_hashes[h]
 
 
-def import_layer(filename, schema, table, encoding='LATIN1', create_table_only=False):
-    try:
-        st = get_shapefile_files(filename)
-    except MapGroundException:
-        raise
+# def import_layer(filename, schema, table, encoding='LATIN1', create_table_only=False):
+#     try:
+#         st = get_shapefile_files(filename)
+#     except MapGroundException:
+#         raise
 
-    srid = DEFAULT_SRID
-    try:
-        srid = get_epsg_from_prj(st['prj'])
-    except KeyError:
-        pass
+#     srid = DEFAULT_SRID
+#     try:
+#         srid = get_epsg_from_prj(st['prj'])
+#     except KeyError:
+#         pass
 
-    try:
-        load_shape(st['shp'], schema, table, srid, encoding, create_table_only)
-    except MapGroundException:
-        raise
-    print 'import srid %d' % srid
+#     try:
+#         load_shape(st['shp'], schema, table, srid, encoding, create_table_only)
+#     except MapGroundException:
+#         raise
+#     print 'import srid %d' % srid
 
-    return srid
+#     return srid
 
 
 def determinar_id_capa(request, nombre):
