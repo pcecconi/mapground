@@ -36,6 +36,6 @@ class CapaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Capa
-        fields = ('id_capa', 'slug', 'owner', 'nombre', 'tipo_de_capa', 'srid', 'proyeccion_proj4',
+        fields = ('id', 'id_capa', 'slug', 'owner', 'nombre', 'tipo_de_capa', 'srid', 'proyeccion_proj4',
                     'cantidad_de_registros', 'layer_srs_extent', 'wxs_publico', 
                     'timestamp_alta', 'timestamp_modificacion','rasterdatasources','vectordatasources')
