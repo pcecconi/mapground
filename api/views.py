@@ -8,7 +8,7 @@ from django.shortcuts import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 from .serializers import ArchivoSerializer, CapaSerializer, UserSerializer, RasterDataSourceSerializer
-from layerimport.views import _get_capas_importables
+from layerimport.views import _get_capas_importables, _get_actualizaciones_validas
 from layers.models import Capa, RasterDataSource
 import json
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
@@ -49,6 +49,18 @@ class LayerImportAPIView(APIView):
             return Response(unicode(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         return Response(CapaSerializer(capa).data, status=status.HTTP_200_OK)
+
+class LayerUpdateAPIView(APIView):
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            capa = Capa.objects.get(pk=pk)
+        except:
+            return Response("Capa con id %s no encontrada."%(pk), status=status.HTTP_404_NOT_FOUND)
+
+        archivos, errores = _get_capas_importables(request)
+
+        updateables = _get_actualizaciones_validas(archivos, capa)
+        return Response(updateables, status=status.HTTP_200_OK)
 
 class CapaViewSet(viewsets.ModelViewSet):
     queryset = Capa.objects.all()
