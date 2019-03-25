@@ -32,4 +32,5 @@ urlpatterns = [
     url(r'^import/$', LayerImportAPIView.as_view(), name='api-layer-importables'),
     url(r'^import/(?P<filename>[A-Za-z0-9-_\.]+)$', LayerImportAPIView.as_view(), name='api-import-layer'),
     url(r'^updates/(?P<pk>[^/.]+)/$', LayerUpdateAPIView.as_view(), name='api-layer-updates'),
+    url(r'^update/(?P<pk>[^/.]+)/(?P<filename>[A-Za-z0-9-_\.]+)$', LayerUpdateAPIView.as_view(), name='api-layer-update'),
 ]

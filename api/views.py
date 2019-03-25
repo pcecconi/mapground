@@ -12,7 +12,7 @@ from layerimport.views import _get_capas_importables, _get_actualizaciones_valid
 from layers.models import Capa, RasterDataSource
 import json
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
-from layerimport.import_utils import import_layer
+from layerimport.import_utils import import_layer, update_layer
 
 class ArchivoAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -61,6 +61,29 @@ class LayerUpdateAPIView(APIView):
 
         updateables = _get_actualizaciones_validas(archivos, capa)
         return Response(updateables, status=status.HTTP_200_OK)
+
+
+    def post(self, request, pk, filename, *args, **kwargs):
+        # filename tiene la forma "nombre.extension"
+        try:
+            capa = Capa.objects.get(pk=pk)
+        except:
+            return Response("Capa con id %s no encontrada."%(pk), status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            encoding = [item[0] for item in ENCODINGS if item[0] == request.POST['encoding']][0]
+        except:
+            encoding = 'LATIN1'
+
+        try:
+            capa = update_layer(request, capa, filename, encoding)
+        except ValueError as e:
+            return Response(unicode(e), status=status.HTTP_400_BAD_REQUEST)
+        
+        except LayerImportError as e:
+            return Response(unicode(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(CapaSerializer(capa).data, status=status.HTTP_200_OK)
 
 class CapaViewSet(viewsets.ModelViewSet):
     queryset = Capa.objects.all()
