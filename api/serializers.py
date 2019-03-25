@@ -19,14 +19,14 @@ class RasterDataSourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RasterDataSource
-        fields = ('nombre_del_archivo', 'gdal_driver_longname', 'cantidad_de_bandas',
+        fields = ('id', 'nombre_del_archivo', 'gdal_driver_longname', 'cantidad_de_bandas',
             'srid', 'proyeccion_proj4', 'data_datetime', 'timestamp_modificacion')
 
 class VectorDataSourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VectorDataSource
-        fields = ('tabla', 'cantidad_de_registros',
+        fields = ('id', 'tabla', 'cantidad_de_registros',
             'srid', 'proyeccion_proj4', 'data_datetime', 'timestamp_modificacion')
 
 class CapaSerializer(serializers.ModelSerializer):

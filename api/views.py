@@ -48,8 +48,7 @@ class LayerImportAPIView(APIView):
         except LayerImportError as e:
             return Response(unicode(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response("Succesfully imported %s as layer %s"%(filename, capa.id_capa), status=status.HTTP_200_OK)
-#         return HttpResponseRedirect(reverse('api:api-layers-detail', args=[capa.id]))
+        return Response(CapaSerializer(capa).data, status=status.HTTP_200_OK)
 
 class CapaViewSet(viewsets.ModelViewSet):
     queryset = Capa.objects.all()
