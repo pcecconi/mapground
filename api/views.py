@@ -4,12 +4,13 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import serializers, viewsets, routers
+from rest_framework.decorators import action
 from django.shortcuts import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
-from .serializers import ArchivoSerializer, CapaSerializer, UserSerializer, RasterDataSourceSerializer
+from .serializers import ArchivoSerializer, CapaSerializer, UserSerializer, RasterDataSourceSerializer, VectorDataSourceSerializer, DataSourceDateTimeSerializer
 from layerimport.views import _get_capas_importables, _get_actualizaciones_validas
-from layers.models import Capa, RasterDataSource
+from layers.models import Capa, VectorDataSource, RasterDataSource, CONST_RASTER, CONST_VECTOR
 import json
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from layerimport.import_utils import import_layer, update_layer
@@ -89,9 +90,48 @@ class CapaViewSet(viewsets.ModelViewSet):
     queryset = Capa.objects.all()
     serializer_class = CapaSerializer
 
+    @action(detail=True, methods=['post'], url_path='update_datasource_date/(?P<ds_pk>[^/.]+)')
+    def update_datasource_date(self, request, pk=None, ds_pk=None):
+        capa = self.get_object()
+        ds = None
+        try:
+            if capa.tipo_de_capa == CONST_RASTER:
+                ds = capa.rasterdatasources.get(id=ds_pk)
+            else:
+                ds = capa.vectordatasources.get(id=ds_pk)
+        except:
+            return Response("Capa con id %s no tiene un data source con id %s."%(pk, ds_pk), status=status.HTTP_404_NOT_FOUND)
+        serializer = DataSourceDateTimeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.update(ds, serializer.validated_data)
+            return Response('Se actualizo date del datasource %s'%(ds_pk), status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['delete'], url_path='delete_datasource/(?P<ds_pk>[^/.]+)')
+    def delete_datasource(self, request, pk=None, ds_pk=None):
+        capa = self.get_object()
+        ds = None
+        try:
+            if capa.tipo_de_capa == CONST_RASTER:
+                ds = capa.rasterdatasources.get(id=ds_pk)
+            else:
+                ds = capa.vectordatasources.get(id=ds_pk)
+        except:
+            return Response("Capa con id %s no tiene un data source con id %s."%(pk, ds_pk), status=status.HTTP_404_NOT_FOUND)
+        if not ds.is_only_datasource:
+            ds.delete()
+            return Response('Se elimino el datasource %s'%(ds_pk), status=status.HTTP_200_OK)
+        else:
+            return Response("No se puede eliminar el unico datasource de una capa", status=status.HTTP_400_BAD_REQUEST)
+
 class RDSViewSet(viewsets.ModelViewSet):
     queryset = RasterDataSource.objects.all()
     serializer_class = RasterDataSourceSerializer
+
+class VDSViewSet(viewsets.ModelViewSet):
+    queryset = VectorDataSource.objects.all()
+    serializer_class = VectorDataSourceSerializer
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()

@@ -1,6 +1,6 @@
 from django.conf.urls import url, include
 from rest_framework import routers
-from .views import ArchivoAPIView, CapaViewSet, UserViewSet, LayerImportAPIView, LayerUpdateAPIView
+from .views import ArchivoAPIView, CapaViewSet, UserViewSet, LayerImportAPIView, LayerUpdateAPIView, RDSViewSet, VDSViewSet
 
 # layers_list = CapaViewSet.as_view({
 #     'get': 'list',
@@ -19,6 +19,8 @@ from .views import ArchivoAPIView, CapaViewSet, UserViewSet, LayerImportAPIView,
 # })
 router = routers.DefaultRouter()
 router.register(r'layers', CapaViewSet)
+# router.register(r'rasters', RDSViewSet)
+# router.register(r'vectors', VDSViewSet)
 router.register(r'users', UserViewSet)
 
 urlpatterns = [
