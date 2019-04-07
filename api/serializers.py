@@ -62,3 +62,10 @@ class CapaSerializer(serializers.ModelSerializer):
             ds.data_datetime = ds_data.get('data_datetime', ds.data_datetime)
             ds.save()
         return instance
+
+
+class TokenSerializer(serializers.Serializer):
+    """
+    This serializer serializes the token data
+    """
+    token = serializers.CharField(max_length=255)

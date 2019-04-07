@@ -7,13 +7,21 @@ from rest_framework import serializers, viewsets, routers
 from rest_framework.decorators import action
 from django.shortcuts import HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import User
-from .serializers import ArchivoSerializer, CapaSerializer, UserSerializer, RasterDataSourceSerializer, VectorDataSourceSerializer, DataSourceDateTimeSerializer
+from .serializers import ArchivoSerializer, CapaSerializer, UserSerializer, RasterDataSourceSerializer, VectorDataSourceSerializer, DataSourceDateTimeSerializer, TokenSerializer
 from layerimport.views import _get_capas_importables, _get_actualizaciones_validas
 from layers.models import Capa, VectorDataSource, RasterDataSource, CONST_RASTER, CONST_VECTOR
 import json
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from layerimport.import_utils import import_layer, update_layer
+
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+from rest_framework_jwt.settings import api_settings
+from rest_framework import permissions, generics
+
+# Get the JWT settings, add these lines after the import/from lines
+jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
 
 class ArchivoAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -137,3 +145,30 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
+class LoginView(APIView):
+    """
+    POST auth/login/
+    """
+    # This permission class will overide the global permission
+    # class setting
+    permission_classes = (permissions.AllowAny,)
+
+    queryset = User.objects.all()
+
+    def post(self, request, *args, **kwargs):
+        username = request.data.get("username", "")
+        password = request.data.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            # login saves the users ID in the session,
+            # using Djangos session framework.
+            login(request, user)
+            serializer = TokenSerializer(data={
+                # using drf jwt utility functions to generate a token
+                "token": jwt_encode_handler(
+                    jwt_payload_handler(user)
+                )})
+            serializer.is_valid()
+            return Response(serializer.data)
+        return Response("Login failed for user '%s' with password '%s'"%(username, password), status=status.HTTP_401_UNAUTHORIZED)
