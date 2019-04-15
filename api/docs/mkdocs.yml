@@ -1,0 +1,6 @@
+site_name: Mapground API
+dev_addr: 127.0.0.1:8001
+nav:
+  - Inicio: index.md
+  - Acerca de: about.md
+theme: readthedocs
