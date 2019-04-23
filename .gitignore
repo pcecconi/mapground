@@ -19,6 +19,7 @@ maps/map-error.log
 maps/*.map
 mapfiles/map-error.log
 mapfiles/*.map
+api/docs/site
 .vagrant
 .vscode
 *console.log
