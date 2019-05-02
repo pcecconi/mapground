@@ -314,14 +314,14 @@ class ManejadorDePermisos():
         for cat, capas in sorted(categorias.iteritems()):
             nodes=[]
             for c in capas:
-                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa})
+                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa, 'type': c.dame_tipo_de_capa})
             #categoriaNode={'text': cat.nombre, 'checkable': False, 'nodes': nodes, 'total': len(nodes)}
             categoriaNode={'text': '%s (%s)'%(cat, str(len(nodes))), 'checkable': False, 'nodes': nodes}
             res.append(categoriaNode)
         if len(sin_categoria) > 0: #si hay capas sin categoría
             nodes=[]
             for c in sin_categoria:
-                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa})
+                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa, 'type': c.dame_tipo_de_capa})
             #categoriaNode={'text': u'Sin categoría', 'checkable': False, 'nodes': nodes, 'total': len(nodes)}
             categoriaNode={'text': u'Sin categoría (%s)'%(str(len(nodes))), 'checkable': False, 'nodes': nodes}
             res.append(categoriaNode)
@@ -352,14 +352,14 @@ class ManejadorDePermisos():
         for cat, capas in sorted(areas_tematicas.iteritems()):
             nodes=[]
             for c in capas:
-                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa})
+                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa, 'type': c.dame_tipo_de_capa})
             #areaTematicaNode={'text': cat.nombre, 'checkable': False, 'nodes': nodes, 'total': len(nodes)}
             areaTematicaNode={'text': '%s (%s)'%(cat, str(len(nodes))), 'checkable': False, 'nodes': nodes}
             res.append(areaTematicaNode)
         if len(sin_area_tematica) > 0: #si hay capas sin área temática
             nodes=[]
             for c in sin_area_tematica:
-                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa})
+                nodes.append({'text':c.dame_titulo, 'layerId': c.id_capa, 'type': c.dame_tipo_de_capa})
             #areaTematicaNode={'text': u'Sin área temática', 'checkable': False, 'nodes': nodes, 'total': len(nodes)}
             areaTematicaNode={'text': u'Sin área temática (%s)'%(str(len(nodes))), 'checkable': False, 'nodes': nodes}
             res.append(areaTematicaNode)

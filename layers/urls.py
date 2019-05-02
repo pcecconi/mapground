@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^scale/(?P<escalaid>[0-9]+)/$', views.detalle_escala, name='detalle_escala'),
     url(r'^folder/(?P<areatematicaid>[0-9]+)/$', views.detalle_area_tematica, name='detalle_area_tematica'),
     url(r'^symbology/(?P<id_capa>.+)/$', views.archivos_sld_de_capa, name='archivos_sld_de_capa'),
+    url(r'^bands/(?P<id_capa>.+)/$', views.bandas_de_capa, name='bandas_de_capa'),
 
     url(r'^download/(?P<id_capa>\w+)/((?P<format>\w+)/)?$', views.download, name='download'),
 ]

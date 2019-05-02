@@ -624,6 +624,15 @@ def archivos_sld_de_capa(request, id_capa):
 
     return HttpResponse(json.dumps(res), content_type="application/json")
 
+def bandas_de_capa(request, id_capa):
+    capa = get_object_or_404(Capa, id_capa=id_capa)
+    ManejadorDePermisos.anotar_permiso_a_capa(request.user, capa)
+    res=[]
+    if capa.permiso is None:
+        return HttpResponse(json.dumps(res), content_type="application/json")
+    
+    return HttpResponse(json.dumps(capa.dame_bandas), content_type="application/json")
+
 @login_required
 def actualizaciones(request, id_capa):
     capa = get_object_or_404(Capa, id_capa=id_capa)

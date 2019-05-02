@@ -138,6 +138,13 @@ class Capa(SingleOwnerMixin, models.Model):
             return 'POSTGIS'
 
     @property
+    def dame_tipo_de_capa(self):
+        if self.tipo_de_capa == CONST_RASTER:
+            return 'RASTER'
+        else:
+            return 'VECTOR'
+
+    @property
     def dame_download_url(self):
         if self.tipo_de_capa == CONST_RASTER:
             return os.path.join(settings.UPLOADED_RASTERS_URL, unicode(self.owner), self.nombre_del_archivo)
@@ -237,6 +244,10 @@ class Capa(SingleOwnerMixin, models.Model):
             return True # self.gdal_driver_shortname not in ('netCDF', 'HDF5')
         else:
             return len(VectorDataSource.objects.filter(capa=self)) > 1
+
+    @property
+    def dame_bandas(self):
+        return list(self.mapa_set.all().filter(tipo_de_mapa='layer_raster_band').values('id', 'id_mapa', 'titulo'))
 
     def save(self, *args, **kwargs):
         # TODO: pensar: vamos a permitir que una capa pueda cambiar su nombre? esto cambaria el id con el tiempo, hay que actualizar las referencias en los mapfiles....si no queremos, hay que hacer algun truco:dirtyfields,compararcontra la base,etc
