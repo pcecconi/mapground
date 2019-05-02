@@ -638,8 +638,8 @@ class MapServerLayer(models.Model):
                 "proj4": '',
             }
 
-            print "Data sources #: %d"%len(VectorDataSource.objects.filter(capa=self.capa))
-            if len(VectorDataSource.objects.filter(capa=self.capa)) > 1:
+            # print "Data sources #: %d"%len(VectorDataSource.objects.filter(capa=self.capa))
+            if len(VectorDataSource.objects.filter(capa=self.capa)) > 1 and connectiontype!='WMS':
                 ds = VectorDataSource.objects.filter(capa=self.capa).order_by('data_datetime')
                 data["timeItem"] = 'data_datetime'
                 data["timeExtent"] = ','.join([rec.data_datetime.replace(second=0,microsecond=0).isoformat() for rec in ds])
@@ -666,8 +666,8 @@ class MapServerLayer(models.Model):
                 "layerExtent": self.capa.layer_srs_extent,
             }
 
-            print "Data sources #: %d"%RasterDataSource.objects.filter(capa=self.capa).count()
-            if RasterDataSource.objects.filter(capa=self.capa).count() > 0 and self.capa.gdal_driver_shortname not in ('netCDF', 'HDF5'):
+            # print "Data sources #: %d"%RasterDataSource.objects.filter(capa=self.capa).count()
+            if RasterDataSource.objects.filter(capa=self.capa).count() > 0 and self.capa.gdal_driver_shortname not in ('netCDF', 'HDF5') and connectiontype!='WMS':
                 ds = RasterDataSource.objects.filter(capa=self.capa).order_by('data_datetime')
                 data["timeItem"] = 'data_datetime'
                 data["tileItem"] = 'location'
@@ -677,7 +677,7 @@ class MapServerLayer(models.Model):
                 data["timeDefault"] = ds.last().data_datetime.isoformat()
 
             # En el caso de GRIB, generamos info extra en rasterBandInfo para aplicar template especifico a posteriori
-            if self.capa.gdal_driver_shortname == 'GRIB':
+            if self.capa.gdal_driver_shortname == 'GRIB' and connectiontype!='WMS':
                 if self.mapa.tipo_de_mapa == 'layer_raster_band':   # es el caso de una banda específica, tenemos que ver metadatos
                     data['rasterBandInfo'] = (self.bandas, self.capa.gdal_metadata['variables_detectadas'][self.bandas])
                 else:                                               # es el caso del mapa por defecto de GRIB, sin variables específicas
@@ -692,7 +692,7 @@ class MapServerLayer(models.Model):
                                 data['rasterBandInfo'] = (banda, variable)
 
             # En el caso de netCDF y HDF5, solo tenemos que overridear el DATA de la capa
-            elif self.capa.gdal_driver_shortname in ('netCDF', 'HDF5'):
+            elif self.capa.gdal_driver_shortname in ('netCDF', 'HDF5') and connectiontype!='WMS':
                 prefijo_data = self.capa.gdal_driver_shortname.upper()  # NETCDF|HDF5
                 if self.mapa.tipo_de_mapa == 'layer_raster_band':
                     data["layerData"] = '{}:{}'.format(data["layerData"], self.bandas)
@@ -704,7 +704,6 @@ class MapServerLayer(models.Model):
                         data["layerData"] = '{}:{}'.format(data["layerData"], primer_subdataset_identificador)
 
         return data
-
 
     def dame_metadatos_asociado_a_banda(self):
         """ Esta version del metodo tiene en cuenta el raster_layer del mapa actual,
