@@ -48,6 +48,9 @@
 .layersconfig-item .dropdown-menu .on .glyphicon {
 	visibility: visible;
 }
+.layersconfig-item .dropdown-menu > li > a.band {
+	white-space: inherit;
+}
 .layersconfig-item > .layer-data {
 	max-width: 180px;
 }

@@ -61,18 +61,34 @@ mg.Visor = (function() {
         }
     }
 
-    function loadLayer(layerId, layerName) {
-        mapLayers[layerId] = L.tileLayer(c.layerUrlTemplate.replace('$layer', layerId), {
-            tms: true,
-            continuousWorld: true,
-            zIndex: 1
-        }); // .addTo(mapa);
+    function loadLayer(layerId, layerName, layerType, bandId) {
+        console.log('loadLayer', layerId, layerType, bandId);
+        if (!bandId) {
+            console.log('loading tiled layer...')
+            mapLayers[layerId] = L.tileLayer(c.layerUrlTemplate.replace('$layer', layerId), {
+                tms: true,
+                continuousWorld: true,
+                zIndex: 1
+            }); // .addTo(mapa);
+        } else {
+            console.log('loading wms layer', c.layerWMSUrlTemplate.replace(/\$bandId/g, bandId))
+            mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerWMSUrlTemplate.replace(/\$bandId/g, bandId), {
+                layers: 'default',
+                format: 'image/png',
+                transparent: true,
+                pane: 'tilePane'
+            }) // .addTo(mapa);                
+        }
+        /*
+        */
         overlays.addLayer(mapLayers[layerId]);
         mapLayers[layerId].layerId = layerId;
         mapLayers[layerId].sldId = 0;
+        mapLayers[layerId].bandId = bandId;
         mapLayers[layerId].tooltip = true;
         mapLayers[layerId].nombre = layerName;
-        layersConfig.addLayer(layerId, layerName, 0);
+        mapLayers[layerId].layerType = layerType;
+        layersConfig.addLayer(layerId, layerName, 0, false, layerType, bandId);
     }
 
     function unloadLayer(layerId) {
@@ -90,7 +106,7 @@ mg.Visor = (function() {
         $.each($('.layersconfig-list .layersconfig-item'), function(k, v) {
             var l = mapLayers[$(v).attr('data-id')];
             if (l) {
-                conf.layers.push({ layerId: l.layerId, sldId: l.sldId, tooltip: l.tooltip });
+                conf.layers.push({ layerId: l.layerId, sldId: l.sldId, tooltip: l.tooltip, layerType: l.layerType, bandId: l.bandId });
             }
         });
 /*
@@ -291,6 +307,20 @@ mg.Visor = (function() {
                                 console.log(e);
                             }
                             updateLayersConfig();
+                        },
+                        onBandChange: function(layerId, bandId, on) {
+                            try {                                
+                                console.log('onBandChange')
+                                overlays.removeLayer(mapLayers[layerId]);
+                                var nombre =  mapLayers[layerId].nombre;
+                                delete mapLayers[layerId];
+                                loadLayer(layerId, nombre, 'RASTER', on?bandId:undefined);
+                                // mapLayers[layerId].setUrl(c.layerUrlTemplate.replace('$layer', bandId));
+                                mapLayers[layerId].bandId = bandId;
+                            } catch(e) {
+                                console.log(e);
+                            }
+                            updateLayersConfig();
                         }
                     }).addTo(mapa);
 
@@ -315,8 +345,9 @@ mg.Visor = (function() {
                 // Cargamos las capas iniciales
                 if (c.initialLayers && c.initialLayers.length > 0) {
                     for (var i=0,l=c.initialLayers.length;i<l;i++) {
-                        loadLayer(c.initialLayers[i].layerId);
+                        loadLayer(c.initialLayers[i].layerId, c.initialLayers[i].layerId, c.initialLayers[i].layerType, c.initialLayers[i].bandId);
                         mapLayers[c.initialLayers[i].layerId].tooltip = c.initialLayers[i].tooltip;
+                        mapLayers[c.initialLayers[i].layerId].layerType = c.initialLayers[i].layerType;
                         if (c.initialLayers[i].sldId!=0) {
                             try {
                                 mapLayers[c.initialLayers[i].layerId].setUrl(c.layerUrlTemplate.replace('$layer', c.initialLayers[i].layerId+'$'+c.initialLayers[i].sldId));
@@ -338,7 +369,7 @@ mg.Visor = (function() {
                     }
                     var layers = overlays.getLayers();
                     $.each(layers, function(k, v) {
-                        layersConfig.addLayer(v.layerId, v.nombre, v.sldId, v.tooltip);
+                        layersConfig.addLayer(v.layerId, v.nombre, v.sldId, v.tooltip, v.bandId);
                     });                    
                 } else {
                     $('button.save-map').addClass('disabled');
@@ -367,7 +398,7 @@ mg.Visor = (function() {
                     }
                 });
                 $tree.on('nodeChecked', function(event, data) {
-                    loadLayer(data.layerId, data.text);
+                    loadLayer(data.layerId, data.text, data.layerType);
                     updateLayersConfig();
                 });
                 /*

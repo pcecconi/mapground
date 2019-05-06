@@ -22,6 +22,7 @@ import urllib2
 # from utils.xml_to_json import xml_to_json
 import xml.etree.cElementTree as etree
 import json
+import urlparse
 from utils import mapserver
 
 # @login_required
@@ -381,8 +382,9 @@ def visor(request, id_mapa=None):
             initialLayers.append({
                 'layerId': msl.capa.id_capa,
                 'sldId': msl.archivo_sld.id if msl.archivo_sld else 0,
-                'tooltip': msl.feature_info
-            });
+                'tooltip': msl.feature_info,
+                'layerType': msl.capa.dame_tipo_de_capa
+            })
 
     # por el momento el world borders lo manejamos como un caso especial
     base_layers= {'world_borders': {
@@ -395,6 +397,7 @@ def visor(request, id_mapa=None):
         base_layers[t.id]= {'url': t.url, 'nombre': unicode(t.nombre), 'tms': t.tms}
 
     visor_config = {}
+    visor_config['layerWMSUrlTemplate'] = urlparse.urljoin(settings.SITE_URL,reverse("layers:wxs_raster_band", kwargs={'id_mapa': '$bandId'}))
     visor_config['layerUrlTemplate'] = settings.MAPCACHE_URL+'tms/1.0.0/$layer@GoogleMapsCompatible/{z}/{x}/{y}.png'
     visor_config['baseLayer'] = base_layer
     visor_config['baseLayers'] = base_layers

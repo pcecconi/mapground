@@ -113,7 +113,7 @@
               </button>
               <ul class="dropdown-menu" role="menu" data-id="$id" aria-labelledby="Acciones">
                   <li class="disabled"><a tabindex="-1" href="#" title="Cargando estilos...">Cargando estilos...</a></li>
-                  <li><a tabindex="-1" href="#" class="info $tooltip" title="Mostrar información contextual">Información contextual <span class="glyphicon glyphicon-ok"></span></a></li>
+                  <li class="tooltip-toggle"><a tabindex="-1" href="#" class="info $tooltip" title="Mostrar información contextual">Información contextual <span class="glyphicon glyphicon-ok"></span></a></li>
                   <li class="divider"></li>
                   <li><a tabindex="-1" href="#" class="borrar" title="Eliminar esta capa">Eliminar</a></li>
               </ul>
@@ -134,6 +134,7 @@
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script type="text/javascript" src="{% static "libs/leaflet/leaflet.js" %}"></script>
+    <script type="text/javascript" src="{% static "assets/js/Leaflet.NonTiledLayer-master/dist/NonTiledLayer.js" %}"></script>
     <script type="text/javascript" src="{% static "assets/js/leaflet-minimap/src/Control.MiniMap.js" %}"></script>
     <script type="text/javascript" src="{% static "assets/js/bootstrap-treeview-1.2.0/src/js/bootstrap-treeview.js" %}"></script>
     <script type="text/javascript" src="{% static "assets/js/leaflet-sidebar-master/src/L.Control.Sidebar.js" %}"></script>
