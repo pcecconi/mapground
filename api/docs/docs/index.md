@@ -8,6 +8,8 @@ La API de Mapground permite administrar capas y datos de forma programática de 
 * `GET      /api/users      ` - Lista los usuarios
 * `GET      /api/layers     ` - Lista las capas a las que se tiene acceso
 * `GET      /api/layers/:id ` - Permite obtener los detalles de una capa
+* `GET      /api/matadata     ` - Lista los metadatos de las capas a las que se tiene acceso
+* `GET      /api/metadata/:id ` - Permite obtener los metadatos de una capa
 * `POST     /api/upload     ` - Permite subir un archivo
 * `GET      /api/import     ` - Lista todas las capas importables
 * `POST     /api/import/:layername` - Permite importar una capa
@@ -204,6 +206,120 @@ Permite obtener el detalle de una capa
 
     curl -X GET \
         http://mapground/api/layers/1 \
+        -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcl9pZCI6MSwiZW1haWwiOiIiLCJleHAiOjE1NTUyODE3Njd9.hC35B6Pgksj0un6OfRlvxKWBYM3QjsX4oqsl9pCY97Q' \
+        -H 'cache-control: no-cache'
+
+## GET /api/metadata
+Lista los metadatos de las capas a las que se tiene acceso
+
+**Tipo de parámetros:** N/A
+
+**Ejemplo de respuesta**
+
+    [
+        {
+            "id": 1,
+            "capa": 1,
+            "nombre_capa": "",
+            "slug_capa": "",
+            "titulo": "Provincias Argentinas",
+            "descripcion": "Delimitaciones de las provincias de la República Argentina",
+            "fuente": "",
+            "contacto": "",
+            "escala": "Nacional",
+            "area_tematica": "Cartografía",
+            "palabras_claves": "provincias, polígonos, delimitaciones",
+            "categorias": [
+                {
+                    "nombre": "Delimitaciones"
+                },
+                {
+                    "nombre": "División administrativa"
+                }
+            ],
+            "fecha_de_relevamiento": "2010",
+            "fecha_de_actualizacion": "Junio 2012",
+            "frecuencia_de_actualizacion": "-",
+            "timestamp_alta": "2019-03-24T14:17:40.755540Z",
+            "timestamp_modificacion": "2019-03-25T02:45:59.380465Z"
+        },
+        {
+            "id": 2,
+            "capa": 2,
+            "nombre_capa": "",
+            "slug_capa": "",
+            "titulo": "Sabancaya 2018062806 fcst vag 18 res",
+            "descripcion": "Cenizas del volcán peruano",
+            "fuente": "SMN",
+            "contacto": "SMN - www.smn.gob.ar",
+            "escala": "Nacional",
+            "area_tematica": "Vulcanología",
+            "palabras_claves": "Cenizas, Perú, Volcán",
+            "categorias": [
+                {
+                    "nombre": "Geología"
+                },
+                {
+                    "nombre": "Sudamérica"
+                }
+            ],
+            "fecha_de_relevamiento": "Junio 2018",
+            "fecha_de_actualizacion": "Marzo 2019",
+            "frecuencia_de_actualizacion": "Anual",
+            "timestamp_alta": "2019-03-26T00:46:54.824253Z",
+            "timestamp_modificacion": "2019-04-27T01:44:49.463643Z"
+        }
+    ]
+
+**cURL**
+
+    curl -X GET \
+        http://mapground/api/metadata/ \
+        -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcl9pZCI6MSwiZW1haWwiOiIiLCJleHAiOjE1NTUyODE3Njd9.hC35B6Pgksj0un6OfRlvxKWBYM3QjsX4oqsl9pCY97Q' \
+        -H 'cache-control: no-cache'
+
+## GET /api/metadata/:id
+Permite obtener los metadatos de una capa
+
+**Tipo de parámetros:** Query string
+
+| Parámetro | Tipo    |
+| --------- | --------|
+| id  | Integer  |
+
+**Ejemplo de respuesta**
+
+    {
+        "id": 1,
+        "capa": 1,
+        "nombre_capa": "",
+        "slug_capa": "",
+        "titulo": "Provincias Argentinas",
+        "descripcion": "Delimitaciones de las provincias de la República Argentina",
+        "fuente": "",
+        "contacto": "",
+        "escala": "Nacional",
+        "area_tematica": "Cartografía",
+        "palabras_claves": "provincias, polígonos, delimitaciones",
+        "categorias": [
+            {
+                "nombre": "Delimitaciones"
+            },
+            {
+                "nombre": "División administrativa"
+            }
+        ],
+        "fecha_de_relevamiento": "2010",
+        "fecha_de_actualizacion": "Junio 2012",
+        "frecuencia_de_actualizacion": "-",
+        "timestamp_alta": "2019-03-24T14:17:40.755540Z",
+        "timestamp_modificacion": "2019-03-25T02:45:59.380465Z"
+    }
+
+**cURL**
+
+    curl -X GET \
+        http://mapground/api/metadata/1 \
         -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwidXNlcl9pZCI6MSwiZW1haWwiOiIiLCJleHAiOjE1NTUyODE3Njd9.hC35B6Pgksj0un6OfRlvxKWBYM3QjsX4oqsl9pCY97Q' \
         -H 'cache-control: no-cache'
 
