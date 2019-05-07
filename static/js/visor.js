@@ -61,18 +61,27 @@ mg.Visor = (function() {
         }
     }
 
-    function loadLayer(layerId, layerName, layerType, bandId) {
-        console.log('loadLayer', layerId, layerType, bandId);
+    function loadLayer(layerId, layerName, layerType, bandId, sldId) {
+        // console.log('loadLayer', layerId, layerType, bandId);
         if (!bandId) {
-            console.log('loading tiled layer...')
-            mapLayers[layerId] = L.tileLayer(c.layerUrlTemplate.replace('$layer', layerId), {
-                tms: true,
-                continuousWorld: true,
-                zIndex: 1
-            }); // .addTo(mapa);
+            // console.log('loading tiled layer...')
+            if (sldId && sldId > 0) {
+                mapLayers[layerId] = L.tileLayer(c.layerUrlTemplate.replace('$layer', layerId+"$"+sldId), {
+                    tms: true,
+                    continuousWorld: true,
+                    zIndex: 1
+                }); // .addTo(mapa);
+            } else {
+                mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerWMSUrlTemplate.replace(/\$layerId/g, layerId), {
+                    layers: 'default',
+                    format: 'image/png',
+                    transparent: true,
+                    pane: 'tilePane'
+                }) // .addTo(mapa);                    
+            }
         } else {
-            console.log('loading wms layer', c.layerWMSUrlTemplate.replace(/\$bandId/g, bandId))
-            mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerWMSUrlTemplate.replace(/\$bandId/g, bandId), {
+            // console.log('loading wms layer', c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId))
+            mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId), {
                 layers: 'default',
                 format: 'image/png',
                 transparent: true,
@@ -121,7 +130,7 @@ mg.Visor = (function() {
         } else {
             $('button.save-map').addClass('disabled');
         }
-        console.log(JSON.stringify(conf));
+        // console.log(JSON.stringify(conf));
     }
 
     function updateExtent() {
@@ -301,7 +310,11 @@ mg.Visor = (function() {
                         },
                         onStyleChange: function(layerId, sldId) {
                             try {
-                                mapLayers[layerId].setUrl(c.layerUrlTemplate.replace('$layer', layerId+'$'+sldId));
+                                // mapLayers[layerId].setUrl(c.layerUrlTemplate.replace('$layer', layerId+'$'+sldId));
+                                overlays.removeLayer(mapLayers[layerId]);
+                                var nombre =  mapLayers[layerId].nombre;
+                                delete mapLayers[layerId];
+                                loadLayer(layerId, nombre, 'VECTOR', false, sldId);
                                 mapLayers[layerId].sldId = sldId;
                             } catch(e) {
                                 console.log(e);
@@ -310,7 +323,7 @@ mg.Visor = (function() {
                         },
                         onBandChange: function(layerId, bandId, on) {
                             try {                                
-                                console.log('onBandChange')
+                                // console.log('onBandChange')
                                 overlays.removeLayer(mapLayers[layerId]);
                                 var nombre =  mapLayers[layerId].nombre;
                                 delete mapLayers[layerId];
@@ -345,12 +358,12 @@ mg.Visor = (function() {
                 // Cargamos las capas iniciales
                 if (c.initialLayers && c.initialLayers.length > 0) {
                     for (var i=0,l=c.initialLayers.length;i<l;i++) {
-                        loadLayer(c.initialLayers[i].layerId, c.initialLayers[i].layerId, c.initialLayers[i].layerType, c.initialLayers[i].bandId);
+                        loadLayer(c.initialLayers[i].layerId, c.initialLayers[i].layerId, c.initialLayers[i].layerType, c.initialLayers[i].bandId, c.initialLayers[i].sldId);
                         mapLayers[c.initialLayers[i].layerId].tooltip = c.initialLayers[i].tooltip;
                         mapLayers[c.initialLayers[i].layerId].layerType = c.initialLayers[i].layerType;
                         if (c.initialLayers[i].sldId!=0) {
                             try {
-                                mapLayers[c.initialLayers[i].layerId].setUrl(c.layerUrlTemplate.replace('$layer', c.initialLayers[i].layerId+'$'+c.initialLayers[i].sldId));
+                                // mapLayers[c.initialLayers[i].layerId].setUrl(c.layerUrlTemplate.replace('$layer', c.initialLayers[i].layerId+'$'+c.initialLayers[i].sldId));
                                 mapLayers[c.initialLayers[i].layerId].sldId = c.initialLayers[i].sldId;
                             } catch(e) {
                                 console.log(e);
@@ -369,7 +382,7 @@ mg.Visor = (function() {
                     }
                     var layers = overlays.getLayers();
                     $.each(layers, function(k, v) {
-                        layersConfig.addLayer(v.layerId, v.nombre, v.sldId, v.tooltip, v.bandId);
+                        layersConfig.addLayer(v.layerId, v.nombre, v.sldId, v.tooltip, v.layerType, v.bandId);
                     });                    
                 } else {
                     $('button.save-map').addClass('disabled');

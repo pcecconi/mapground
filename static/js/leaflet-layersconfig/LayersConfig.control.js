@@ -213,7 +213,7 @@ L.Control.LayersConfig = L.Control.extend({
 	},
 
 	updateBands: function(layerId, bands) {
-		console.log('update bands', layerId, bands);
+		// console.log('update bands', layerId, this.options.layers[layerId], bands);
 		var bandTemplate = '<li title="$band_desc" data-toggle="band"><a tabindex="-1" href="#" class="band" data-id="$id"><span class="nombre-banda">$titulo</span><span class="pull-right glyphicon glyphicon-ok"></span></a></li>';
 		var bandsContent = '<li class="divider"></li><h6 class="dropdown-header">Bandas</h6>';
 		for (var i=0, l=bands.length; i<l;i++) {
@@ -231,7 +231,7 @@ L.Control.LayersConfig = L.Control.extend({
         var content = '<h1>Capas</h1><ul class="layersconfig-list">',
         	template = $('#'+this.options.itemsTemplate).html(),
 			self = this;
-		console.log(this.options.layers);
+		// console.log(this.options.layers);
 		if (Object.keys(this.options.layers).length > 0) {
 	        $.each(this.options.layers, function(k, v) {        	
 	        	content+=template.replace(/\$id/g, k)

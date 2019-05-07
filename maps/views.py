@@ -161,7 +161,10 @@ def crear_mapa(request):
                                 feature_info=l['tooltip']
                             except:
                                 feature_info=True
-                        MapServerLayer(mapa=mapa,capa=capa,orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
+                            if 'bandId' in l and l['bandId']!='False':
+                                MapServerLayer(mapa=mapa,capa=capa,bandas=l['bandId'],orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
+                            else:
+                                MapServerLayer(mapa=mapa,capa=capa,orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
                     except:
                         pass
             #ManejadorDeMapas.generar_thumbnail(mapa.id_mapa)
@@ -210,7 +213,10 @@ def actualizar_mapa(request,id_mapa):
                                 feature_info=l['tooltip']
                             except:
                                 feature_info=True
-                            MapServerLayer(mapa=mapa,capa=capa,orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
+                            if 'bandId' in l and l['bandId']!='False':
+                                MapServerLayer(mapa=mapa,capa=capa,bandas=l['bandId'],orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
+                            else:
+                                MapServerLayer(mapa=mapa,capa=capa,orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
                     except:
                         pass
             #ManejadorDeMapas.generar_thumbnail(id_mapa)
@@ -381,6 +387,7 @@ def visor(request, id_mapa=None):
         for msl in m.mapserverlayer_set.all().order_by('orden_de_capa'):
             initialLayers.append({
                 'layerId': msl.capa.id_capa,
+                'bandId': msl.bandas,
                 'sldId': msl.archivo_sld.id if msl.archivo_sld else 0,
                 'tooltip': msl.feature_info,
                 'layerType': msl.capa.dame_tipo_de_capa
@@ -397,7 +404,8 @@ def visor(request, id_mapa=None):
         base_layers[t.id]= {'url': t.url, 'nombre': unicode(t.nombre), 'tms': t.tms}
 
     visor_config = {}
-    visor_config['layerWMSUrlTemplate'] = urlparse.urljoin(settings.SITE_URL,reverse("layers:wxs_raster_band", kwargs={'id_mapa': '$bandId'}))
+    visor_config['layerWMSUrlTemplate'] = urlparse.urljoin(settings.SITE_URL,reverse("layers:wxs", kwargs={'id_capa': '$layerId'}))
+    visor_config['layerBandWMSUrlTemplate'] = urlparse.urljoin(settings.SITE_URL,reverse("layers:wxs_raster_band", kwargs={'id_mapa': '$bandId'}))
     visor_config['layerUrlTemplate'] = settings.MAPCACHE_URL+'tms/1.0.0/$layer@GoogleMapsCompatible/{z}/{x}/{y}.png'
     visor_config['baseLayer'] = base_layer
     visor_config['baseLayers'] = base_layers

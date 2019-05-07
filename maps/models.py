@@ -593,7 +593,10 @@ class MapServerLayer(models.Model):
 
     def dame_layer_connection(self, connectiontype):
         if connectiontype == 'WMS':
-            return mapserver.get_wms_url(self.capa.id_capa)
+            if self.bandas != "":
+                return mapserver.get_wms_url(self.bandas)
+            else:
+                return mapserver.get_wms_url(self.capa.id_capa)
         else:
             return self.capa.dame_connection_string
 
