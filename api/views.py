@@ -7,9 +7,9 @@ from rest_framework import serializers, viewsets, routers
 from rest_framework.decorators import action
 from django.shortcuts import HttpResponseRedirect
 from django.core.urlresolvers import reverse
-from .serializers import ArchivoSerializer, CapaSerializer, UserSerializer, RasterDataSourceSerializer, VectorDataSourceSerializer, DataSourceDateTimeSerializer, TokenSerializer
+from .serializers import ArchivoSerializer, CapaSerializer, MetadatosSerializer, UserSerializer, RasterDataSourceSerializer, VectorDataSourceSerializer, DataSourceDateTimeSerializer, TokenSerializer
 from layerimport.views import _get_capas_importables, _get_actualizaciones_validas
-from layers.models import Capa, VectorDataSource, RasterDataSource, CONST_RASTER, CONST_VECTOR
+from layers.models import Capa, Metadatos, VectorDataSource, RasterDataSource, CONST_RASTER, CONST_VECTOR
 import json
 from MapGround.settings import IMPORT_SCHEMA, ENCODINGS, UPLOADED_RASTERS_PATH
 from layerimport.import_utils import import_layer, update_layer
@@ -145,6 +145,9 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+class MetadatosViewSet(viewsets.ModelViewSet):
+    queryset = Metadatos.objects.all()
+    serializer_class = MetadatosSerializer
 
 class LoginView(APIView):
     """

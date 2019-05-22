@@ -1,10 +1,11 @@
 from django.conf.urls import url, include
 from rest_framework import routers
-from .views import ArchivoAPIView, CapaViewSet, UserViewSet, LayerImportAPIView, LayerUpdateAPIView, RDSViewSet, VDSViewSet, LoginView
+from .views import ArchivoAPIView, CapaViewSet, UserViewSet, MetadatosViewSet, LayerImportAPIView, LayerUpdateAPIView, RDSViewSet, VDSViewSet, LoginView
 
 router = routers.DefaultRouter()
 router.register(r'layers', CapaViewSet)
 router.register(r'users', UserViewSet)
+router.register(r'metadata', MetadatosViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),    

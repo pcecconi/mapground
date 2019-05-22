@@ -18,7 +18,7 @@ import os
 class MetadatosForm(ModelForm):
     # fecha_de_relevamiento = forms.DateField(widget=SelectDateWidget(),required=False)
     # fecha_de_actualizacion = forms.DateField(widget=SelectDateWidget(),required=False)
-    categorias = forms.ModelMultipleChoiceField(widget=forms.CheckboxSelectMultiple, queryset=Categoria.objects.all().order_by('nombre'), required=False)
+    categorias = forms.ModelMultipleChoiceField(label='Categorías', widget=forms.CheckboxSelectMultiple, queryset=Categoria.objects.all().order_by('nombre'), required=False)
     titulo = forms.CharField(label='Título', validators=[MinLengthValidator(5)])
 
     class Meta:
@@ -176,6 +176,7 @@ def make_band_sld_form(capa):
 
     return BandSLDForm
 
+
 class RasterDataSourceForm(ModelForm):
     class Meta:
         model = RasterDataSource
@@ -185,6 +186,7 @@ class RasterDataSourceForm(ModelForm):
         super(RasterDataSourceForm, self).__init__(*args, **kwargs)
         if self.instance.id:
             self.fields['nombre_del_archivo'].widget.attrs['readonly'] = 'True'
+
 
 class VectorDataSourceForm(ModelForm):
     class Meta:
