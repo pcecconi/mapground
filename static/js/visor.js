@@ -63,31 +63,41 @@ mg.Visor = (function() {
 
     function loadLayer(layerId, layerName, layerType, bandId, sldId) {
         // console.log('loadLayer', layerId, layerType, bandId);
-        if (!bandId) {
-            // console.log('loading tiled layer...')
-            if (sldId && sldId > 0) {
-                mapLayers[layerId] = L.tileLayer(c.layerUrlTemplate.replace('$layer', layerId+"$"+sldId), {
-                    tms: true,
-                    continuousWorld: true,
-                    zIndex: 1
-                }); // .addTo(mapa);
-            } else {
-                mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerWMSUrlTemplate.replace(/\$layerId/g, layerId), {
-                    layers: 'default',
-                    format: 'image/png',
-                    transparent: true,
-                    pane: 'tilePane'
-                }) // .addTo(mapa);                    
-            }
-        } else {
-            // console.log('loading wms layer', c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId))
-            mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId), {
-                layers: 'default',
-                format: 'image/png',
-                transparent: true,
-                pane: 'tilePane'
-            }) // .addTo(mapa);                
+        var layerWMSUrl = bandId ? c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId):c.layerWMSUrlTemplate.replace(/\$layerId/g, layerId);
+        if (sldId > 0) {
+            layerWMSUrl+=sldId+"/";
         }
+        mapLayers[layerId] =  L.nonTiledLayer.wms(layerWMSUrl, {
+            layers: 'default',
+            format: 'image/png',
+            transparent: true,
+            pane: 'tilePane'
+        }) // .addTo(mapa);                    
+        // if (!bandId) {
+        //     // console.log('loading tiled layer...')
+        //     // if (sldId && sldId > 0) {
+        //     //     mapLayers[layerId] = L.tileLayer(c.layerUrlTemplate.replace('$layer', layerId+"$"+sldId), {
+        //     //         tms: true,
+        //     //         continuousWorld: true,
+        //     //         zIndex: 1
+        //     //     }); // .addTo(mapa);
+        //     // } else {
+        //     mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerWMSUrlTemplate.replace(/\$layerId/g, layerId), {
+        //         layers: 'default',
+        //         format: 'image/png',
+        //         transparent: true,
+        //         pane: 'tilePane'
+        //     }) // .addTo(mapa);                    
+        //     // }
+        // } else {
+        //     // console.log('loading wms layer', c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId))
+        //     mapLayers[layerId] =  L.nonTiledLayer.wms(c.layerBandWMSUrlTemplate.replace(/\$bandId/g, bandId), {
+        //         layers: 'default',
+        //         format: 'image/png',
+        //         transparent: true,
+        //         pane: 'tilePane'
+        //     }) // .addTo(mapa);                
+        // }
         /*
         */
         overlays.addLayer(mapLayers[layerId]);
@@ -130,7 +140,7 @@ mg.Visor = (function() {
         } else {
             $('button.save-map').addClass('disabled');
         }
-        // console.log(JSON.stringify(conf));
+        console.log(JSON.stringify(conf));
     }
 
     function updateExtent() {
@@ -312,9 +322,9 @@ mg.Visor = (function() {
                             try {
                                 // mapLayers[layerId].setUrl(c.layerUrlTemplate.replace('$layer', layerId+'$'+sldId));
                                 overlays.removeLayer(mapLayers[layerId]);
-                                var nombre =  mapLayers[layerId].nombre;
+                                var prev =  mapLayers[layerId];
                                 delete mapLayers[layerId];
-                                loadLayer(layerId, nombre, 'VECTOR', false, sldId);
+                                loadLayer(layerId, prev.nombre, prev.layerType, false, sldId);
                                 mapLayers[layerId].sldId = sldId;
                             } catch(e) {
                                 console.log(e);
@@ -343,7 +353,7 @@ mg.Visor = (function() {
                         .on('mousedown', stopPropagation)
                         .on('dblclick', stopPropagation);
 
-                    mapa.on('click', onContextMenu, this);
+                    mapa.on('click', function(ev) { if (!layersConfig.isActive()) { onContextMenu(ev) } } , this);
                     mapa.on('moveend', updateExtent, this);
                     mapa.on('zoomend', updateExtent, this);
 

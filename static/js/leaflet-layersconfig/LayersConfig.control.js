@@ -81,6 +81,11 @@ L.Control.LayersConfig = L.Control.extend({
 	    });
 	    $(document).on('click', '.leaflet-sidebar .sld', function(ev) {
 	    	ev.preventDefault();
+	        if (ev.stopPropagation) {
+	            ev.stopPropagation();
+	        } else {
+	            ev.cancelBubble = true;
+	        }            	    	
 	    	var layerId = $(this).parent().parent().attr('data-id');
 	    	if (!$(this).hasClass('on')) {
 	    		$('.leaflet-sidebar .layersconfig-item[data-id='+layerId+'] .sld').removeClass('on');
@@ -92,6 +97,11 @@ L.Control.LayersConfig = L.Control.extend({
 	    });
 	    $(document).on('click', '.leaflet-sidebar .band', function(ev) {
 	    	ev.preventDefault();
+	        if (ev.stopPropagation) {
+	            ev.stopPropagation();
+	        } else {
+	            ev.cancelBubble = true;
+	        }            	    	
 	    	var layerId = $(this).parent().parent().attr('data-id');
 	    	if (!$(this).hasClass('on')) {
 	    		$('.leaflet-sidebar .layersconfig-item[data-id='+layerId+'] .band').removeClass('on');
@@ -106,6 +116,14 @@ L.Control.LayersConfig = L.Control.extend({
 		    	}
 			}
 	    });
+	    $(document).on('click', '.leaflet-sidebar .layersconfig-item', function(ev) {
+			ev.preventDefault();
+	        if (ev.stopPropagation) {
+	            ev.stopPropagation();
+	        } else {
+	            ev.cancelBubble = true;
+			}            	    	
+		});
         this.update();
 	
 	    // $(".dropdown-toggle").dropdown();
@@ -265,6 +283,10 @@ L.Control.LayersConfig = L.Control.extend({
 	    });
 	    self.loadSlds();
 	    self.loadBands();
+	},
+
+	isActive: function() {
+		return L.DomUtil.hasClass(this._button, 'active');
 	},
 
 	_eliminar: function(ev) {

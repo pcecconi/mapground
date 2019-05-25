@@ -140,7 +140,7 @@ def crear_mapa(request):
                 pass
             if 'extent' in posted_layers:
                 mapa.extent=posted_layers['extent']
-            mapa.save(escribir_imagen_y_mapfile=False)            
+            mapa.save(escribir_imagen_y_mapfile=False)      
             if 'layers' in posted_layers:
                 for idx, l in enumerate(posted_layers['layers']):
                     try:
@@ -161,7 +161,7 @@ def crear_mapa(request):
                                 feature_info=l['tooltip']
                             except:
                                 feature_info=True
-                            if 'bandId' in l and l['bandId']!='False':
+                            if 'bandId' in l and l['bandId']:
                                 MapServerLayer(mapa=mapa,capa=capa,bandas=l['bandId'],orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
                             else:
                                 MapServerLayer(mapa=mapa,capa=capa,orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
@@ -213,7 +213,7 @@ def actualizar_mapa(request,id_mapa):
                                 feature_info=l['tooltip']
                             except:
                                 feature_info=True
-                            if 'bandId' in l and l['bandId']!='False':
+                            if 'bandId' in l and l['bandId']:
                                 MapServerLayer(mapa=mapa,capa=capa,bandas=l['bandId'],orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()
                             else:
                                 MapServerLayer(mapa=mapa,capa=capa,orden_de_capa=idx,feature_info=feature_info,archivo_sld=sld).save()

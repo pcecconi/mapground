@@ -3,8 +3,11 @@ from layers import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^public_wxs/(?P<id_capa>.+)/(?P<id_sld>\w+)/$', views.public_layer_wxs, name='public_layer_wxs'),
     url(r'^public_wxs/(?P<id_capa>.+)/$', views.public_layer_wxs, name='public_layer_wxs'),
+    url(r'^wxs/(?P<id_capa>.+)/(?P<id_sld>\w+)/$', views.wxs, name='wxs'),
     url(r'^wxs/(?P<id_capa>.+)/$', views.wxs, name='wxs'),
+    url(r'^wxs_raster_band/(?P<id_mapa>.+)/(?P<id_sld>\w+)/$', views.wxs_raster_band, name='wxs_raster_band'),
     url(r'^wxs_raster_band/(?P<id_mapa>.+)/$', views.wxs_raster_band, name='wxs_raster_band'),
     url(r'^public_wxs/$', views.wxs_public, name='wxs_public'),
     url(r'^details/(?P<id_capa>.+)/$', views.detalle_capa, name='detalle_capa'),
