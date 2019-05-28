@@ -102,12 +102,12 @@ mg.Visor = (function() {
         */
         overlays.addLayer(mapLayers[layerId]);
         mapLayers[layerId].layerId = layerId;
-        mapLayers[layerId].sldId = 0;
+        mapLayers[layerId].sldId = sldId;
         mapLayers[layerId].bandId = bandId;
         mapLayers[layerId].tooltip = true;
         mapLayers[layerId].nombre = layerName;
         mapLayers[layerId].layerType = layerType;
-        layersConfig.addLayer(layerId, layerName, 0, false, layerType, bandId);
+        layersConfig.addLayer(layerId, layerName, sldId, false, layerType, bandId);
     }
 
     function unloadLayer(layerId) {
@@ -335,9 +335,9 @@ mg.Visor = (function() {
                             try {                                
                                 // console.log('onBandChange')
                                 overlays.removeLayer(mapLayers[layerId]);
-                                var nombre =  mapLayers[layerId].nombre;
+                                var prev =  mapLayers[layerId];
                                 delete mapLayers[layerId];
-                                loadLayer(layerId, nombre, 'RASTER', on?bandId:undefined);
+                                loadLayer(layerId, prev.nombre, 'RASTER', on?bandId:undefined, prev.sldId);
                                 // mapLayers[layerId].setUrl(c.layerUrlTemplate.replace('$layer', bandId));
                                 mapLayers[layerId].bandId = bandId;
                             } catch(e) {
@@ -421,7 +421,7 @@ mg.Visor = (function() {
                     }
                 });
                 $tree.on('nodeChecked', function(event, data) {
-                    loadLayer(data.layerId, data.text, data.layerType);
+                    loadLayer(data.layerId, data.text, data.layerType, false, 0);
                     updateLayersConfig();
                 });
                 /*
