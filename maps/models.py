@@ -385,19 +385,19 @@ class Mapa(models.Model):
     @property
     def dame_wxs_url(self):
         if self.tipo_de_mapa=='public_layers':
-            return urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/')
+            return urlparse.urljoin(settings.SITE_URL,'/layers/public_wxs/')
         elif self.tipo_de_mapa=='user':
-            return urlparse.urljoin(settings.SITE_URL, 'users/'+self.owner.username+'wxs/')
+            return urlparse.urljoin(settings.SITE_URL, '/users/'+self.owner.username+'/wxs/')
         elif self.tipo_de_mapa=='layer_original_srs':
-            return urlparse.urljoin(settings.SITE_URL,'layers/wxs'+unicode(self.id_mapa.replace('_layer_srs',''))+'/')
+            return urlparse.urljoin(settings.SITE_URL,'/layers/wxs/'+unicode(self.id_mapa.replace('_layer_srs',''))+'/')
         elif self.tipo_de_mapa=='layer_raster_band':
-            return urlparse.urljoin(settings.SITE_URL, 'layers/wxs_raster_band/' + unicode(self.id_mapa) + '/')
+            return urlparse.urljoin(settings.SITE_URL, '/layers/wxs_raster_band/' + unicode(self.id_mapa) + '/')
         elif self.tipo_de_mapa=='layer':
             c=self.capas.first()
             if c.wxs_publico:
-                return urlparse.urljoin(settings.SITE_URL,'layers/public_wxs/'+unicode(self.id_mapa)+'/')
+                return urlparse.urljoin(settings.SITE_URL,'/layers/public_wxs/'+unicode(self.id_mapa)+'/')
 
-        return urlparse.urljoin(settings.SITE_URL,'layers/wxs/'+unicode(self.id_mapa)+'/')
+        return urlparse.urljoin(settings.SITE_URL,'/layers/wxs/'+unicode(self.id_mapa)+'/')
     
     @property
     def showAsWMSLayer(self):
