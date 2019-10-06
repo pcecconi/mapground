@@ -326,6 +326,13 @@ class RasterDataSource(DataSource):
     active = models.BooleanField(default=False, null=False, blank=False)
     objects = models.GeoManager()
 
+    @property
+    def dame_download_url(self):
+        if self.capa.tipo_de_capa == CONST_RASTER:
+            return os.path.join(settings.UPLOADED_RASTERS_URL, unicode(self.capa.owner), self.nombre_del_archivo)
+        else:
+            return ''
+
 def get_newest_datasource_for_layer(capa):
     if capa.tipo_de_capa == CONST_RASTER:
         return RasterDataSource.objects.filter(capa=capa).order_by('-data_datetime').first()

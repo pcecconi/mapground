@@ -231,10 +231,15 @@
         <div class="tab-pane fade" id="layerHistory">
             {% if capa.tipo_de_capa == 'raster' %}
             <table class="table table-striped">
-                <thead><tr><th>Nombre</th><th>Tipo</th><th>Fecha</th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Tipo</th><th>Fecha</th><th>Descargar</th></tr></thead>
                 <tbody>
                     {% for ds in capa.rasterdatasources.all %}
-                      <tr><td>{{ ds.nombre_del_archivo }}</td><td>{{ ds.gdal_driver_longname }}</td><td>{{ ds.data_datetime }}</td></tr>
+                      <tr>
+                        <td>{{ ds.nombre_del_archivo }}</td>
+                        <td>{{ ds.gdal_driver_longname }}</td>
+                        <td>{{ ds.data_datetime }}</td>
+                        <td><a href="{{ ds.dame_download_url }}"><span class="glyphicon glyphicon-download"></span></a></td>
+                      </tr>
                     {% endfor %}
                 </tbody>
             </table>
