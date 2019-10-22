@@ -23,6 +23,7 @@ def wxs(request, username):
     if user != request.user:
         return HttpResponseForbidden()
 
+    print request.GET.get('LAYERS')
     extra_requests_args = {}
     mapfile = ManejadorDeMapas.commit_mapfile(username)
     # remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'

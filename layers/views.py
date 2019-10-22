@@ -485,9 +485,10 @@ def __process_wxs_request(request, id_capa, id_sld):
         return HttpResponseForbidden()
 
     extra_requests_args = {}
-    mapfile=ManejadorDeMapas.commit_mapfile(id_capa+'_layer_srs')
+    mapfile=ManejadorDeMapas.commit_mapfile(id_capa) if capa.wxs_publico else ManejadorDeMapas.commit_mapfile(id_capa+'_layer_srs')
     # remote_url = MAPSERVER_URL+'?map='+mapfile # +'&mode=browse&layers=all&template=openlayers'
-    remote_url = mapserver.get_wms_url(id_capa+'_layer_srs')
+    # remote_url = mapserver.get_wms_url(id_capa+'_layer_srs')
+    remote_url = mapserver.get_wms_url(id_capa) if capa.wxs_publico else mapserver.get_wms_url(id_capa+'_layer_srs')
     sld = __sld_url_by_id(id_sld)
     sld = sld if sld is not None else capa.dame_sld_default()
     if sld is not None:
@@ -509,9 +510,7 @@ def wxs_public(request):
     remote_url = mapserver.get_wms_url('mapground_public_layers')
     return views.proxy_view(request, remote_url, extra_requests_args)
 
-
-@logged_in_or_basicauth()
-def wxs_raster_band(request, id_mapa, id_sld=None):
+def __process_wxs_raster_band(request, id_mapa, id_sld=None):
     mapa = get_object_or_404(Mapa, id_mapa=id_mapa, tipo_de_mapa='layer_raster_band')
     ManejadorDePermisos.anotar_permiso_a_mapa(request.user, mapa)
     if mapa.permiso is None:
@@ -526,6 +525,27 @@ def wxs_raster_band(request, id_mapa, id_sld=None):
     elif first_sld: 
         remote_url = remote_url + '&SLD=' + urlparse.urljoin(settings.SITE_URL, first_sld.filename.url)
     return views.proxy_view(request, remote_url, extra_requests_args)
+
+def public_wxs_raster_band(request, id_mapa, id_sld=None):
+    return __process_wxs_raster_band(request, id_mapa, id_sld)
+
+@logged_in_or_basicauth()
+def wxs_raster_band(request, id_mapa, id_sld=None):
+    return __process_wxs_raster_band(request, id_mapa, id_sld)
+    # mapa = get_object_or_404(Mapa, id_mapa=id_mapa, tipo_de_mapa='layer_raster_band')
+    # ManejadorDePermisos.anotar_permiso_a_mapa(request.user, mapa)
+    # if mapa.permiso is None:
+    #     return HttpResponseForbidden()
+    # extra_requests_args = {}
+    # mapfile = ManejadorDeMapas.commit_mapfile(mapa.id_mapa)
+    # remote_url = mapserver.get_wms_url(mapa.id_mapa)
+    # first_sld = mapa.mapserverlayer_set.first().archivo_sld
+    # sld = __sld_url_by_id(id_sld)
+    # if sld is not None:
+    #     remote_url = remote_url + '&SLD=' + sld
+    # elif first_sld: 
+    #     remote_url = remote_url + '&SLD=' + urlparse.urljoin(settings.SITE_URL, first_sld.filename.url)
+    # return views.proxy_view(request, remote_url, extra_requests_args)
 
 
 # @login_required

@@ -391,7 +391,11 @@ class Mapa(models.Model):
         elif self.tipo_de_mapa=='layer_original_srs':
             return urlparse.urljoin(settings.SITE_URL,'/layers/wxs/'+unicode(self.id_mapa.replace('_layer_srs',''))+'/')
         elif self.tipo_de_mapa=='layer_raster_band':
-            return urlparse.urljoin(settings.SITE_URL, '/layers/wxs_raster_band/' + unicode(self.id_mapa) + '/')
+            c=self.capas.first()
+            if c.wxs_publico:
+                return urlparse.urljoin(settings.SITE_URL, '/layers/public_wxs_raster_band/' + unicode(self.id_mapa) + '/')
+            else: 
+                return urlparse.urljoin(settings.SITE_URL, '/layers/wxs_raster_band/' + unicode(self.id_mapa) + '/')
         elif self.tipo_de_mapa=='layer':
             c=self.capas.first()
             if c.wxs_publico:

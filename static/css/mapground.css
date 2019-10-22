@@ -159,6 +159,7 @@ h3 {
 	/*text-align: left;*/
 	width: 150px;
 	padding-left: 10px;
+	white-space: normal;
 }
 #layerInfo>dl>dd {
 	margin-left: 170px;
