@@ -19,7 +19,6 @@ class ArchivoSerializer(serializers.ModelSerializer):
 
 
 class RasterDataSourceSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = RasterDataSource
         fields = ('id', 'nombre_del_archivo', 'gdal_driver_longname', 'cantidad_de_bandas',
@@ -45,6 +44,8 @@ class DataSourceDateTimeSerializer(serializers.Serializer):
 
 class CapaSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source='owner.username')
+    # rasterdatasources = serializers.SerializerMethodField()
+    # vectordatasources = serializers.SerializerMethodField()
     rasterdatasources = RasterDataSourceSerializer(many=True, read_only=True)
     vectordatasources = VectorDataSourceSerializer(many=True, read_only=True)
 
@@ -53,6 +54,14 @@ class CapaSerializer(serializers.ModelSerializer):
         fields = ('id', 'id_capa', 'slug', 'owner', 'nombre', 'tipo_de_capa', 'srid', 'proyeccion_proj4',
                   'cantidad_de_registros', 'layer_srs_extent', 'wxs_publico',
                   'timestamp_alta', 'timestamp_modificacion', 'rasterdatasources', 'vectordatasources')
+
+    # def get_rasterdatasources(self, instance):
+    #     rds = instance.rasterdatasources.all().order_by('timestamp_modificacion')
+    #     return RasterDataSourceSerializer(rds, many=True).data
+
+    # def get_vectordatasources(self, instance):
+    #     vds = instance.vectordatasources.all().order_by('timestamp_modificacion')
+    #     return VectorDataSourceSerializer(vds, many=True).data
 
     def update(self, instance, validated_data):
         dss_data = validated_data.pop('rasterdatasources') if instance.tipo_de_capa == CONST_RASTER else validated_data.pop('vectordatasources')

@@ -129,6 +129,7 @@ class CapaViewSet(viewsets.ModelViewSet):
             return Response("Capa con id %s no tiene un data source con id %s."%(pk, ds_pk), status=status.HTTP_404_NOT_FOUND)
         if not ds.is_only_datasource:
             ds.delete()
+            capa.save()
             return Response('Se elimino el datasource %s'%(ds_pk), status=status.HTTP_200_OK)
         else:
             return Response("No se puede eliminar el unico datasource de una capa", status=status.HTTP_400_BAD_REQUEST)

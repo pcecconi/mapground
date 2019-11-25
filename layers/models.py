@@ -296,6 +296,7 @@ class DataSource(SingleOwnerMixin, models.Model):
 
     class Meta:
         abstract=True
+        ordering = ['timestamp_modificacion']
 
     @property
     def is_only_datasource(self):
